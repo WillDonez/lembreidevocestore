@@ -293,12 +293,16 @@ async function buscarProdutos() {
                   </h3>
 
                   <p className="text-gray-500 mt-2">
-                    Cliente: {pedido.cliente}
-                  </p>
+  Cliente: {pedido.nome_cliente || pedido.cliente}
+</p>
 
-                  <p className="text-gray-500">
-                    Total: R$ {pedido.total}
-                  </p>
+<p className="text-gray-500">
+  WhatsApp: {pedido.whatsapp_cliente}
+</p>
+
+<p className="text-gray-500">
+  Total: R$ {Number(pedido.total).toFixed(2)}
+</p>
 
                   <p className="mt-2">
                     Status:
@@ -309,45 +313,57 @@ async function buscarProdutos() {
 
                 </div>
 
-                <div className="flex gap-3">
+  <div className="flex gap-3">
 
-                  <button
-                    onClick={() =>
-                      atualizarStatus(
-                        pedido.id,
-                        "aprovado"
-                      )
-                    }
-                    className="bg-green-500 text-white px-4 py-2 rounded-xl"
-                  >
-                    Aprovar
-                  </button>
+  <button
+    onClick={() =>
+      atualizarStatus(
+        pedido.id,
+        "aprovado"
+      )
+    }
+    className="bg-green-500 text-white px-4 py-2 rounded-xl"
+  >
+    Aprovar
+  </button>
 
-                  <button
-                    onClick={() =>
-                      atualizarStatus(
-                        pedido.id,
-                        "enviado"
-                      )
-                    }
-                    className="bg-blue-500 text-white px-4 py-2 rounded-xl"
-                  >
-                    Enviado
-                  </button>
+  <button
+    onClick={() =>
+      atualizarStatus(
+        pedido.id,
+        "enviado"
+      )
+    }
+    className="bg-blue-500 text-white px-4 py-2 rounded-xl"
+  >
+    Enviado
+  </button>
 
-                  <button
-                    onClick={() =>
-                      atualizarStatus(
-                        pedido.id,
-                        "cancelado"
-                      )
-                    }
-                    className="bg-red-500 text-white px-4 py-2 rounded-xl"
-                  >
-                    Cancelar
-                  </button>
+  <button
+    onClick={() =>
+      atualizarStatus(
+        pedido.id,
+        "cancelado"
+      )
+    }
+    className="bg-red-500 text-white px-4 py-2 rounded-xl"
+  >
+    Cancelar
+  </button>
 
-                </div>
+  <button
+    onClick={() =>
+      window.open(
+        `https://wa.me/55${pedido.whatsapp_cliente}`,
+        "_blank"
+      )
+    }
+    className="bg-green-700 text-white px-4 py-2 rounded-xl"
+  >
+    WhatsApp
+  </button>
+
+</div>
 
               </div>
 
