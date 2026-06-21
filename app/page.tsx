@@ -160,62 +160,107 @@ function removerCarrinho(index: number) {
 
       {abrirCarrinho && (
 
-        <div className="fixed right-0 top-0 h-full w-96 bg-white shadow-2xl p-6">
+        <div className="fixed right-0 top-0 h-full w-[420px] bg-white shadow-2xl p-6 overflow-y-auto z-50">
 
-   <div className="flex justify-between items-center">
+   <div className="flex justify-between items-center mb-6">
 
   <h2 className="text-3xl font-bold">
     Seu Carrinho
   </h2>
 
- <input
-  type="text"
-  placeholder="Seu nome completo"
-  value={nomeCliente}
-  onChange={(e) => setNomeCliente(e.target.value)}
-  className="w-full border p-4 rounded-xl mt-6"
-/>
+  <button
+    onClick={() => setAbrirCarrinho(false)}
+    className="bg-red-500 text-white px-4 py-2 rounded-xl"
+  >
+    Fechar
+  </button>
 
-<input
-  type="text"
-  placeholder="Seu WhatsApp"
-  value={whatsappCliente}
-  onChange={(e) => setWhatsappCliente(e.target.value)}
-  className="w-full border p-4 rounded-xl mt-4"
-/>
+</div>
 
-<button
-  onClick={async () => {
-    if (!nomeCliente || !whatsappCliente) {
-      alert("Preencha seu nome e WhatsApp antes de finalizar.");
-      return;
-    }
+<div className="mt-6 space-y-4">
 
-    const response = await fetch("/api/checkout", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        produtos: carrinho,
-        nomeCliente,
-        whatsappCliente,
-      }),
-    });
+  {carrinho.map((item, index) => (
 
-    const data = await response.json();
+    <div
+      key={index}
+      className="bg-pink-50 p-4 rounded-xl"
+    >
 
-    window.open(
-      `https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${data.id}`,
-      "_blank"
-    );
-  }}
-  className="bg-green-500 text-white px-6 py-4 rounded-2xl font-bold text-2xl hover:bg-green-600 transition w-full mt-6"
->
-  Finalizar Pedido
-</button>
+      <h3 className="font-bold text-xl">
+        {item.nome}
+      </h3>
 
-          </div>
+      <p className="text-pink-500 font-bold mt-2">
+        R$ {item.preco}
+      </p>
+
+      <button
+        onClick={() => removerCarrinho(index)}
+        className="mt-3 bg-red-500 text-white px-4 py-2 rounded-lg"
+      >
+        Remover
+      </button>
+
+    </div>
+
+  ))}
+
+</div>
+
+<div className="mt-10">
+
+  <h3 className="text-4xl font-bold">
+    Total: R$ {total.toFixed(2)}
+  </h3>
+
+  <input
+    type="text"
+    placeholder="Seu nome completo"
+    value={nomeCliente}
+    onChange={(e) => setNomeCliente(e.target.value)}
+    className="w-full border p-4 rounded-xl mt-6"
+  />
+
+  <input
+    type="text"
+    placeholder="Seu WhatsApp"
+    value={whatsappCliente}
+    onChange={(e) => setWhatsappCliente(e.target.value)}
+    className="w-full border p-4 rounded-xl mt-4"
+  />
+
+  <button
+    onClick={async () => {
+      if (!nomeCliente || !whatsappCliente) {
+        alert("Preencha seu nome e WhatsApp antes de finalizar.");
+        return;
+      }
+
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          produtos: carrinho,
+          nomeCliente,
+          whatsappCliente,
+        }),
+      });
+
+      const data = await response.json();
+
+      window.open(
+        `https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${data.id}`,
+        "_blank"
+      );
+    }}
+    className="bg-green-500 text-white px-6 py-4 rounded-2xl font-bold text-2xl hover:bg-green-600 transition w-full mt-6"
+  >
+    Finalizar Pedido
+  </button>
+
+</div>
 
         </div>
 
