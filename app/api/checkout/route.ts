@@ -35,8 +35,11 @@ export async function POST(req: Request) {
     );
 
     const nomesProdutos = produtos
-      .map((produto: any) => `• ${produto.nome} - R$ ${produto.preco}`)
-      .join("\n");
+  .map(
+    (produto: any) =>
+      `• ${produto.nome} - R$ ${Number(produto.preco).toFixed(2)}`
+  )
+  .join("\n");
 
     await supabase
       .from("pedidos")
@@ -62,7 +65,7 @@ await enviarWhatsapp(
 📦 Produtos:
 ${nomesProdutos}
 
-💰 Total: R$ ${total}
+💰 Total: R$ ${total.toFixed(2)}
 
 ✅ Pedido recebido com sucesso!`
 );
