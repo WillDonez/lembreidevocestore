@@ -1,15 +1,20 @@
 export default function Sucesso() {
+
   return (
     <main className="min-h-screen flex items-center justify-center bg-green-50">
 
-      <div className="bg-white p-10 rounded-3xl shadow-xl text-center">
+      <div className="bg-white p-12 rounded-3xl shadow-xl text-center max-w-xl">
 
         <h1 className="text-5xl font-bold text-green-600">
-          Pagamento Aprovado 🎉
+          Pagamento Aprovado 💚
         </h1>
 
-        <p className="text-gray-600 mt-4 text-xl">
+        <p className="text-gray-600 text-xl mt-6">
           Seu pedido foi recebido com sucesso.
+        </p>
+
+        <p className="text-gray-500 mt-3">
+          Em breve entraremos em contato.
         </p>
 
         <a

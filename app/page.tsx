@@ -10,6 +10,8 @@ const [produtos, setProdutos] = useState<any[]>([]);
 
 const [carrinho, setCarrinho] = useState<any[]>([]);
 const [abrirCarrinho, setAbrirCarrinho] = useState(false);
+const [nomeCliente, setNomeCliente] = useState("");
+const [whatsappCliente, setWhatsappCliente] = useState("");
 useEffect(() => {
   buscarProdutos();
 }, []);
@@ -166,61 +168,39 @@ function removerCarrinho(index: number) {
     Seu Carrinho
   </h2>
 
-  <button
-    onClick={() => setAbrirCarrinho(false)}
-    className="bg-red-500 text-white px-4 py-2 rounded-xl"
-  >
-    Fechar
-  </button>
+ <input
+  type="text"
+  placeholder="Seu nome completo"
+  value={nomeCliente}
+  onChange={(e) => setNomeCliente(e.target.value)}
+  className="w-full border p-4 rounded-xl mt-6"
+/>
 
-</div>
+<input
+  type="text"
+  placeholder="Seu WhatsApp"
+  value={whatsappCliente}
+  onChange={(e) => setWhatsappCliente(e.target.value)}
+  className="w-full border p-4 rounded-xl mt-4"
+/>
 
-          <div className="mt-6 space-y-4">
-
-            {carrinho.map((item, index) => (
-
-              <div
-  key={index}
-  className="bg-pink-50 p-4 rounded-xl"
->
-
-  <h3 className="font-bold text-xl">
-    {item.nome}
-  </h3>
-
-  <p className="text-pink-500 font-bold mt-2">
-    R$ {item.preco}
-  </p>
-
-  <button
-    onClick={() => removerCarrinho(index)}
-    className="mt-3 bg-red-500 text-white px-4 py-2 rounded-lg"
-  >
-    Remover
-
-  </button>
-
-</div>
-
-            ))}
-
-          </div>
-
-          <div className="mt-10">
-
-            <h3 className="text-4xl font-bold">
-              Total: R$ {total.toFixed(2)}
-            </h3>
-
-            <button
+<button
   onClick={async () => {
+    if (!nomeCliente || !whatsappCliente) {
+      alert("Preencha seu nome e WhatsApp antes de finalizar.");
+      return;
+    }
 
     const response = await fetch("/api/checkout", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(carrinho),
+      body: JSON.stringify({
+        produtos: carrinho,
+        nomeCliente,
+        whatsappCliente,
+      }),
     });
 
     const data = await response.json();
@@ -229,7 +209,6 @@ function removerCarrinho(index: number) {
       `https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${data.id}`,
       "_blank"
     );
-
   }}
   className="bg-green-500 text-white px-6 py-4 rounded-2xl font-bold text-2xl hover:bg-green-600 transition w-full mt-6"
 >

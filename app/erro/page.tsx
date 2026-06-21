@@ -1,15 +1,16 @@
 export default function Erro() {
+
   return (
     <main className="min-h-screen flex items-center justify-center bg-red-50">
 
-      <div className="bg-white p-10 rounded-3xl shadow-xl text-center">
+      <div className="bg-white p-12 rounded-3xl shadow-xl text-center max-w-xl">
 
-        <h1 className="text-5xl font-bold text-red-600">
-          Pagamento Não Aprovado
+        <h1 className="text-5xl font-bold text-red-500">
+          Pagamento Não Aprovado ❌
         </h1>
 
-        <p className="text-gray-600 mt-4 text-xl">
-          Houve um problema no pagamento.
+        <p className="text-gray-600 text-xl mt-6">
+          O pagamento não foi concluído.
         </p>
 
         <a

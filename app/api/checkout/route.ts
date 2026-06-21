@@ -1,3 +1,4 @@
+import { enviarWhatsapp } from "@/lib/whatsapp";
 import { MercadoPagoConfig, Preference } from "mercadopago";
 import { NextResponse } from "next/server";
 
@@ -13,10 +14,12 @@ const supabase = createClient(
 );
 
 export async function POST(req: Request) {
-
   try {
+    const body = await req.json();
 
-    const produtos = await req.json();
+    const produtos = body.produtos;
+    const nomeCliente = body.nomeCliente;
+    const whatsappCliente = body.whatsappCliente;
 
     const items = produtos.map((produto: any) => ({
       id: String(produto.id),
@@ -31,41 +34,61 @@ export async function POST(req: Request) {
       0
     );
 
+    const nomesProdutos = produtos
+      .map((produto: any) => `• ${produto.nome} - R$ ${produto.preco}`)
+      .join("\n");
+
     await supabase
       .from("pedidos")
       .insert([
         {
-          cliente: "Cliente Site",
+          cliente: nomeCliente,
+          nome_cliente: nomeCliente,
+          whatsapp_cliente: whatsappCliente,
           produtos: produtos,
           total: total,
           status: "pendente",
         },
       ]);
 
+ console.log("ENVIANDO WHATSAPP...");
+
+await enviarWhatsapp(
+  `🛍️ NOVO PEDIDO NA LOJA
+
+👤 Cliente: ${nomeCliente}
+📱 WhatsApp: ${whatsappCliente}
+
+📦 Produtos:
+${nomesProdutos}
+
+💰 Total: R$ ${total}
+
+✅ Pedido recebido com sucesso!`
+);
+
+console.log("WHATSAPP ENVIADO");
+
     const preference = new Preference(client);
 
     const response = await preference.create({
-  body: {
+      body: {
+        items: items,
 
-    items: items,
+        back_urls: {
+          success: "https://lembreidevocestore.com.br/sucesso",
+          failure: "https://lembreidevocestore.com.br/erro",
+          pending: "https://lembreidevocestore.com.br/pendente",
+        },
 
-    back_urls: {
-      success: "https://lembreidevocestore.com.br/sucesso",
-      failure: "https://lembreidevocestore.com.br/erro",
-      pending: "https://lembreidevocestore.com.br/pendente",
-    },
-
-    auto_return: "approved",
-
-  },
-});
+        auto_return: "approved",
+      },
+    });
 
     return NextResponse.json({
       id: response.id,
     });
-
   } catch (error) {
-
     console.log(error);
 
     return NextResponse.json(
