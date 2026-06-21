@@ -306,6 +306,21 @@ async function buscarProdutos() {
   Total: R$ {Number(pedido.total).toFixed(2)}
 </p>
 
+<div className="mt-4">
+  <p className="font-bold">
+    Produtos:
+  </p>
+
+  {pedido.produtos?.map((produto: any, index: number) => (
+    <p
+      key={index}
+      className="text-gray-600"
+    >
+      • {produto.nome} - R$ {produto.preco}
+    </p>
+  ))}
+</div>
+
                   <p className="mt-2">
                     Status:
                     <span className="font-bold ml-2">
