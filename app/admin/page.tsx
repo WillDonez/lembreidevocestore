@@ -19,6 +19,8 @@ export default function Admin() {
  useEffect(() => {
 
   verificarUsuario();
+  buscarProdutos();
+  buscarPedidos();
 
 }, []);
 
