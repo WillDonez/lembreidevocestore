@@ -438,12 +438,25 @@ const pedidosFiltrados =
 ))}
                 </div>
 
-                <p className="mt-2">
-                  Status:
-                  <span className="font-bold ml-2">
-                    {pedido.status}
-                  </span>
-                </p>
+                <p className="mt-3 flex items-center gap-2">
+  Status:
+
+  <span
+    className={`px-3 py-1 rounded-full text-white font-bold text-sm ${
+      pedido.status === "pendente"
+        ? "bg-yellow-500"
+        : pedido.status === "aprovado"
+        ? "bg-green-500"
+        : pedido.status === "enviado"
+        ? "bg-blue-500"
+        : pedido.status === "cancelado"
+        ? "bg-red-500"
+        : "bg-gray-500"
+    }`}
+  >
+    {pedido.status}
+  </span>
+</p>
 
               </div>
 
