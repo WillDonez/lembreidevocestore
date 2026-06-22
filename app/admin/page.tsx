@@ -396,13 +396,23 @@ Seu pedido foi cancelado. Entre em contato conosco para mais informações.`;
                   </p>
 
                   {pedido.produtos?.map((produto: any, index: number) => (
-                    <p
-                      key={index}
-                      className="text-gray-600"
-                    >
-                      • {produto.nome} - R$ {produto.preco}
-                    </p>
-                  ))}
+  <div
+    key={index}
+    className="flex items-center gap-3 mt-2"
+  >
+    {produto.imagem && (
+      <img
+        src={produto.imagem}
+        alt={produto.nome}
+        className="w-14 h-14 object-cover rounded-lg"
+      />
+    )}
+
+    <p className="text-gray-600">
+      {produto.nome} - R$ {Number(produto.preco).toFixed(2)}
+    </p>
+  </div>
+))}
                 </div>
 
                 <p className="mt-2">
