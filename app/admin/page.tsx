@@ -77,20 +77,51 @@ async function buscarProdutos() {
     }
   }
 
-  async function atualizarStatus(
-    id: number,
-    status: string
-  ) {
+ async function atualizarStatus(
+  id: number,
+  status: string
+) {
 
-    await supabase
-      .from("pedidos")
-      .update({
-        status: status,
-      })
-      .eq("id", id);
+  const pedido = pedidos.find(
+    (p) => p.id === id
+  );
 
-    buscarPedidos();
+  await supabase
+    .from("pedidos")
+    .update({
+      status: status,
+    })
+    .eq("id", id);
+
+  let mensagem = "";
+
+  if (status === "aprovado") {
+    mensagem =
+      "✅ Seu pedido foi aprovado e já está sendo preparado pela Lembrei de Voce Store!";
   }
+
+  if (status === "enviado") {
+    mensagem =
+      "🚚 Seu pedido foi enviado e em breve chegará até você!";
+  }
+
+  if (status === "cancelado") {
+    mensagem =
+      "❌ Seu pedido foi cancelado. Entre em contato conosco para mais informações.";
+  }
+
+  if (pedido?.whatsapp_cliente) {
+
+    const telefone = pedido.whatsapp_cliente.replace(/\D/g, "");
+
+    window.open(
+      `https://wa.me/55${telefone}?text=${encodeURIComponent(mensagem)}`,
+      "_blank"
+    );
+  }
+
+  buscarPedidos();
+}
 
   async function uploadImagem() {
 
