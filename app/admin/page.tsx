@@ -1,3 +1,5 @@
+import { enviarWhatsapp } from "@/lib/whatsapp";
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -77,14 +79,11 @@ async function buscarProdutos() {
     }
   }
 
- async function atualizarStatus(
+async function atualizarStatus(
   id: number,
   status: string
 ) {
-
-  const pedido = pedidos.find(
-    (p) => p.id === id
-  );
+  const pedido = pedidos.find((p) => p.id === id);
 
   await supabase
     .from("pedidos")
@@ -96,28 +95,30 @@ async function buscarProdutos() {
   let mensagem = "";
 
   if (status === "aprovado") {
-    mensagem =
-      "✅ Seu pedido foi aprovado e já está sendo preparado pela Lembrei de Voce Store!";
+    mensagem = `✅ Olá, ${pedido?.nome_cliente || "cliente"}!
+
+Seu pedido foi aprovado e já está sendo preparado pela Lembrei de Voce Store. 💖`;
   }
 
   if (status === "enviado") {
-    mensagem =
-      "🚚 Seu pedido foi enviado e em breve chegará até você!";
+    mensagem = `🚚 Olá, ${pedido?.nome_cliente || "cliente"}!
+
+Seu pedido foi enviado e em breve chegará até você.`;
   }
 
   if (status === "cancelado") {
-    mensagem =
-      "❌ Seu pedido foi cancelado. Entre em contato conosco para mais informações.";
+    mensagem = `❌ Olá, ${pedido?.nome_cliente || "cliente"}!
+
+Seu pedido foi cancelado. Entre em contato conosco para mais informações.`;
   }
 
   if (pedido?.whatsapp_cliente) {
-
-    const telefone = pedido.whatsapp_cliente.replace(/\D/g, "");
-
-    window.open(
-      `https://wa.me/55${telefone}?text=${encodeURIComponent(mensagem)}`,
-      "_blank"
+    await enviarWhatsapp(
+      pedido.whatsapp_cliente,
+      mensagem
     );
+
+    alert("Mensagem enviada para o cliente!");
   }
 
   buscarPedidos();

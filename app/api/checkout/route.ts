@@ -57,6 +57,7 @@ export async function POST(req: Request) {
  console.log("ENVIANDO WHATSAPP...");
 
 await enviarWhatsapp(
+  "3399958593",
   `🛍️ NOVO PEDIDO NA LOJA
 
 👤 Cliente: ${nomeCliente}
