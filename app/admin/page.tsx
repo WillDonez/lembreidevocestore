@@ -15,6 +15,7 @@ export default function Admin() {
 
   const [produtos, setProdutos] = useState<any[]>([]);
   const [pedidos, setPedidos] = useState<any[]>([]);
+  const [filtroStatus, setFiltroStatus] = useState("todos");
 
  useEffect(() => {
 
@@ -191,6 +192,11 @@ Seu pedido foi cancelado. Entre em contato conosco para mais informações.`;
     buscarProdutos();
   }
 
+const pedidosFiltrados =
+  filtroStatus === "todos"
+    ? pedidos
+    : pedidos.filter((pedido) => pedido.status === filtroStatus);
+
   return (
   <main className="min-h-screen bg-pink-50 p-10">
 
@@ -356,10 +362,27 @@ Seu pedido foi cancelado. Entre em contato conosco para mais informações.`;
       <h2 className="text-4xl font-bold mb-8">
         Pedidos da Loja
       </h2>
+      <div className="flex gap-3 mb-8 flex-wrap">
+
+  {["todos", "pendente", "aprovado", "enviado", "cancelado"].map((status) => (
+    <button
+      key={status}
+      onClick={() => setFiltroStatus(status)}
+      className={`px-4 py-2 rounded-xl font-bold ${
+        filtroStatus === status
+          ? "bg-pink-500 text-white"
+          : "bg-white text-gray-700"
+      }`}
+    >
+      {status}
+    </button>
+  ))}
+
+</div>
 
       <div className="space-y-6">
 
-        {pedidos.map((pedido) => (
+        {pedidosFiltrados.map((pedido) => (
 
           <div
             key={pedido.id}
