@@ -87,9 +87,7 @@ async function atualizarStatus(
 
   await supabase
     .from("pedidos")
-    .update({
-      status: status,
-    })
+    .update({ status })
     .eq("id", id);
 
   let mensagem = "";
@@ -113,12 +111,12 @@ Seu pedido foi cancelado. Entre em contato conosco para mais informações.`;
   }
 
   if (pedido?.whatsapp_cliente) {
-    await enviarWhatsapp(
-      pedido.whatsapp_cliente,
-      mensagem
-    );
+    const telefone = pedido.whatsapp_cliente.replace(/\D/g, "");
 
-    alert("Mensagem enviada para o cliente!");
+    window.open(
+      `https://wa.me/55${telefone}?text=${encodeURIComponent(mensagem)}`,
+      "_blank"
+    );
   }
 
   buscarPedidos();
