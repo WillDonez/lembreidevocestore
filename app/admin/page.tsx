@@ -306,20 +306,38 @@ Seu pedido foi cancelado. Entre em contato conosco para mais informações.`;
             className="bg-white p-6 rounded-2xl shadow flex justify-between items-center"
           >
 
-            <div>
+            <div className="flex items-center gap-4">
 
-              <h3 className="text-2xl font-bold">
-                {produto.nome}
-              </h3>
+  {produto.imagem && (
+    <img
+      src={produto.imagem}
+      alt={produto.nome}
+      className="w-20 h-20 object-cover rounded-xl"
+    />
+  )}
 
-              <p className="text-pink-500 font-bold">
-                R$ {produto.preco}
-              </p>
+  <div>
+    <h3 className="text-2xl font-bold">
+      {produto.nome}
+    </h3>
 
-            </div>
+    <p className="text-pink-500 font-bold">
+      R$ {produto.preco}
+    </p>
+  </div>
+
+</div>
 
             <button
-              onClick={() => excluirProduto(produto.id)}
+              onClick={() => {
+  const confirmar = confirm(
+    `Deseja realmente excluir "${produto.nome}"?`
+  );
+
+  if (confirmar) {
+    excluirProduto(produto.id);
+  }
+}}
               className="bg-red-500 text-white px-4 py-2 rounded-xl"
             >
               Excluir
@@ -367,6 +385,10 @@ Seu pedido foi cancelado. Entre em contato conosco para mais informações.`;
                 <p className="text-gray-500">
                   Total: R$ {Number(pedido.total).toFixed(2)}
                 </p>
+
+                <p className="text-gray-500">
+  Data: {new Date(pedido.created_at).toLocaleString("pt-BR")}
+</p>
 
                 <div className="mt-4">
                   <p className="font-bold">
