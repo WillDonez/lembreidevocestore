@@ -16,6 +16,7 @@ export default function Admin() {
   const [produtos, setProdutos] = useState<any[]>([]);
   const [pedidos, setPedidos] = useState<any[]>([]);
   const [filtroStatus, setFiltroStatus] = useState("todos");
+  const [buscaPedido, setBuscaPedido] = useState("");
 
  useEffect(() => {
 
@@ -192,10 +193,19 @@ Seu pedido foi cancelado. Entre em contato conosco para mais informações.`;
     buscarProdutos();
   }
 
-const pedidosFiltrados =
-  filtroStatus === "todos"
-    ? pedidos
-    : pedidos.filter((pedido) => pedido.status === filtroStatus);
+const pedidosFiltrados = pedidos.filter((pedido) => {
+  const combinaStatus =
+    filtroStatus === "todos" || pedido.status === filtroStatus;
+
+  const textoBusca = buscaPedido.toLowerCase();
+
+  const combinaBusca =
+    String(pedido.id).includes(textoBusca) ||
+    String(pedido.nome_cliente || "").toLowerCase().includes(textoBusca) ||
+    String(pedido.whatsapp_cliente || "").includes(textoBusca);
+
+  return combinaStatus && combinaBusca;
+});
 
   return (
   <main className="min-h-screen bg-pink-50 p-10">
@@ -362,6 +372,13 @@ const pedidosFiltrados =
       <h2 className="text-4xl font-bold mb-8">
         Pedidos da Loja
       </h2>
+      <input
+  type="text"
+  placeholder="Buscar por pedido, nome ou WhatsApp..."
+  value={buscaPedido}
+  onChange={(e) => setBuscaPedido(e.target.value)}
+  className="w-full border p-4 rounded-xl mb-6"
+/>
       <div className="flex gap-3 mb-8 flex-wrap">
 
   {["todos", "pendente", "aprovado", "enviado", "cancelado"].map((status) => (
