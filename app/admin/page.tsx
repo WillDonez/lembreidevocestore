@@ -24,6 +24,12 @@ export default function Admin() {
   buscarProdutos();
   buscarPedidos();
 
+  const intervalo = setInterval(() => {
+    buscarPedidos();
+  }, 10000);
+
+  return () => clearInterval(intervalo);
+
 }, []);
 
 async function sair() {
