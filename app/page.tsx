@@ -63,9 +63,17 @@ function removerCarrinho(index: number) {
 
       <header className="bg-white shadow-md p-6 flex justify-between items-center">
 
-        <h1 className="text-5xl font-bold text-pink-500">
-          Lembrei de Voce Store
-        </h1>
+        <div className="flex items-center gap-3">
+  <img
+    src="/logo.png"
+    alt="Lembrei de Você Store"
+    className="h-16 w-auto"
+  />
+
+  <span className="text-3xl font-bold text-pink-500">
+    Lembrei de Voce Store
+  </span>
+</div>
 
         <button
   onClick={() => setAbrirCarrinho(true)}
