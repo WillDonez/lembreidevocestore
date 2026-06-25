@@ -69,6 +69,53 @@ export default function MeuPedido() {
             </p>
 
             <div className="mt-8">
+
+  <h3 className="text-2xl font-bold mb-4">
+    Produtos do Pedido
+  </h3>
+
+  <div className="space-y-4">
+
+    {pedido.produtos?.map((produto: any, index: number) => (
+
+      <div
+        key={index}
+        className="flex items-center gap-4 bg-pink-50 p-4 rounded-2xl"
+      >
+
+        {produto.imagem && (
+          <img
+            src={produto.imagem}
+            alt={produto.nome}
+            className="w-24 h-24 object-cover rounded-xl border"
+          />
+        )}
+
+        <div className="flex-1">
+
+          <h4 className="text-xl font-bold">
+            {produto.nome}
+          </h4>
+
+          <p className="text-gray-500">
+            Quantidade: 1
+          </p>
+
+          <p className="text-pink-500 font-bold text-lg">
+            R$ {Number(produto.preco).toFixed(2)}
+          </p>
+
+        </div>
+
+      </div>
+
+    ))}
+
+  </div>
+
+</div>
+
+            <div className="mt-8">
               <p className="font-bold text-xl mb-6">
                 Acompanhamento:
               </p>
