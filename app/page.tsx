@@ -61,28 +61,68 @@ function removerCarrinho(index: number) {
   return (
     <main className="min-h-screen bg-pink-50">
 
-      <header className="bg-white shadow-md p-6 flex justify-between items-center">
+      <header className="bg-white shadow-md p-6 sticky top-0 z-40">
 
-        <div className="flex items-center gap-3">
-  <img
-    src="/logo.png"
-    alt="Lembrei de Você Store"
-    className="h-16 w-auto"
-  />
+  <div className="max-w-7xl mx-auto flex justify-between items-center">
 
-  <span className="text-3xl font-bold text-pink-500">
-    Lembrei de Voce Store
-  </span>
-</div>
+    <div className="flex items-center gap-3">
+      <img
+        src="/logo.png"
+        alt="Lembrei de Você Store"
+        className="h-16 w-auto"
+      />
 
-        <button
-  onClick={() => setAbrirCarrinho(true)}
-  className="bg-pink-500 text-white px-6 py-3 rounded-xl font-bold"
->
-  Carrinho ({carrinho.length})
-</button>
+      <span className="text-3xl font-bold text-pink-500">
+        Lembrei de Voce Store
+      </span>
+    </div>
 
-      </header>
+    <nav className="hidden md:flex items-center gap-8 font-bold text-gray-700">
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        className="hover:text-pink-500"
+      >
+        Início
+      </button>
+
+      <button
+        onClick={() =>
+          document
+            .getElementById("produtos")
+            ?.scrollIntoView({ behavior: "smooth" })
+        }
+        className="hover:text-pink-500"
+      >
+        Produtos
+      </button>
+
+      <a
+        href="/meu-pedido"
+        className="hover:text-pink-500"
+      >
+        Meu Pedido
+      </a>
+
+      <a
+        href="https://wa.me/5533999958593"
+        target="_blank"
+        className="hover:text-pink-500"
+      >
+        Contato
+      </a>
+    </nav>
+
+    <button
+      onClick={() => setAbrirCarrinho(true)}
+      className="bg-pink-500 text-white px-6 py-3 rounded-xl font-bold"
+    >
+      Carrinho ({carrinho.length})
+    </button>
+
+  </div>
+
+</header>
+
       <section className="bg-gradient-to-r from-pink-500 to-rose-400 text-white py-20 px-10">
 
   <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-10 items-center">
