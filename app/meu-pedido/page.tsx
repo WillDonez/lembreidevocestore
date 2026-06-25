@@ -54,7 +54,9 @@ export default function MeuPedido() {
       <div className="max-w-3xl mx-auto mt-10 space-y-6">
         {pedidos.map((pedido) => (
           <div key={pedido.id} className="bg-white p-6 rounded-2xl shadow">
-            <h2 className="text-3xl font-bold">Pedido #{pedido.id}</h2>
+            <h2 className="text-3xl font-bold">
+  Pedido LVS-{String(pedido.id).padStart(6, "0")}
+</h2>
 
             <p className="text-gray-500 mt-2">
               Cliente: {pedido.nome_cliente || pedido.cliente}
