@@ -41,18 +41,33 @@ export async function POST(req: Request) {
   )
   .join("\n");
 
-    await supabase
-      .from("pedidos")
-      .insert([
-        {
-          cliente: nomeCliente,
-          nome_cliente: nomeCliente,
-          whatsapp_cliente: whatsappCliente,
-          produtos: produtos,
-          total: total,
-          status: "pendente",
-        },
-      ]);
+    const { data: pedidoCriado, error: erroPedido } = await supabase
+  .from("pedidos")
+  .insert([
+    {
+      cliente: nomeCliente,
+      nome_cliente: nomeCliente,
+      whatsapp_cliente: whatsappCliente,
+      produtos: produtos,
+      total: total,
+      status: "pendente",
+    },
+  ])
+  .select()
+  .single();
+
+if (erroPedido) {
+  console.log(erroPedido);
+
+  return NextResponse.json(
+    {
+      error: "Erro ao criar pedido",
+    },
+    {
+      status: 500,
+    }
+  );
+}
 
  console.log("ENVIANDO WHATSAPP...");
 
@@ -78,6 +93,8 @@ console.log("WHATSAPP ENVIADO");
     const response = await preference.create({
       body: {
         items: items,
+
+        external_reference: String(pedidoCriado.id),
 
         back_urls: {
           success: "https://lembreidevocestore.com.br/sucesso",
