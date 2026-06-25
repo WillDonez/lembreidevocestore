@@ -91,9 +91,17 @@ function removerCarrinho(index: number) {
         presentes criativos e muito mais.
       </p>
 
-      <button className="mt-8 bg-white text-pink-500 px-8 py-4 rounded-2xl font-bold text-xl hover:scale-105 transition">
-        Comprar Agora
-      </button>
+      <button
+  onClick={() => {
+    document
+      .getElementById("produtos")
+      ?.scrollIntoView({ behavior: "smooth" });
+  }}
+  className="mt-8 bg-white text-pink-500 px-8 py-4 rounded-2xl font-bold text-xl hover:scale-105 transition"
+>
+  Comprar Agora
+
+</button>
 
     </div>
 
@@ -111,7 +119,10 @@ function removerCarrinho(index: number) {
 
 </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-10">
+      <div
+  id="produtos"
+  className="grid grid-cols-1 md:grid-cols-3 gap-8 p-10"
+>
 
         {produtos.map((produto) => (
 
