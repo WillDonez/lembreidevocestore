@@ -68,12 +68,67 @@ export default function MeuPedido() {
               Data: {new Date(pedido.created_at).toLocaleString("pt-BR")}
             </p>
 
-            <p className="mt-4">
-              Status:
-              <span className="font-bold ml-2 text-pink-500">
-                {pedido.status}
-              </span>
-            </p>
+            <div className="mt-8">
+              <p className="font-bold text-xl mb-6">
+                Acompanhamento:
+              </p>
+
+              <div className="flex items-center justify-between">
+                {[
+                  {
+                    nome: "Recebido",
+                    icone: "📦",
+                    ativo: true,
+                  },
+                  {
+                    nome: "Aprovado",
+                    icone: "💳",
+                    ativo: ["aprovado", "enviado"].includes(pedido.status),
+                  },
+                  {
+                    nome: "Produção",
+                    icone: "🎨",
+                    ativo: ["aprovado", "enviado"].includes(pedido.status),
+                  },
+                  {
+                    nome: "Enviado",
+                    icone: "🚚",
+                    ativo: pedido.status === "enviado",
+                  },
+                ].map((etapa, index, array) => (
+                  <div
+                    key={etapa.nome}
+                    className="flex items-center flex-1"
+                  >
+                    <div className="flex flex-col items-center">
+                      <div
+                        className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold ${
+                          etapa.ativo
+                            ? "bg-green-500 text-white"
+                            : "bg-gray-200 text-gray-500"
+                        }`}
+                      >
+                        {etapa.icone}
+                      </div>
+
+                      <p className="mt-2 text-sm font-bold text-center">
+                        {etapa.nome}
+                      </p>
+                    </div>
+
+                    {index < array.length - 1 && (
+                      <div
+                        className={`h-1 flex-1 mx-2 ${
+                          etapa.ativo
+                            ? "bg-green-500"
+                            : "bg-gray-200"
+                        }`}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         ))}
       </div>
