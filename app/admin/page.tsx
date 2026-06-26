@@ -12,6 +12,8 @@ export default function Admin() {
   const [preco, setPreco] = useState("");
   const [arquivo, setArquivo] = useState<any>(null);
   const [descricao, setDescricao] = useState("");
+  const [categoria, setCategoria] = useState("Canecas");
+  const [destaque, setDestaque] = useState(false);
 
   const [produtos, setProdutos] = useState<any[]>([]);
   const [pedidos, setPedidos] = useState<any[]>([]);
@@ -162,11 +164,13 @@ Seu pedido foi cancelado. Entre em contato conosco para mais informações.`;
       .from("produtos")
       .insert([
         {
-          nome,
-          preco: Number(preco),
-          imagem: imagemUrl,
-          descricao,
-        },
+  nome,
+  preco: Number(preco),
+  imagem: imagemUrl,
+  descricao,
+  categoria,
+  destaque,
+}
       ]);
 
     if (error) {
@@ -180,6 +184,8 @@ Seu pedido foi cancelado. Entre em contato conosco para mais informações.`;
     setNome("");
     setPreco("");
     setDescricao("");
+    setCategoria("Canecas");
+    setDestaque(false);
 
     buscarProdutos();
   }
@@ -301,6 +307,31 @@ const pedidosFiltrados = pedidos.filter((pedido) => {
           onChange={(e) => setDescricao(e.target.value)}
           className="w-full border p-4 rounded-xl h-40"
         />
+
+        <select
+  value={categoria}
+  onChange={(e) => setCategoria(e.target.value)}
+  className="w-full border p-4 rounded-xl"
+>
+  <option>Canecas</option>
+  <option>Topos de Bolo</option>
+  <option>Lembrancinhas</option>
+  <option>Marcadores</option>
+  <option>Papelaria</option>
+  <option>Festas</option>
+  <option>Outros</option>
+</select>
+
+<label className="flex items-center gap-3 text-lg font-semibold">
+  <input
+    type="checkbox"
+    checked={destaque}
+    onChange={(e) => setDestaque(e.target.checked)}
+    className="w-5 h-5"
+  />
+
+  ⭐ Produto em Destaque
+</label>
 
         <button
           onClick={cadastrarProduto}
