@@ -123,48 +123,12 @@ function removerCarrinho(index: number) {
 
 </header>
 
-      <section className="bg-gradient-to-r from-pink-500 to-rose-400 text-white py-20 px-10">
-
-  <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-10 items-center">
-
-    <div>
-
-      <h2 className="text-6xl font-bold leading-tight">
-        Presentes Personalizados
-        para Momentos Especiais 💖
-      </h2>
-
-      <p className="mt-6 text-2xl text-pink-100">
-        Canecas, lembrancinhas, topos de bolo,
-        presentes criativos e muito mais.
-      </p>
-
-      <button
-  onClick={() => {
-    document
-      .getElementById("produtos")
-      ?.scrollIntoView({ behavior: "smooth" });
-  }}
-  className="mt-8 bg-white text-pink-500 px-8 py-4 rounded-2xl font-bold text-xl hover:scale-105 transition"
->
-  Comprar Agora
-
-</button>
-
-    </div>
-
-    <div>
-
-      <img
-        src="https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?q=80&w=1200&auto=format&fit=crop"
-        alt="Banner"
-        className="rounded-3xl shadow-2xl"
-      />
-
-    </div>
-
-  </div>
-
+      <section className="w-full bg-pink-50">
+  <img
+    src="/banner-principal.png"
+    alt="Presentes personalizados Lembrei de Você Store"
+    className="w-full h-auto object-cover"
+  />
 </section>
 
       <div
