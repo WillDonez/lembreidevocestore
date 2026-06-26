@@ -131,9 +131,25 @@ function removerCarrinho(index: number) {
   />
 </section>
 
-      <div
+     <section className="p-10 bg-white">
+  <div className="max-w-7xl mx-auto text-center">
+    <p className="text-pink-500 font-bold text-xl">
+      ⭐ Produtos em Destaque
+    </p>
+
+    <h2 className="text-5xl font-bold text-gray-800 mt-2">
+      Escolha o produto perfeito
+    </h2>
+
+    <p className="text-gray-500 text-xl mt-4">
+      Produtos personalizados feitos com carinho para momentos especiais.
+    </p>
+  </div>
+</section>
+
+<div
   id="produtos"
-  className="grid grid-cols-1 md:grid-cols-3 gap-8 p-10"
+  className="grid grid-cols-1 md:grid-cols-3 gap-8 p-10 bg-white"
 >
 
         {produtos.map((produto) => (
