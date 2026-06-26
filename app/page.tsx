@@ -18,8 +18,10 @@ useEffect(() => {
  
 async function buscarProdutos() {
   const { data, error } = await supabase
-    .from("produtos")
-    .select("*");
+  .from("produtos")
+  .select("*")
+  .order("destaque", { ascending: false })
+  .order("created_at", { ascending: false });
 
   if (error) {
     alert("ERRO SUPABASE");
