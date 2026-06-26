@@ -155,9 +155,13 @@ function removerCarrinho(index: number) {
         {produtos.map((produto) => (
 
           <div
-            key={produto.id}
-            className="bg-white rounded-3xl shadow-lg overflow-hidden"
-          >
+  key={produto.id}
+  className="bg-white rounded-3xl shadow-lg overflow-hidden hover:shadow-2xl hover:-translate-y-2 transition relative"
+>
+
+  <span className="absolute top-4 left-4 bg-pink-500 text-white px-4 py-2 rounded-full text-sm font-bold z-10">
+  Novo
+</span>
 
             {produto.imagem && (
   <img
@@ -183,11 +187,11 @@ function removerCarrinho(index: number) {
               </p>
 
               <button
-                onClick={() => adicionarCarrinho(produto)}
-                className="mt-6 bg-pink-500 text-white w-full py-4 rounded-2xl text-2xl font-bold"
-              >
-                Adicionar ao Carrinho
-              </button>
+  onClick={() => adicionarCarrinho(produto)}
+  className="mt-6 bg-pink-500 text-white w-full py-4 rounded-2xl text-xl font-bold hover:bg-pink-600 transition"
+>
+  🛒 Adicionar ao Carrinho
+</button>
 
             </div>
 
