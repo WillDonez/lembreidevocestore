@@ -14,6 +14,7 @@ export default function Admin() {
   const [descricao, setDescricao] = useState("");
   const [categoria, setCategoria] = useState("Canecas");
   const [destaque, setDestaque] = useState(false);
+  const [produtoEditando, setProdutoEditando] = useState<any>(null);
 
   const [produtos, setProdutos] = useState<any[]>([]);
   const [pedidos, setPedidos] = useState<any[]>([]);
@@ -159,6 +160,38 @@ Seu pedido foi cancelado. Entre em contato conosco para mais informações.`;
   async function cadastrarProduto() {
 
     const imagemUrl = await uploadImagem();
+    if (produtoEditando) {
+  const { error } = await supabase
+    .from("produtos")
+    .update({
+      nome,
+      preco: Number(preco),
+      imagem: imagemUrl || produtoEditando.imagem,
+      descricao,
+      categoria,
+      destaque,
+    })
+    .eq("id", produtoEditando.id);
+
+  if (error) {
+    alert("Erro ao editar produto");
+    console.log(error);
+    return;
+  }
+
+  alert("Produto atualizado!");
+
+  setProdutoEditando(null);
+  setNome("");
+  setPreco("");
+  setDescricao("");
+  setCategoria("Canecas");
+  setDestaque(false);
+  setArquivo(null);
+
+  buscarProdutos();
+  return;
+}
 
     const { error } = await supabase
       .from("produtos")
@@ -189,6 +222,22 @@ Seu pedido foi cancelado. Entre em contato conosco para mais informações.`;
 
     buscarProdutos();
   }
+
+  function editarProduto(produto: any) {
+  setProdutoEditando(produto);
+
+  setNome(produto.nome);
+  setPreco(String(produto.preco));
+  setDescricao(produto.descricao || "");
+  setCategoria(produto.categoria || "Canecas");
+  setDestaque(produto.destaque || false);
+  setArquivo(null);
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+}
 
   async function excluirProduto(id: number) {
 
@@ -262,6 +311,11 @@ const pedidosFiltrados = pedidos.filter((pedido) => {
 
         <h1 className="text-4xl font-bold text-pink-500">
           Painel Admin
+          {produtoEditando && (
+  <p className="text-blue-500 font-bold">
+    Editando produto: {produtoEditando.nome}
+  </p>
+)}
         </h1>
 
         <button
@@ -337,7 +391,7 @@ const pedidosFiltrados = pedidos.filter((pedido) => {
           onClick={cadastrarProduto}
           className="bg-pink-500 text-white px-6 py-4 rounded-2xl font-bold w-full"
         >
-          Cadastrar Produto
+          {produtoEditando ? "Salvar Alterações" : "Cadastrar Produto"}
         </button>
 
       </div>
@@ -381,20 +435,29 @@ const pedidosFiltrados = pedidos.filter((pedido) => {
 
 </div>
 
-            <button
-              onClick={() => {
-  const confirmar = confirm(
-    `Deseja realmente excluir "${produto.nome}"?`
-  );
+          <div className="flex gap-3">
+  <button
+    onClick={() => editarProduto(produto)}
+    className="bg-blue-500 text-white px-4 py-2 rounded-xl"
+  >
+    Editar
+  </button>
 
-  if (confirmar) {
-    excluirProduto(produto.id);
-  }
-}}
-              className="bg-red-500 text-white px-4 py-2 rounded-xl"
-            >
-              Excluir
-            </button>
+  <button
+    onClick={() => {
+      const confirmar = confirm(
+        `Deseja realmente excluir "${produto.nome}"?`
+      );
+
+      if (confirmar) {
+        excluirProduto(produto.id);
+      }
+    }}
+    className="bg-red-500 text-white px-4 py-2 rounded-xl"
+  >
+    Excluir
+  </button>
+</div>
 
           </div>
 
