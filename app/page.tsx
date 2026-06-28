@@ -7,13 +7,15 @@ import { useEffect } from "react";
 export default function Home() {
 
 const [produtos, setProdutos] = useState<any[]>([]);
-
+const [categorias, setCategorias] = useState<any[]>([]);
 const [carrinho, setCarrinho] = useState<any[]>([]);
+const [categoriaSelecionada, setCategoriaSelecionada] = useState("Todos");
 const [abrirCarrinho, setAbrirCarrinho] = useState(false);
 const [nomeCliente, setNomeCliente] = useState("");
 const [whatsappCliente, setWhatsappCliente] = useState("");
 useEffect(() => {
   buscarProdutos();
+  buscarCategorias();
 }, []);
  
 async function buscarProdutos() {
@@ -38,6 +40,27 @@ async function buscarProdutos() {
   }
 }
 
+async function buscarCategorias() {
+  const { data, error } = await supabase
+  .from("categorias")
+  .select("*")
+  .order("ordem");
+
+  if (error) {
+    console.log(error);
+    return;
+  }
+
+  if (data) {
+    data.sort((a, b) => {
+  if (a.nome === "Outros") return 1;
+  if (b.nome === "Outros") return -1;
+  return a.nome.localeCompare(b.nome);
+});
+    setCategorias(data);
+  }
+}
+
   function adicionarCarrinho(produto: any) {
 
   setCarrinho([...carrinho, produto]);
@@ -59,6 +82,13 @@ function removerCarrinho(index: number) {
     (acc, item) => acc + item.preco,
     0
   );
+
+  const produtosFiltrados =
+  categoriaSelecionada === "Todos"
+    ? produtos
+    : produtos.filter(
+        (produto) => produto.categoria === categoriaSelecionada
+      );
 
   return (
     <main className="min-h-screen bg-pink-50">
@@ -146,6 +176,26 @@ function removerCarrinho(index: number) {
     <p className="text-gray-500 text-xl mt-4">
       Produtos personalizados feitos com carinho para momentos especiais.
     </p>
+
+<div className="flex flex-wrap justify-center gap-3 mt-8">
+  {[
+  { nome: "Todos", icone: "🏠" },
+  ...categorias,
+].map((categoria) => (
+    <button
+     key={categoria.nome}
+      onClick={() => setCategoriaSelecionada(categoria.nome)}
+      className={`px-5 py-3 rounded-full font-bold transition ${
+        categoriaSelecionada === categoria.nome
+          ? "bg-pink-500 text-white"
+          : "bg-pink-100 text-pink-600 hover:bg-pink-200"
+      }`}
+    >
+      {categoria.icone} {categoria.nome}
+    </button>
+  ))}
+</div>
+
   </div>
 </section>
 
@@ -154,7 +204,7 @@ function removerCarrinho(index: number) {
   className="grid grid-cols-1 md:grid-cols-3 gap-8 p-10 bg-white"
 >
 
-        {produtos.map((produto) => (
+        {produtosFiltrados.map((produto) => (
 
           <div
   key={produto.id}
