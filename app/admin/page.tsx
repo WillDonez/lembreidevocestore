@@ -325,7 +325,7 @@ const pedidosFiltrados = pedidos.filter((pedido) => {
           Sair
         </button>
 
-      </div>
+            </div>
 
       <div className="space-y-6">
 
