@@ -47,10 +47,11 @@ export default function AdminLayout({
   }
 
   const menu = [
-    { nome: "Produtos", href: "/admin", icone: "📦" },
-    { nome: "Categorias", href: "/admin/categorias", icone: "📂" },
-    { nome: "Pedidos", href: "/admin/pedidos", icone: "🛒" },
-  ];
+  { nome: "Dashboard", href: "/admin/dashboard", icone: "🏠" },
+  { nome: "Produtos", href: "/admin", icone: "📦" },
+  { nome: "Categorias", href: "/admin/categorias", icone: "📂" },
+  { nome: "Pedidos", href: "/admin/pedidos", icone: "🛒" },
+];
 
   return (
     <div className="min-h-screen bg-pink-50 flex">

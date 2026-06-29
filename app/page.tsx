@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useEffect } from "react";
@@ -215,20 +216,23 @@ function removerCarrinho(index: number) {
   Novo
 </span>
 
-            {produto.imagem && (
-  <img
-    src={produto.imagem}
-    alt={produto.nome}
-    className="w-full h-72 object-cover"
-  />
-)}
-
+            <Link href={`/produtos/${produto.id}`}>
+  {produto.imagem && (
+    <img
+      src={produto.imagem}
+      alt={produto.nome}
+      className="w-full h-72 object-cover cursor-pointer"
+    />
+  )}
+</Link>
 
             <div className="p-6">
 
-              <h2 className="text-4xl font-bold text-gray-800">
-                {produto.nome}
-              </h2>
+              <Link href={`/produtos/${produto.id}`}>
+  <h2 className="text-4xl font-bold text-gray-800 hover:text-pink-500 cursor-pointer">
+    {produto.nome}
+  </h2>
+</Link>
 
               <p className="text-gray-500 mt-2">
   {produto.descricao}
