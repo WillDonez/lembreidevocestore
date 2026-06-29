@@ -86,19 +86,27 @@ export default function PedidosPage() {
                 {pedido.produtos.map((produto: any, index: number) => (
 
                   <div
-                    key={index}
-                    className="bg-pink-50 p-3 rounded-xl"
-                  >
+  key={index}
+  className="bg-pink-50 p-4 rounded-xl flex items-center gap-4"
+>
+  {produto.imagem && (
+    <img
+      src={produto.imagem}
+      alt={produto.nome}
+      className="w-16 h-16 object-cover rounded-xl"
+    />
+  )}
 
-                    <p className="font-bold">
-                      {produto.nome}
-                    </p>
+  <div>
+    <p className="font-bold">
+      {produto.nome}
+    </p>
 
-                    <p className="text-pink-500 font-bold">
-                      R$ {produto.preco}
-                    </p>
-
-                  </div>
+    <p className="text-pink-500 font-bold">
+      R$ {produto.preco}
+    </p>
+  </div>
+</div>
 
                 ))}
 
