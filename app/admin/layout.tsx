@@ -85,11 +85,13 @@ export default function AdminLayout({
 
         <div className="absolute bottom-6 left-6 right-6 space-y-3">
           <a
-            href="/"
-            className="block text-center bg-gray-100 text-gray-600 px-5 py-4 rounded-2xl font-bold hover:bg-gray-200"
-          >
-            🏠 Ver Loja
-          </a>
+  href="/"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="block text-center bg-gray-100 text-gray-600 px-5 py-4 rounded-2xl font-bold hover:bg-gray-200 transition"
+>
+  🏠 Ver Loja
+</a>
 
           <button
             onClick={sair}

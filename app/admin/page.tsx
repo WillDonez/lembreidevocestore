@@ -15,11 +15,12 @@ export default function Admin() {
   const [categoria, setCategoria] = useState("Canecas");
   const [destaque, setDestaque] = useState(false);
   const [produtoEditando, setProdutoEditando] = useState<any>(null);
-
   const [produtos, setProdutos] = useState<any[]>([]);
   const [pedidos, setPedidos] = useState<any[]>([]);
   const [filtroStatus, setFiltroStatus] = useState("todos");
   const [buscaPedido, setBuscaPedido] = useState("");
+
+  const [mostrarBotaoLoja, setMostrarBotaoLoja] = useState(false);
 
  useEffect(() => {
 
@@ -180,7 +181,7 @@ Seu pedido foi cancelado. Entre em contato conosco para mais informações.`;
   }
 
   alert("Produto atualizado!");
-
+  setMostrarBotaoLoja(true);
   setProdutoEditando(null);
   setNome("");
   setPreco("");
@@ -213,7 +214,7 @@ Seu pedido foi cancelado. Entre em contato conosco para mais informações.`;
     }
 
     alert("Produto cadastrado!");
-
+    setMostrarBotaoLoja(true);
     setNome("");
     setPreco("");
     setDescricao("");
@@ -393,6 +394,17 @@ const pedidosFiltrados = pedidos.filter((pedido) => {
         >
           {produtoEditando ? "Salvar Alterações" : "Cadastrar Produto"}
         </button>
+
+        {mostrarBotaoLoja && (
+  <a
+    href="/"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="block text-center bg-green-500 text-white px-6 py-4 rounded-2xl font-bold w-full hover:bg-green-600 transition"
+  >
+    👁️ Visualizar na Loja
+  </a>
+)}
 
       </div>
 
