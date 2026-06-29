@@ -7,6 +7,7 @@ export default function CategoriasAdmin() {
   const [nome, setNome] = useState("");
   const [icone, setIcone] = useState("");
   const [ordem, setOrdem] = useState("");
+  const [arquivo, setArquivo] = useState<any>(null);
   const [categorias, setCategorias] = useState<any[]>([]);
   const [categoriaEditando, setCategoriaEditando] = useState<any>(null);
 
@@ -30,15 +31,42 @@ export default function CategoriasAdmin() {
     }
   }
 
+  async function uploadImagemCategoria() {
+  if (!arquivo) return "";
+
+  const nomeArquivo = `${Date.now()}-${arquivo.name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9.]/g, "-")}`;
+
+  const { error } = await supabase.storage
+    .from("produtos")
+    .upload(nomeArquivo, arquivo);
+
+  if (error) {
+    alert("Erro ao enviar imagem da categoria");
+    console.log(error);
+    return "";
+  }
+
+  const { data } = supabase.storage
+    .from("produtos")
+    .getPublicUrl(nomeArquivo);
+
+  return data.publicUrl;
+}
+
   async function cadastrarCategoria() {
+    const imagemUrl = await uploadImagemCategoria();
     if (categoriaEditando) {
   const { error } = await supabase
     .from("categorias")
     .update({
-      nome,
-      icone,
-      ordem: Number(ordem),
-    })
+  nome,
+  icone,
+  ordem: Number(ordem),
+  imagem: imagemUrl || categoriaEditando.imagem,
+})
     .eq("id", categoriaEditando.id);
 
   if (error) {
@@ -51,18 +79,20 @@ export default function CategoriasAdmin() {
 
   setCategoriaEditando(null);
   setNome("");
-  setIcone("");
-  setOrdem("");
+setIcone("");
+setOrdem("");
+setArquivo(null);
 
   buscarCategorias();
   return;
 }
     const { error } = await supabase.from("categorias").insert([
       {
-        nome,
-        icone,
-        ordem: Number(ordem),
-      },
+  nome,
+  icone,
+  ordem: Number(ordem),
+  imagem: imagemUrl,
+}
     ]);
 
     if (error) {
@@ -76,6 +106,7 @@ export default function CategoriasAdmin() {
     setNome("");
     setIcone("");
     setOrdem("");
+    setArquivo(null);
 
     buscarCategorias();
   }
@@ -144,6 +175,16 @@ export default function CategoriasAdmin() {
             className="w-full border p-4 rounded-xl"
           />
 
+          <input
+  type="file"
+  onChange={(e) => {
+    if (e.target.files) {
+      setArquivo(e.target.files[0]);
+    }
+  }}
+  className="w-full border p-4 rounded-xl"
+/>
+
           <button
             onClick={cadastrarCategoria}
             className="bg-pink-500 text-white px-6 py-4 rounded-2xl font-bold w-full"
@@ -159,15 +200,26 @@ export default function CategoriasAdmin() {
             key={categoria.id}
             className="bg-white p-6 rounded-2xl shadow flex justify-between items-center"
           >
-            <div>
-              <h2 className="text-2xl font-bold">
-                {categoria.icone} {categoria.nome}
-              </h2>
+            <div className="flex items-center gap-5">
+  {categoria.imagem && (
+    <img
+      src={categoria.imagem}
+      alt={categoria.nome}
+      className="w-20 h-20 rounded-xl object-cover border"
+    />
+  )}
 
-              <p className="text-gray-500">
-                Ordem: {categoria.ordem}
-              </p>
-            </div>
+  <div>
+    <h2 className="text-2xl font-bold">
+      {categoria.icone} {categoria.nome}
+    </h2>
+
+    <p className="text-gray-500">
+      Ordem: {categoria.ordem}
+    </p>
+  </div>
+  
+</div>
 
             <div className="flex gap-3">
   <button
