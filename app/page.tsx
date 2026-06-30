@@ -89,13 +89,17 @@ function removerCarrinho(index: number) {
   const combinaCategoria =
     categoriaSelecionada === "Todos" ||
     produto.categoria === categoriaSelecionada;
-
+    
   const combinaBusca =
     produto.nome.toLowerCase().includes(busca.toLowerCase()) ||
     produto.descricao?.toLowerCase().includes(busca.toLowerCase());
 
   return combinaCategoria && combinaBusca;
 });
+
+const produtosDestaque = produtos.filter(
+  (produto: any) => produto.destaque === true
+);
 
   return (
     <main className="min-h-screen bg-pink-50">
@@ -213,6 +217,58 @@ function removerCarrinho(index: number) {
 
   </div>
 </section>
+
+{produtosDestaque.length > 0 && (
+  <section className="bg-white px-10 pb-10">
+    <div className="max-w-7xl mx-auto">
+      <h2 className="text-4xl font-bold text-gray-800 mb-6">
+        ⭐ Produtos em Destaque
+      </h2>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {produtosDestaque.slice(0, 4).map((produto) => (
+          <div
+            key={produto.id}
+            className="bg-white rounded-3xl shadow-lg overflow-hidden hover:shadow-2xl hover:-translate-y-2 transition relative"
+          >
+            <span className="absolute top-4 left-4 bg-yellow-500 text-white px-4 py-2 rounded-full text-sm font-bold z-10">
+              Destaque
+            </span>
+
+            <Link href={`/produtos/${produto.id}`}>
+              {produto.imagem && (
+                <img
+                  src={produto.imagem}
+                  alt={produto.nome}
+                  className="w-full h-56 object-cover cursor-pointer"
+                />
+              )}
+            </Link>
+
+            <div className="p-5">
+              <Link href={`/produtos/${produto.id}`}>
+                <h3 className="text-2xl font-bold text-gray-800 hover:text-pink-500 cursor-pointer">
+                  {produto.nome}
+                </h3>
+              </Link>
+
+              <p className="text-pink-500 text-2xl font-bold mt-3">
+                R$ {produto.preco}
+              </p>
+
+              <button
+                onClick={() => adicionarCarrinho(produto)}
+                className="mt-5 bg-pink-500 text-white w-full py-3 rounded-2xl text-lg font-bold hover:bg-pink-600 transition"
+              >
+                🛒 Adicionar
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+)}
 
 <div
   id="produtos"
