@@ -8,6 +8,7 @@ import { useEffect } from "react";
 export default function Home() {
 
 const [produtos, setProdutos] = useState<any[]>([]);
+const [busca, setBusca] = useState("");
 const [categorias, setCategorias] = useState<any[]>([]);
 const [carrinho, setCarrinho] = useState<any[]>([]);
 const [categoriaSelecionada, setCategoriaSelecionada] = useState("Todos");
@@ -84,12 +85,17 @@ function removerCarrinho(index: number) {
     0
   );
 
-  const produtosFiltrados =
-  categoriaSelecionada === "Todos"
-    ? produtos
-    : produtos.filter(
-        (produto) => produto.categoria === categoriaSelecionada
-      );
+  const produtosFiltrados = produtos.filter((produto) => {
+  const combinaCategoria =
+    categoriaSelecionada === "Todos" ||
+    produto.categoria === categoriaSelecionada;
+
+  const combinaBusca =
+    produto.nome.toLowerCase().includes(busca.toLowerCase()) ||
+    produto.descricao?.toLowerCase().includes(busca.toLowerCase());
+
+  return combinaCategoria && combinaBusca;
+});
 
   return (
     <main className="min-h-screen bg-pink-50">
@@ -175,8 +181,16 @@ function removerCarrinho(index: number) {
     </h2>
 
     <p className="text-gray-500 text-xl mt-4">
-      Produtos personalizados feitos com carinho para momentos especiais.
-    </p>
+  Produtos personalizados feitos com carinho para momentos especiais.
+</p>
+
+    <input
+  type="text"
+  placeholder="🔍 O que você procura hoje?"
+  value={busca}
+  onChange={(e) => setBusca(e.target.value)}
+  className="w-full max-w-2xl mx-auto mt-8 border p-4 rounded-2xl text-lg shadow"
+/>
 
 <div className="flex flex-wrap justify-center gap-3 mt-8">
   {[
