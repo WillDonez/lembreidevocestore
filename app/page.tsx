@@ -4,6 +4,10 @@ import Link from "next/link";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useEffect } from "react";
+import ProdutoCard from "@/components/ProdutoCard";
+import Header from "@/components/Header";
+import BannerPrincipal from "@/components/BannerPrincipal";
+import BuscaProdutos from "@/components/BuscaProdutos";
 
 export default function Home() {
 
@@ -101,78 +105,23 @@ const produtosDestaque = produtos.filter(
   (produto: any) => produto.destaque === true
 );
 
+const novidades = [...produtos]
+  .sort(
+    (a: any, b: any) =>
+      new Date(b.created_at).getTime() -
+      new Date(a.created_at).getTime()
+  )
+  .slice(0, 4);
+
   return (
     <main className="min-h-screen bg-pink-50">
 
-      <header className="bg-white shadow-md p-6 sticky top-0 z-40">
+      <Header
+  quantidadeCarrinho={carrinho.length}
+  abrirCarrinho={() => setAbrirCarrinho(true)}
+/>
 
-  <div className="max-w-7xl mx-auto flex justify-between items-center">
-
-    <div className="flex items-center gap-3">
-      <img
-        src="/logo.png"
-        alt="Lembrei de Você Store"
-        className="h-16 w-auto"
-      />
-
-      <span className="text-3xl font-bold text-pink-500">
-        Lembrei de Voce Store
-      </span>
-    </div>
-
-    <nav className="hidden md:flex items-center gap-8 font-bold text-gray-700">
-      <button
-        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-        className="hover:text-pink-500"
-      >
-        Início
-      </button>
-
-      <button
-        onClick={() =>
-          document
-            .getElementById("produtos")
-            ?.scrollIntoView({ behavior: "smooth" })
-        }
-        className="hover:text-pink-500"
-      >
-        Produtos
-      </button>
-
-      <a
-        href="/meu-pedido"
-        className="hover:text-pink-500"
-      >
-        Meu Pedido
-      </a>
-
-      <a
-        href="https://wa.me/5533999958593"
-        target="_blank"
-        className="hover:text-pink-500"
-      >
-        Contato
-      </a>
-    </nav>
-
-    <button
-      onClick={() => setAbrirCarrinho(true)}
-      className="bg-pink-500 text-white px-6 py-3 rounded-xl font-bold"
-    >
-      Carrinho ({carrinho.length})
-    </button>
-
-  </div>
-
-</header>
-
-      <section className="w-full bg-pink-50">
-  <img
-    src="/banner-principal.png"
-    alt="Presentes personalizados Lembrei de Você Store"
-    className="w-full h-auto object-cover"
-  />
-</section>
+      <BannerPrincipal />
 
      <section className="p-10 bg-white">
   <div className="max-w-7xl mx-auto text-center">
@@ -270,60 +219,82 @@ const produtosDestaque = produtos.filter(
   </section>
 )}
 
-<div
-  id="produtos"
-  className="grid grid-cols-1 md:grid-cols-3 gap-8 p-10 bg-white"
->
+{novidades.length > 0 && (
+  <section className="bg-pink-50 px-10 py-10">
+    <div className="max-w-7xl mx-auto">
 
-        {produtosFiltrados.map((produto) => (
+      <h2 className="text-4xl font-bold text-gray-800 mb-6">
+        🆕 Novidades
+      </h2>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+
+        {novidades.map((produto: any) => (
 
           <div
-  key={produto.id}
-  className="bg-white rounded-3xl shadow-lg overflow-hidden hover:shadow-2xl hover:-translate-y-2 transition relative"
->
-
-  <span className="absolute top-4 left-4 bg-pink-500 text-white px-4 py-2 rounded-full text-sm font-bold z-10">
-  Novo
-</span>
+            key={produto.id}
+            className="bg-white rounded-3xl shadow-lg overflow-hidden hover:shadow-2xl transition"
+          >
 
             <Link href={`/produtos/${produto.id}`}>
-  {produto.imagem && (
-    <img
-      src={produto.imagem}
-      alt={produto.nome}
-      className="w-full h-72 object-cover cursor-pointer"
-    />
-  )}
-</Link>
 
-            <div className="p-6">
+              {produto.imagem && (
+
+                <img
+                  src={produto.imagem}
+                  alt={produto.nome}
+                  className="w-full h-56 object-cover cursor-pointer"
+                />
+
+              )}
+
+            </Link>
+
+            <div className="p-5">
 
               <Link href={`/produtos/${produto.id}`}>
-  <h2 className="text-4xl font-bold text-gray-800 hover:text-pink-500 cursor-pointer">
-    {produto.nome}
-  </h2>
-</Link>
 
-              <p className="text-gray-500 mt-2">
-  {produto.descricao}
-</p>
+                <h3 className="text-2xl font-bold hover:text-pink-500">
+                  {produto.nome}
+                </h3>
 
-              <p className="text-pink-500 text-3xl font-bold mt-4">
+              </Link>
+
+              <p className="text-pink-500 text-2xl font-bold mt-3">
                 R$ {produto.preco}
               </p>
 
               <button
-  onClick={() => adicionarCarrinho(produto)}
-  className="mt-6 bg-pink-500 text-white w-full py-4 rounded-2xl text-xl font-bold hover:bg-pink-600 transition"
->
-  🛒 Adicionar ao Carrinho
-</button>
+                onClick={() => adicionarCarrinho(produto)}
+                className="mt-5 bg-pink-500 text-white w-full py-3 rounded-2xl font-bold hover:bg-pink-600"
+              >
+                🛒 Adicionar
+              </button>
 
             </div>
 
           </div>
 
         ))}
+
+      </div>
+
+    </div>
+  </section>
+)}
+
+<div
+  id="produtos"
+  className="grid grid-cols-1 md:grid-cols-3 gap-8 p-10 bg-white"
+>
+
+        {produtosFiltrados.map((produto) => (
+  <ProdutoCard
+    key={produto.id}
+    produto={produto}
+    adicionarCarrinho={adicionarCarrinho}
+  />
+))}
 
       </div>
 

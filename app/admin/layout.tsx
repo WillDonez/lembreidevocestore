@@ -47,8 +47,8 @@ export default function AdminLayout({
   }
 
   const menu = [
-  { nome: "Dashboard", href: "/admin/dashboard", icone: "🏠" },
-  { nome: "Produtos", href: "/admin", icone: "📦" },
+  { nome: "Dashboard", href: "/admin", icone: "🏠" },
+  { nome: "Produtos", href: "/admin/produtos", icone: "📦" },
   { nome: "Categorias", href: "/admin/categorias", icone: "📂" },
   { nome: "Pedidos", href: "/admin/pedidos", icone: "🛒" },
 ];
