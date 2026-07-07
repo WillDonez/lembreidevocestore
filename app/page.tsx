@@ -8,6 +8,7 @@ import ProdutoCard from "@/components/ProdutoCard";
 import Header from "@/components/Header";
 import BannerPrincipal from "@/components/BannerPrincipal";
 import BuscaProdutos from "@/components/BuscaProdutos";
+import CheckoutCliente from "@/components/CheckoutCliente";
 
 export default function Home() {
 
@@ -19,6 +20,15 @@ const [categoriaSelecionada, setCategoriaSelecionada] = useState("Todos");
 const [abrirCarrinho, setAbrirCarrinho] = useState(false);
 const [nomeCliente, setNomeCliente] = useState("");
 const [whatsappCliente, setWhatsappCliente] = useState("");
+const [emailCliente, setEmailCliente] = useState("");
+const [cpfCnpj, setCpfCnpj] = useState("");
+const [cep, setCep] = useState("");
+const [endereco, setEndereco] = useState("");
+const [numero, setNumero] = useState("");
+const [complemento, setComplemento] = useState("");
+const [bairro, setBairro] = useState("");
+const [cidade, setCidade] = useState("");
+const [estado, setEstado] = useState("");
 useEffect(() => {
   buscarProdutos();
   buscarCategorias();
@@ -353,21 +363,30 @@ const novidades = [...produtos]
     Total: R$ {total.toFixed(2)}
   </h3>
 
-  <input
-    type="text"
-    placeholder="Seu nome completo"
-    value={nomeCliente}
-    onChange={(e) => setNomeCliente(e.target.value)}
-    className="w-full border p-4 rounded-xl mt-6"
-  />
-
-  <input
-    type="text"
-    placeholder="Seu WhatsApp"
-    value={whatsappCliente}
-    onChange={(e) => setWhatsappCliente(e.target.value)}
-    className="w-full border p-4 rounded-xl mt-4"
-  />
+  <CheckoutCliente
+  nomeCliente={nomeCliente}
+  setNomeCliente={setNomeCliente}
+  whatsappCliente={whatsappCliente}
+  setWhatsappCliente={setWhatsappCliente}
+  emailCliente={emailCliente}
+  setEmailCliente={setEmailCliente}
+  cpfCnpj={cpfCnpj}
+  setCpfCnpj={setCpfCnpj}
+  cep={cep}
+  setCep={setCep}
+  endereco={endereco}
+  setEndereco={setEndereco}
+  numero={numero}
+  setNumero={setNumero}
+  complemento={complemento}
+  setComplemento={setComplemento}
+  bairro={bairro}
+  setBairro={setBairro}
+  cidade={cidade}
+  setCidade={setCidade}
+  estado={estado}
+  setEstado={setEstado}
+/>
 
   <button
     onClick={async () => {

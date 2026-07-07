@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import CheckoutCliente from "@/components/CheckoutCliente";
 
 export default function ProdutoDetalhe() {
   const params = useParams();
@@ -13,6 +14,15 @@ export default function ProdutoDetalhe() {
   const [relacionados, setRelacionados] = useState<any[]>([]);
   const [nomeCliente, setNomeCliente] = useState("");
   const [whatsappCliente, setWhatsappCliente] = useState("");
+  const [emailCliente, setEmailCliente] = useState("");
+const [cpfCnpj, setCpfCnpj] = useState("");
+const [cep, setCep] = useState("");
+const [endereco, setEndereco] = useState("");
+const [numero, setNumero] = useState("");
+const [complemento, setComplemento] = useState("");
+const [bairro, setBairro] = useState("");
+const [cidade, setCidade] = useState("");
+const [estado, setEstado] = useState("");
 
   useEffect(() => {
     buscarProduto();
@@ -150,21 +160,31 @@ Link: ${window.location.href}`;
           </p>
 
           <div className="mt-8 space-y-4">
-            <input
-              type="text"
-              placeholder="Seu nome completo"
-              value={nomeCliente}
-              onChange={(e) => setNomeCliente(e.target.value)}
-              className="w-full border p-4 rounded-xl"
-            />
-
-            <input
-              type="text"
-              placeholder="Seu WhatsApp"
-              value={whatsappCliente}
-              onChange={(e) => setWhatsappCliente(e.target.value)}
-              className="w-full border p-4 rounded-xl"
-            />
+            
+            <CheckoutCliente
+  nomeCliente={nomeCliente}
+  setNomeCliente={setNomeCliente}
+  whatsappCliente={whatsappCliente}
+  setWhatsappCliente={setWhatsappCliente}
+  emailCliente={emailCliente}
+  setEmailCliente={setEmailCliente}
+  cpfCnpj={cpfCnpj}
+  setCpfCnpj={setCpfCnpj}
+  cep={cep}
+  setCep={setCep}
+  endereco={endereco}
+  setEndereco={setEndereco}
+  numero={numero}
+  setNumero={setNumero}
+  complemento={complemento}
+  setComplemento={setComplemento}
+  bairro={bairro}
+  setBairro={setBairro}
+  cidade={cidade}
+  setCidade={setCidade}
+  estado={estado}
+  setEstado={setEstado}
+/>
 
             <button
               onClick={comprarAgora}

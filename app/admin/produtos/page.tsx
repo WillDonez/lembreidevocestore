@@ -2,13 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { obterFormatoArquivo } from "@/lib/helpers/produto";
 
 export default function Admin() {
   const [nome, setNome] = useState("");
   const [preco, setPreco] = useState("");
   const [arquivo, setArquivo] = useState<any>(null);
+  const [arquivoDigital, setArquivoDigital] = useState<any>(null);
   const [descricao, setDescricao] = useState("");
   const [categoria, setCategoria] = useState("Canecas");
+  const [tipoProduto, setTipoProduto] = useState("fisico");
   const [destaque, setDestaque] = useState(false);
   const [produtoEditando, setProdutoEditando] = useState<any>(null);
   const [produtos, setProdutos] = useState<any[]>([]);
@@ -59,20 +62,58 @@ export default function Admin() {
     return data.publicUrl;
   }
 
+  async function uploadArquivoDigital() {
+    console.log("Arquivo Digital:", arquivoDigital);
+  if (!arquivoDigital) return "";
+
+  const nomeArquivo = `${Date.now()}-${arquivoDigital.name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9.]/g, "-")}`;
+
+  const { error } = await supabase.storage
+    .from("arquivos-digitais")
+    .upload(nomeArquivo, arquivoDigital);
+
+    console.log("Erro upload:", error);
+
+  if (error) {
+    console.error("UPLOAD ARQUIVO DIGITAL ERROR:", error);
+    alert("Erro ao enviar arquivo digital");
+    return "";
+  }
+
+  const { data } = supabase.storage
+    .from("arquivos-digitais")
+    .getPublicUrl(nomeArquivo);
+
+    console.log("URL pública:", data.publicUrl);
+
+  return data.publicUrl;
+}
+
   async function cadastrarProduto() {
     const imagemUrl = await uploadImagem();
+    const arquivoDigitalUrl = await uploadArquivoDigital();
 
     if (produtoEditando) {
       const { error } = await supabase
         .from("produtos")
         .update({
-          nome,
-          preco: Number(preco),
-          imagem: imagemUrl || produtoEditando.imagem,
-          descricao,
-          categoria,
-          destaque,
-        })
+  nome,
+  preco: Number(preco),
+  imagem: imagemUrl || produtoEditando.imagem,
+  descricao,
+  categoria,
+  tipo_produto: tipoProduto,
+
+  arquivo_digital:
+    arquivoDigitalUrl || produtoEditando.arquivo_digital,
+
+  formato_arquivo: obterFormatoArquivo(tipoProduto),
+
+  destaque,
+})
         .eq("id", produtoEditando.id);
 
       if (error) {
@@ -88,16 +129,23 @@ export default function Admin() {
       return;
     }
 
-    const { error } = await supabase.from("produtos").insert([
-      {
-        nome,
-        preco: Number(preco),
-        imagem: imagemUrl,
-        descricao,
-        categoria,
-        destaque,
-      },
-    ]);
+    const { error } = await supabase.from("produtos")
+      .insert([
+  {
+    nome,
+    preco: Number(preco),
+    imagem: imagemUrl,
+    descricao,
+    categoria,
+    tipo_produto: tipoProduto,
+
+    arquivo_digital: arquivoDigitalUrl,
+
+    formato_arquivo: obterFormatoArquivo(tipoProduto),
+
+    destaque,
+  },
+]);
 
     if (error) {
       alert("Erro ao cadastrar produto");
@@ -116,8 +164,10 @@ export default function Admin() {
     setNome("");
     setPreco("");
     setArquivo(null);
+    setArquivoDigital(null);
     setDescricao("");
     setCategoria("Canecas");
+    setTipoProduto("fisico");
     setDestaque(false);
   }
 
@@ -127,6 +177,7 @@ export default function Admin() {
     setPreco(String(produto.preco || ""));
     setDescricao(produto.descricao || "");
     setCategoria(produto.categoria || "Canecas");
+    setTipoProduto(produto.tipo_produto || "fisico");
     setDestaque(produto.destaque || false);
     setArquivo(null);
 
@@ -210,6 +261,35 @@ export default function Admin() {
             className="w-full border p-4 rounded-xl"
           />
 
+          {tipoProduto !== "fisico" && (
+  <div>
+    <label className="block font-bold mb-2">
+      📁 Arquivo Digital
+    </label>
+
+    <input
+      type="file"
+      accept={tipoProduto === "pdf" ? ".pdf" : ".zip"}
+      onChange={(e) => {
+        const arquivoSelecionado = e.target.files?.[0];
+
+        console.log("Arquivo selecionado:", arquivoSelecionado);
+
+        if (arquivoSelecionado) {
+          setArquivoDigital(arquivoSelecionado);
+        }
+      }}
+      className="w-full border p-4 rounded-xl"
+    />
+
+    {arquivoDigital && (
+      <p className="text-green-600 font-bold mt-2">
+        Arquivo selecionado: {arquivoDigital.name}
+      </p>
+    )}
+  </div>
+)}
+
           {produtoEditando?.imagem && (
             <div>
               <p className="font-bold mb-2">Imagem atual:</p>
@@ -220,6 +300,27 @@ export default function Admin() {
               />
             </div>
           )}
+
+          {produtoEditando?.arquivo_digital && (
+  <div className="bg-green-50 border border-green-300 rounded-2xl p-5">
+    <h3 className="font-bold text-green-700 text-lg">
+      📁 Biblioteca Digital
+    </h3>
+
+    <p className="mt-2 text-green-700">
+      ✅ Arquivo digital enviado com sucesso.
+    </p>
+
+    <a
+      href={produtoEditando.arquivo_digital}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-block mt-4 bg-green-600 text-white px-5 py-3 rounded-xl font-bold hover:bg-green-700 transition"
+    >
+      📥 Abrir Arquivo
+    </a>
+  </div>
+)}
 
           <textarea
             placeholder="Descrição"
@@ -241,6 +342,16 @@ export default function Admin() {
             <option>Festas</option>
             <option>Outros</option>
           </select>
+
+          <select
+  value={tipoProduto}
+  onChange={(e) => setTipoProduto(e.target.value)}
+  className="w-full border p-4 rounded-xl"
+>
+  <option value="fisico">🛍 Produto Físico</option>
+  <option value="pdf">📄 PDF</option>
+  <option value="kit">📦 Kit Digital (.ZIP)</option>
+</select>
 
           <label className="flex items-center gap-3 text-lg font-semibold">
             <input
