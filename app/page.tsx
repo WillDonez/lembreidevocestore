@@ -401,10 +401,19 @@ const novidades = [...produtos]
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          produtos: carrinho,
-          nomeCliente,
-          whatsappCliente,
-        }),
+  produtos: carrinho,
+  nomeCliente,
+  whatsappCliente,
+  emailCliente,
+  cpfCnpj,
+  cep,
+  endereco,
+  numero,
+  complemento,
+  bairro,
+  cidade,
+  estado,
+}),
       });
 
       const data = await response.json();

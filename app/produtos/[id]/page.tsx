@@ -55,30 +55,39 @@ const [estado, setEstado] = useState("");
   }
 
   async function comprarAgora() {
-    if (!nomeCliente || !whatsappCliente) {
-      alert("Preencha seu nome e WhatsApp antes de finalizar.");
-      return;
-    }
-
-    const response = await fetch("/api/checkout", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        produtos: [produto],
-        nomeCliente,
-        whatsappCliente,
-      }),
-    });
-
-    const data = await response.json();
-
-    window.open(
-      `https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${data.id}`,
-      "_blank"
-    );
+  if (!nomeCliente || !whatsappCliente) {
+    alert("Preencha seu nome e WhatsApp antes de finalizar.");
+    return;
   }
+
+  const response = await fetch("/api/checkout", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      produtos: [produto],
+      nomeCliente,
+      whatsappCliente,
+      emailCliente,
+      cpfCnpj,
+      cep,
+      endereco,
+      numero,
+      complemento,
+      bairro,
+      cidade,
+      estado,
+    }),
+  });
+
+  const data = await response.json();
+
+  window.open(
+    `https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${data.id}`,
+    "_blank"
+  );
+}
 
   function comprarWhatsApp() {
     const mensagem = `Olá! Tenho interesse neste produto:

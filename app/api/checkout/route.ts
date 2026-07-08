@@ -17,9 +17,20 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
+    console.log(body);
+
     const produtos = body.produtos;
-    const nomeCliente = body.nomeCliente;
-    const whatsappCliente = body.whatsappCliente;
+const nomeCliente = body.nomeCliente;
+const whatsappCliente = body.whatsappCliente;
+const emailCliente = body.emailCliente;
+const cpfCnpj = body.cpfCnpj;
+const cep = body.cep;
+const endereco = body.endereco;
+const numero = body.numero;
+const complemento = body.complemento;
+const bairro = body.bairro;
+const cidade = body.cidade;
+const estado = body.estado;
 
     const items = produtos.map((produto: any) => ({
       id: String(produto.id),
@@ -44,14 +55,36 @@ export async function POST(req: Request) {
     const { data: pedidoCriado, error: erroPedido } = await supabase
   .from("pedidos")
   .insert([
-    {
-      cliente: nomeCliente,
-      nome_cliente: nomeCliente,
-      whatsapp_cliente: whatsappCliente,
-      produtos: produtos,
-      total: total,
-      status: "pendente",
-    },
+  
+     {
+  cliente: nomeCliente,
+  nome_cliente: nomeCliente,
+  whatsapp_cliente: whatsappCliente,
+  email_cliente: emailCliente,
+  cpf_cnpj: cpfCnpj,
+  cep,
+  endereco,
+  numero,
+  complemento,
+  bairro,
+  cidade,
+  estado,
+  dados_fiscais_completos: Boolean(
+    nomeCliente &&
+      whatsappCliente &&
+      emailCliente &&
+      cpfCnpj &&
+      cep &&
+      endereco &&
+      numero &&
+      bairro &&
+      cidade &&
+      estado
+  ),
+  produtos: produtos,
+  total: total,
+  status: "pendente",
+},
   ])
   .select()
   .single();
