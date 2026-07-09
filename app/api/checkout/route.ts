@@ -1,8 +1,8 @@
 import { enviarWhatsapp } from "@/lib/whatsapp";
 import { MercadoPagoConfig, Preference } from "mercadopago";
 import { NextResponse } from "next/server";
-
 import { createClient } from "@supabase/supabase-js";
+import { salvarOuAtualizarCliente } from "@/lib/clientes";
 
 const client = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN!,
@@ -10,7 +10,7 @@ const client = new MercadoPagoConfig({
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
 export async function POST(req: Request) {
@@ -51,6 +51,20 @@ const estado = body.estado;
       `• ${produto.nome} - R$ ${Number(produto.preco).toFixed(2)}`
   )
   .join("\n");
+
+  await salvarOuAtualizarCliente({
+  nome: nomeCliente,
+  email: emailCliente,
+  whatsapp: whatsappCliente,
+  cpf_cnpj: cpfCnpj,
+  cep,
+  endereco,
+  numero,
+  complemento,
+  bairro,
+  cidade,
+  estado,
+});
 
     const { data: pedidoCriado, error: erroPedido } = await supabase
   .from("pedidos")

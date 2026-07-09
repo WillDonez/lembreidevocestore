@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { buscarClientePorEmail } from "@/lib/clientes";
 
 type CheckoutClienteProps = {
   nomeCliente: string;
@@ -122,6 +123,12 @@ async function buscarCep(
 }
 }
 
+async function buscarCliente(email: string) {
+  if (!email) return;
+
+  console.log("Procurando cliente:", email);
+}
+
 export default function CheckoutCliente({
   nomeCliente,
   setNomeCliente,
@@ -156,6 +163,7 @@ export default function CheckoutCliente({
   estado,
   setEstado,
 }: CheckoutClienteProps) {
+
   const [statusCep, setStatusCep] = useState("");
 
   return (
@@ -174,12 +182,28 @@ export default function CheckoutCliente({
       />
 
       <input
-        type="email"
-        placeholder="E-mail"
-        value={emailCliente}
-        onChange={(e) => setEmailCliente(e.target.value)}
-        className="w-full border p-4 rounded-xl"
-      />
+  type="email"
+  placeholder="E-mail"
+  value={emailCliente}
+  onChange={(e) => setEmailCliente(e.target.value)}
+  onBlur={async () => {
+    const cliente = await buscarClientePorEmail(emailCliente);
+
+    if (!cliente) return;
+
+    setNomeCliente(cliente.nome || "");
+    setWhatsappCliente(cliente.whatsapp || "");
+    setCpfCnpj(cliente.cpf_cnpj || "");
+    setCep(cliente.cep || "");
+    setEndereco(cliente.endereco || "");
+    setNumero(cliente.numero || "");
+    setComplemento(cliente.complemento || "");
+    setBairro(cliente.bairro || "");
+    setCidade(cliente.cidade || "");
+    setEstado(cliente.estado || "");
+  }}
+  className="w-full border p-4 rounded-xl"
+/>
 
       <input
   type="text"
