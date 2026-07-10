@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { CarrinhoProvider } from "@/app/context/CarrinhoContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,7 +28,14 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-    <body suppressHydrationWarning={true} className="min-h-full flex flex-col">{children}</body>
+    <body
+  suppressHydrationWarning={true}
+  className="min-h-full flex flex-col"
+>
+  <CarrinhoProvider>
+    {children}
+  </CarrinhoProvider>
+</body>
     </html>
   );
 }

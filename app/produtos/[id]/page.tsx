@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import CheckoutCliente from "@/components/CheckoutCliente";
+import { useCarrinho } from "@/app/context/CarrinhoContext";
+import { useRouter } from "next/navigation";
 
 export default function ProdutoDetalhe() {
   const params = useParams();
@@ -12,17 +13,8 @@ export default function ProdutoDetalhe() {
 
   const [produto, setProduto] = useState<any>(null);
   const [relacionados, setRelacionados] = useState<any[]>([]);
-  const [nomeCliente, setNomeCliente] = useState("");
-  const [whatsappCliente, setWhatsappCliente] = useState("");
-  const [emailCliente, setEmailCliente] = useState("");
-const [cpfCnpj, setCpfCnpj] = useState("");
-const [cep, setCep] = useState("");
-const [endereco, setEndereco] = useState("");
-const [numero, setNumero] = useState("");
-const [complemento, setComplemento] = useState("");
-const [bairro, setBairro] = useState("");
-const [cidade, setCidade] = useState("");
-const [estado, setEstado] = useState("");
+const { limparCarrinho, adicionarCarrinho } = useCarrinho();
+const router = useRouter();
 
   useEffect(() => {
     buscarProduto();
@@ -54,54 +46,14 @@ const [estado, setEstado] = useState("");
     }
   }
 
-  async function comprarAgora() {
-  if (!nomeCliente || !whatsappCliente) {
-    alert("Preencha seu nome e WhatsApp antes de finalizar.");
-    return;
-  }
+  function comprarAgora() {
+  if (!produto) return;
 
-  const response = await fetch("/api/checkout", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      produtos: [produto],
-      nomeCliente,
-      whatsappCliente,
-      emailCliente,
-      cpfCnpj,
-      cep,
-      endereco,
-      numero,
-      complemento,
-      bairro,
-      cidade,
-      estado,
-    }),
-  });
+  limparCarrinho();
+  adicionarCarrinho(produto);
 
-  const data = await response.json();
-
-  window.open(
-    `https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${data.id}`,
-    "_blank"
-  );
+  router.push("/checkout");
 }
-
-  function comprarWhatsApp() {
-    const mensagem = `Olá! Tenho interesse neste produto:
-
-${produto.nome}
-R$ ${produto.preco}
-
-Link: ${window.location.href}`;
-
-    window.open(
-      `https://wa.me/5533999958593?text=${encodeURIComponent(mensagem)}`,
-      "_blank"
-    );
-  }
 
   if (!produto) {
     return (
@@ -170,31 +122,6 @@ Link: ${window.location.href}`;
 
           <div className="mt-8 space-y-4">
             
-            <CheckoutCliente
-  nomeCliente={nomeCliente}
-  setNomeCliente={setNomeCliente}
-  whatsappCliente={whatsappCliente}
-  setWhatsappCliente={setWhatsappCliente}
-  emailCliente={emailCliente}
-  setEmailCliente={setEmailCliente}
-  cpfCnpj={cpfCnpj}
-  setCpfCnpj={setCpfCnpj}
-  cep={cep}
-  setCep={setCep}
-  endereco={endereco}
-  setEndereco={setEndereco}
-  numero={numero}
-  setNumero={setNumero}
-  complemento={complemento}
-  setComplemento={setComplemento}
-  bairro={bairro}
-  setBairro={setBairro}
-  cidade={cidade}
-  setCidade={setCidade}
-  estado={estado}
-  setEstado={setEstado}
-/>
-
             <button
               onClick={comprarAgora}
               className="bg-pink-500 text-white w-full py-4 rounded-2xl text-xl font-bold hover:bg-pink-600 transition"
@@ -202,12 +129,6 @@ Link: ${window.location.href}`;
               🛒 Comprar Agora
             </button>
 
-            <button
-              onClick={comprarWhatsApp}
-              className="bg-green-600 text-white w-full py-4 rounded-2xl text-xl font-bold hover:bg-green-700 transition"
-            >
-              💬 Comprar pelo WhatsApp
-            </button>
           </div>
         </div>
       </section>

@@ -8,16 +8,16 @@ import ProdutoCard from "@/components/ProdutoCard";
 import Header from "@/components/Header";
 import BannerPrincipal from "@/components/BannerPrincipal";
 import BuscaProdutos from "@/components/BuscaProdutos";
-import CheckoutCliente from "@/components/CheckoutCliente";
+import { useCarrinho } from "@/app/context/CarrinhoContext";
+import ListaProdutos from "@/components/ListaProdutos";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
 
 const [produtos, setProdutos] = useState<any[]>([]);
 const [busca, setBusca] = useState("");
 const [categorias, setCategorias] = useState<any[]>([]);
-const [carrinho, setCarrinho] = useState<any[]>([]);
 const [categoriaSelecionada, setCategoriaSelecionada] = useState("Todos");
-const [abrirCarrinho, setAbrirCarrinho] = useState(false);
 const [nomeCliente, setNomeCliente] = useState("");
 const [whatsappCliente, setWhatsappCliente] = useState("");
 const [emailCliente, setEmailCliente] = useState("");
@@ -29,6 +29,15 @@ const [complemento, setComplemento] = useState("");
 const [bairro, setBairro] = useState("");
 const [cidade, setCidade] = useState("");
 const [estado, setEstado] = useState("");
+const router = useRouter();
+
+const {
+  carrinho,
+  adicionarCarrinho,
+  removerCarrinho,
+  total,
+} = useCarrinho();
+
 useEffect(() => {
   buscarProdutos();
   buscarCategorias();
@@ -77,28 +86,6 @@ async function buscarCategorias() {
   }
 }
 
-  function adicionarCarrinho(produto: any) {
-
-  setCarrinho([...carrinho, produto]);
-  setAbrirCarrinho(true);
-
-}
-
-function removerCarrinho(index: number) {
-
-  const novoCarrinho = [...carrinho];
-
-  novoCarrinho.splice(index, 1);
-
-  setCarrinho(novoCarrinho);
-
-}
-
-  const total = carrinho.reduce(
-    (acc, item) => acc + item.preco,
-    0
-  );
-
   const produtosFiltrados = produtos.filter((produto) => {
   const combinaCategoria =
     categoriaSelecionada === "Todos" ||
@@ -128,7 +115,9 @@ const novidades = [...produtos]
 
       <Header
   quantidadeCarrinho={carrinho.length}
-  abrirCarrinho={() => setAbrirCarrinho(true)}
+  abrirCarrinho={() => {
+    router.push("/carrinho");
+  }}
 />
 
       <BannerPrincipal />
@@ -293,146 +282,10 @@ const novidades = [...produtos]
   </section>
 )}
 
-<div
-  id="produtos"
-  className="grid grid-cols-1 md:grid-cols-3 gap-8 p-10 bg-white"
->
-
-        {produtosFiltrados.map((produto) => (
-  <ProdutoCard
-    key={produto.id}
-    produto={produto}
-    adicionarCarrinho={adicionarCarrinho}
-  />
-))}
-
-      </div>
-
-      {abrirCarrinho && (
-
-        <div className="fixed right-0 top-0 h-full w-[420px] bg-white shadow-2xl p-6 overflow-y-auto z-50">
-
-   <div className="flex justify-between items-center mb-6">
-
-  <h2 className="text-3xl font-bold">
-    Seu Carrinho
-  </h2>
-
-  <button
-    onClick={() => setAbrirCarrinho(false)}
-    className="bg-red-500 text-white px-4 py-2 rounded-xl"
-  >
-    Fechar
-  </button>
-
-</div>
-
-<div className="mt-6 space-y-4">
-
-  {carrinho.map((item, index) => (
-
-    <div
-      key={index}
-      className="bg-pink-50 p-4 rounded-xl"
-    >
-
-      <h3 className="font-bold text-xl">
-        {item.nome}
-      </h3>
-
-      <p className="text-pink-500 font-bold mt-2">
-        R$ {item.preco}
-      </p>
-
-      <button
-        onClick={() => removerCarrinho(index)}
-        className="mt-3 bg-red-500 text-white px-4 py-2 rounded-lg"
-      >
-        Remover
-      </button>
-
-    </div>
-
-  ))}
-
-</div>
-
-<div className="mt-10">
-
-  <h3 className="text-4xl font-bold">
-    Total: R$ {total.toFixed(2)}
-  </h3>
-
-  <CheckoutCliente
-  nomeCliente={nomeCliente}
-  setNomeCliente={setNomeCliente}
-  whatsappCliente={whatsappCliente}
-  setWhatsappCliente={setWhatsappCliente}
-  emailCliente={emailCliente}
-  setEmailCliente={setEmailCliente}
-  cpfCnpj={cpfCnpj}
-  setCpfCnpj={setCpfCnpj}
-  cep={cep}
-  setCep={setCep}
-  endereco={endereco}
-  setEndereco={setEndereco}
-  numero={numero}
-  setNumero={setNumero}
-  complemento={complemento}
-  setComplemento={setComplemento}
-  bairro={bairro}
-  setBairro={setBairro}
-  cidade={cidade}
-  setCidade={setCidade}
-  estado={estado}
-  setEstado={setEstado}
+<ListaProdutos
+  produtos={produtosFiltrados}
+  adicionarCarrinho={adicionarCarrinho}
 />
-
-  <button
-    onClick={async () => {
-      if (!nomeCliente || !whatsappCliente) {
-        alert("Preencha seu nome e WhatsApp antes de finalizar.");
-        return;
-      }
-
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-  produtos: carrinho,
-  nomeCliente,
-  whatsappCliente,
-  emailCliente,
-  cpfCnpj,
-  cep,
-  endereco,
-  numero,
-  complemento,
-  bairro,
-  cidade,
-  estado,
-}),
-      });
-
-      const data = await response.json();
-
-      window.open(
-        `https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${data.id}`,
-        "_blank"
-      );
-    }}
-    className="bg-green-500 text-white px-6 py-4 rounded-2xl font-bold text-2xl hover:bg-green-600 transition w-full mt-6"
-  >
-    Finalizar Pedido
-  </button>
-
-</div>
-
-        </div>
-
-      )}
 
     </main>
   );
