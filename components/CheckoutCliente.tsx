@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { buscarClientePorEmail } from "@/lib/clientes";
 
 type CheckoutClienteProps = {
   nomeCliente: string;
@@ -165,6 +164,7 @@ export default function CheckoutCliente({
 }: CheckoutClienteProps) {
 
   const [statusCep, setStatusCep] = useState("");
+const [clienteEncontrado, setClienteEncontrado] = useState(false);
 
   return (
     <div className="bg-white rounded-3xl shadow-xl p-8 space-y-6">
@@ -185,31 +185,9 @@ export default function CheckoutCliente({
   type="email"
   placeholder="E-mail"
   value={emailCliente}
-  onChange={(e) => setEmailCliente(e.target.value)}
-  onBlur={async () => {
-    const cliente = await buscarClientePorEmail(emailCliente);
-
-    if (!cliente) return;
-
-    setNomeCliente(cliente.nome || "");
-    setWhatsappCliente(cliente.whatsapp || "");
-    setCpfCnpj(cliente.cpf_cnpj || "");
-    setCep(cliente.cep || "");
-    setEndereco(cliente.endereco || "");
-    setNumero(cliente.numero || "");
-    setComplemento(cliente.complemento || "");
-    setBairro(cliente.bairro || "");
-    setCidade(cliente.cidade || "");
-    setEstado(cliente.estado || "");
-  }}
-  className="w-full border p-4 rounded-xl"
-/>
-
-      <input
-  type="text"
-  placeholder="WhatsApp"
-  value={whatsappCliente}
-  onChange={(e) => setWhatsappCliente(formatarWhatsApp(e.target.value))}
+  onChange={(e) =>
+    setEmailCliente(e.target.value.trimStart().toLowerCase())
+  }
   className="w-full border p-4 rounded-xl"
 />
 
@@ -217,7 +195,75 @@ export default function CheckoutCliente({
   type="text"
   placeholder="CPF ou CNPJ"
   value={cpfCnpj}
-  onChange={(e) => setCpfCnpj(formatarCpfCnpj(e.target.value))}
+  onChange={(e) =>
+    setCpfCnpj(formatarCpfCnpj(e.target.value))
+  }
+  onBlur={async (e) => {
+    const cpfCnpjDigitado = e.currentTarget.value.trim();
+    const emailDigitado = emailCliente.trim().toLowerCase();
+
+    if (!emailDigitado || !cpfCnpjDigitado) {
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/clientes/buscar", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: emailDigitado,
+          cpfCnpj: cpfCnpjDigitado,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.log("Erro ao buscar cliente:", data);
+        return;
+      }
+
+      const cliente = data.cliente;
+
+      if (!cliente) {
+  setClienteEncontrado(false);
+  console.log("Cliente ainda não cadastrado.");
+  return;
+}
+
+setClienteEncontrado(true);
+
+      setNomeCliente(cliente.nome || "");
+      setEmailCliente(cliente.email || emailDigitado);
+      setWhatsappCliente(cliente.whatsapp || "");
+      setCpfCnpj(cliente.cpf_cnpj || cpfCnpjDigitado);
+      setCep(cliente.cep || "");
+      setEndereco(cliente.endereco || "");
+      setNumero(cliente.numero || "");
+      setComplemento(cliente.complemento || "");
+      setBairro(cliente.bairro || "");
+      setCidade(cliente.cidade || "");
+      setEstado(cliente.estado || "");
+    } catch (error) {
+      console.log("Erro ao consultar cadastro:", error);
+    }
+  }}
+  className="w-full border p-4 rounded-xl"
+/>
+
+{clienteEncontrado && (
+  <p className="text-green-600 font-bold mt-2 mb-2">
+    ✅ Cliente localizado automaticamente.
+  </p>
+)}
+
+<input
+  type="text"
+  placeholder="WhatsApp"
+  value={whatsappCliente}
+  onChange={(e) => setWhatsappCliente(formatarWhatsApp(e.target.value))}
   className="w-full border p-4 rounded-xl"
 />
 

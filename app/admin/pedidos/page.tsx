@@ -28,6 +28,82 @@ export default function PedidosPage() {
     }
   }
 
+  async function atualizarStatusPedido(
+  pedidoId: number,
+  novoStatus: string
+) {
+  const { error } = await supabase
+    .from("pedidos")
+    .update({
+      status: novoStatus,
+    })
+    .eq("id", pedidoId);
+
+  if (error) {
+    console.log("Erro ao atualizar status:", error);
+    alert("Não foi possível atualizar o status do pedido.");
+    return;
+  }
+
+  setPedidos((pedidosAtuais) =>
+    pedidosAtuais.map((pedido) =>
+      pedido.id === pedidoId
+        ? {
+            ...pedido,
+            status: novoStatus,
+          }
+        : pedido
+    )
+  );
+}
+
+  function obterEstiloStatus(status: string) {
+  switch (status) {
+    case "aprovado":
+    case "pago":
+      return {
+        texto: "Aprovado",
+        classe: "bg-green-500",
+      };
+
+    case "cancelado":
+      return {
+        texto: "Cancelado",
+        classe: "bg-red-500",
+      };
+
+    case "em_producao":
+      return {
+        texto: "Em produção",
+        classe: "bg-orange-500",
+      };
+
+    case "pronto":
+      return {
+        texto: "Pronto",
+        classe: "bg-blue-500",
+      };
+
+    case "enviado":
+      return {
+        texto: "Enviado",
+        classe: "bg-purple-500",
+      };
+
+    case "finalizado":
+      return {
+        texto: "Finalizado",
+        classe: "bg-emerald-700",
+      };
+
+    default:
+      return {
+        texto: "Pendente",
+        classe: "bg-yellow-500",
+      };
+  }
+}
+
   return (
 
     <main className="min-h-screen bg-pink-50 p-10">
@@ -52,28 +128,98 @@ export default function PedidosPage() {
               </h2>
 
               <span
-                className={`px-4 py-2 rounded-xl text-white font-bold ${
-                  pedido.status === "pago"
-                    ? "bg-green-500"
-                    : "bg-yellow-500"
-                }`}
-              >
-                {pedido.status}
-              </span>
+  className={`px-4 py-2 rounded-xl text-white font-bold ${
+    obterEstiloStatus(pedido.status).classe
+  }`}
+>
+  {obterEstiloStatus(pedido.status).texto}
+</span>
+
+<select
+  value={pedido.status}
+  onChange={(e) =>
+    atualizarStatusPedido(pedido.id, e.target.value)
+  }
+  className="mt-3 border p-3 rounded-xl font-bold bg-white"
+>
+  <option value="pendente">Pendente</option>
+  <option value="aprovado">Aprovado</option>
+  <option value="em_producao">Em produção</option>
+  <option value="pronto">Pronto</option>
+  <option value="enviado">Enviado</option>
+  <option value="finalizado">Finalizado</option>
+  <option value="cancelado">Cancelado</option>
+</select>
 
             </div>
 
-            <div className="mt-4">
+            <div className="mt-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+  <div>
+    <p className="font-bold text-xl">
+      Cliente:
+    </p>
 
-              <p className="font-bold text-xl">
-                Cliente:
-              </p>
+    <p className="text-gray-600">
+      {pedido.nome_cliente || pedido.cliente || "Cliente não informado"}
+    </p>
 
-              <p className="text-gray-600">
-                {pedido.cliente}
-              </p>
+    {pedido.email_cliente && (
+      <p className="text-gray-500">
+        {pedido.email_cliente}
+      </p>
+    )}
 
-            </div>
+    {pedido.whatsapp_cliente && (
+      <p className="text-gray-500">
+        {pedido.whatsapp_cliente}
+      </p>
+    )}
+
+    {pedido.cpf_cnpj && (
+  <p className="text-gray-500">
+    CPF/CNPJ: {pedido.cpf_cnpj}
+  </p>
+)}
+
+{pedido.endereco && (
+  <p className="text-gray-500">
+    {pedido.endereco}, {pedido.numero}
+    {pedido.complemento && ` - ${pedido.complemento}`}
+  </p>
+)}
+
+{pedido.bairro && (
+  <p className="text-gray-500">
+    {pedido.bairro}
+  </p>
+)}
+
+{pedido.cidade && (
+  <p className="text-gray-500">
+    {pedido.cidade} - {pedido.estado}
+  </p>
+)}
+
+{pedido.cep && (
+  <p className="text-gray-500">
+    CEP: {pedido.cep}
+  </p>
+)}
+
+  </div>
+
+  <div>
+    {pedido.dados_fiscais_completos ? (
+      <span className="inline-block bg-green-100 text-green-700 px-4 py-2 rounded-xl font-bold">
+        🟢 Dados fiscais completos
+      </span>
+    ) : (
+      <span className="inline-block bg-yellow-100 text-yellow-700 px-4 py-2 rounded-xl font-bold">
+        🟡 Dados fiscais incompletos
+      </span>
+    )}
+  </div>
+</div>
 
             <div className="mt-4">
 

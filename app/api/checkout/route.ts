@@ -20,6 +20,18 @@ export async function POST(req: Request) {
     console.log(body);
 
     const produtos = body.produtos;
+
+    const produtosPedido = produtos.map((produto: any) => ({
+  id: produto.id,
+  nome: produto.nome,
+  preco: produto.preco,
+  imagem: produto.imagem || "",
+  descricao: produto.descricao || "",
+  tipo_produto: produto.tipo_produto || "fisico",
+  arquivo_digital: produto.arquivo_digital || "",
+  formato_arquivo: produto.formato_arquivo || "",
+}));
+
 const nomeCliente = body.nomeCliente;
 const whatsappCliente = body.whatsappCliente;
 const emailCliente = body.emailCliente;
@@ -95,7 +107,7 @@ const estado = body.estado;
       cidade &&
       estado
   ),
-  produtos: produtos,
+  produtos: produtosPedido,
   total: total,
   status: "pendente",
 },

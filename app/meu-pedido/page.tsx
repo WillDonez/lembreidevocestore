@@ -107,6 +107,17 @@ export default function MeuPedido() {
             R$ {Number(produto.preco).toFixed(2)}
           </p>
 
+          {pedido.download_liberado && produto.arquivo_digital && (
+  <a
+    href={produto.arquivo_digital}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="inline-block mt-4 bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-xl font-bold transition"
+  >
+    ⬇ Baixar Arquivo
+  </a>
+)}
+
         </div>
 
       </div>
