@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { formatarMoeda } from "@/lib/formatadores";
 
 export default function MeuPedido() {
   const [busca, setBusca] = useState("");
@@ -63,8 +64,8 @@ export default function MeuPedido() {
             </p>
 
             <p className="text-gray-500">
-              Total: R$ {Number(pedido.total).toFixed(2)}
-            </p>
+  Total: {formatarMoeda(pedido.total)}
+</p>
 
             <p className="text-gray-500">
               Data: {new Date(pedido.created_at).toLocaleString("pt-BR")}
@@ -104,8 +105,8 @@ export default function MeuPedido() {
           </p>
 
           <p className="text-pink-500 font-bold text-lg">
-            R$ {Number(produto.preco).toFixed(2)}
-          </p>
+  {formatarMoeda(produto.preco)}
+</p>
 
           {pedido.download_liberado && produto.arquivo_digital && (
   <a

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { obterFormatoArquivo } from "@/lib/helpers/produto";
+import { formatarMoeda } from "@/lib/formatadores";
 
 export default function Admin() {
   const [nome, setNome] = useState("");
@@ -409,7 +410,7 @@ export default function Admin() {
                   </h3>
 
                   <p className="text-pink-500 font-bold">
-                    R$ {produto.preco}
+                   {formatarMoeda(produto.preco)}
                   </p>
 
                   <p className="text-gray-500">

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import CheckoutCliente from "@/components/CheckoutCliente";
 import { useCarrinho } from "@/app/context/CarrinhoContext";
+import { formatarMoeda } from "@/lib/formatadores";
 
 export default function CheckoutPage() {
   const [nomeCliente, setNomeCliente] = useState("");
@@ -123,7 +124,7 @@ setEstado("");
         </p>
 
         <p className="text-pink-500 font-bold mt-2">
-          R$ {Number(produto.preco).toFixed(2)}
+          {formatarMoeda(produto.preco)}
         </p>
       </div>
     </div>
@@ -132,7 +133,7 @@ setEstado("");
   {carrinho.length > 0 && (
     <div className="border-t pt-6 mt-6">
       <h3 className="text-3xl font-bold text-pink-500">
-        Total: R$ {total.toFixed(2)}
+        Total: {formatarMoeda(total)}
       </h3>
     </div>
   )}

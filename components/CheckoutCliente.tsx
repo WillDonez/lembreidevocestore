@@ -70,18 +70,18 @@ function formatarCpfCnpj(valor: string) {
 
 async function buscarCep(
   cep: string,
-  setEndereco: (v: string) => void,
-  setBairro: (v: string) => void,
-  setCidade: (v: string) => void,
-  setEstado: (v: string) => void,
-  setStatusCep: (v: string) => void
+  setEndereco: (value: string) => void,
+  setBairro: (value: string) => void,
+  setCidade: (value: string) => void,
+  setEstado: (value: string) => void,
+  setStatusCep: (value: string) => void
 ) {
   const cepLimpo = cep.replace(/\D/g, "");
 
   if (cepLimpo.length !== 8) {
-  setStatusCep("");
-  return;
-}
+    setStatusCep("");
+    return;
+  }
 
   try {
     const response = await fetch(
@@ -91,41 +91,28 @@ async function buscarCep(
     const data = await response.json();
 
     if (data.erro) {
-  setEndereco("");
-  setBairro("");
-  setCidade("");
-  setEstado("");
-
-  setStatusCep("erro");
-
-  alert("CEP não encontrado.");
-  return;
-}
+      setEndereco("");
+      setBairro("");
+      setCidade("");
+      setEstado("");
+      setStatusCep("erro");
+      return;
+    }
 
     setEndereco(data.logradouro || "");
     setBairro(data.bairro || "");
     setCidade(data.localidade || "");
     setEstado(data.uf || "");
     setStatusCep("encontrado");
-
   } catch (error) {
-  console.log(error);
+    console.log("Erro ao consultar CEP:", error);
 
-  setEndereco("");
-  setBairro("");
-  setCidade("");
-  setEstado("");
-
-  setStatusCep("erro");
-
-  alert("Erro ao consultar CEP.");
-}
-}
-
-async function buscarCliente(email: string) {
-  if (!email) return;
-
-  console.log("Procurando cliente:", email);
+    setEndereco("");
+    setBairro("");
+    setCidade("");
+    setEstado("");
+    setStatusCep("erro");
+  }
 }
 
 export default function CheckoutCliente({
@@ -162,47 +149,14 @@ export default function CheckoutCliente({
   estado,
   setEstado,
 }: CheckoutClienteProps) {
-
   const [statusCep, setStatusCep] = useState("");
-const [clienteEncontrado, setClienteEncontrado] = useState(false);
+  const [clienteEncontrado, setClienteEncontrado] = useState(false);
 
-  return (
-    <div className="bg-white rounded-3xl shadow-xl p-8 space-y-6">
-
-      <h2 className="text-3xl font-bold text-pink-500">
-        👤 Dados do Cliente
-      </h2>
-
-      <input
-        type="text"
-        placeholder="Nome Completo"
-        value={nomeCliente}
-        onChange={(e) => setNomeCliente(e.target.value)}
-        className="w-full border p-4 rounded-xl"
-      />
-
-      <input
-  type="email"
-  placeholder="E-mail"
-  value={emailCliente}
-  onChange={(e) =>
-    setEmailCliente(e.target.value.trimStart().toLowerCase())
-  }
-  className="w-full border p-4 rounded-xl"
-/>
-
-      <input
-  type="text"
-  placeholder="CPF ou CNPJ"
-  value={cpfCnpj}
-  onChange={(e) =>
-    setCpfCnpj(formatarCpfCnpj(e.target.value))
-  }
-  onBlur={async (e) => {
-    const cpfCnpjDigitado = e.currentTarget.value.trim();
+  async function localizarCliente(cpfCnpjDigitado: string) {
     const emailDigitado = emailCliente.trim().toLowerCase();
 
     if (!emailDigitado || !cpfCnpjDigitado) {
+      setClienteEncontrado(false);
       return;
     }
 
@@ -222,18 +176,18 @@ const [clienteEncontrado, setClienteEncontrado] = useState(false);
 
       if (!response.ok) {
         console.log("Erro ao buscar cliente:", data);
+        setClienteEncontrado(false);
         return;
       }
 
       const cliente = data.cliente;
 
       if (!cliente) {
-  setClienteEncontrado(false);
-  console.log("Cliente ainda não cadastrado.");
-  return;
-}
+        setClienteEncontrado(false);
+        return;
+      }
 
-setClienteEncontrado(true);
+      setClienteEncontrado(true);
 
       setNomeCliente(cliente.nome || "");
       setEmailCliente(cliente.email || emailDigitado);
@@ -248,116 +202,176 @@ setClienteEncontrado(true);
       setEstado(cliente.estado || "");
     } catch (error) {
       console.log("Erro ao consultar cadastro:", error);
+      setClienteEncontrado(false);
     }
-  }}
-  className="w-full border p-4 rounded-xl"
-/>
+  }
 
-{clienteEncontrado && (
-  <p className="text-green-600 font-bold mt-2 mb-2">
-    ✅ Cliente localizado automaticamente.
-  </p>
-)}
+  return (
+    <div className="space-y-4 rounded-3xl bg-white p-4">
+      <h2 className="text-2xl font-bold text-pink-500">
+        👤 Dados do Cliente
+      </h2>
 
-<input
-  type="text"
-  placeholder="WhatsApp"
-  value={whatsappCliente}
-  onChange={(e) => setWhatsappCliente(formatarWhatsApp(e.target.value))}
-  className="w-full border p-4 rounded-xl"
-/>
+      {/* Nome e e-mail */}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <input
+          type="text"
+          placeholder="Nome Completo"
+          value={nomeCliente}
+          onChange={(e) => setNomeCliente(e.target.value)}
+          className="w-full rounded-xl border p-3"
+        />
 
-<div className="border-t pt-6 mt-6">
-  <h3 className="text-2xl font-bold text-pink-500 mb-4">
-    📍 Endereço
-  </h3>
+        <input
+          type="email"
+          placeholder="E-mail"
+          value={emailCliente}
+          onChange={(e) =>
+            setEmailCliente(e.target.value.trimStart().toLowerCase())
+          }
+          className="w-full rounded-xl border p-3"
+        />
+      </div>
 
-  <input
-  type="text"
-  placeholder="CEP"
-  value={cep}
-  onChange={(e) => {
-    const valor = e.target.value
-      .replace(/\D/g, "")
-      .replace(/^(\d{5})(\d)/, "$1-$2")
-      .slice(0, 9);
+      {/* CPF/CNPJ e WhatsApp */}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <input
+          type="text"
+          placeholder="CPF ou CNPJ"
+          value={cpfCnpj}
+          onChange={(e) =>
+            setCpfCnpj(formatarCpfCnpj(e.target.value))
+          }
+          onBlur={(e) =>
+            localizarCliente(e.currentTarget.value.trim())
+          }
+          className="w-full rounded-xl border p-3"
+        />
 
-    setCep(valor);
+        <input
+          type="text"
+          placeholder="WhatsApp"
+          value={whatsappCliente}
+          onChange={(e) =>
+            setWhatsappCliente(formatarWhatsApp(e.target.value))
+          }
+          className="w-full rounded-xl border p-3"
+        />
+      </div>
 
-    buscarCep(
-  valor,
-  setEndereco,
-  setBairro,
-  setCidade,
-  setEstado,
-  setStatusCep
-);
+      {clienteEncontrado && (
+        <p className="font-bold text-green-600">
+          ✅ Cliente localizado automaticamente.
+        </p>
+      )}
 
-  }}
-  className="w-full border p-4 rounded-xl mb-4"
-/>
+      {/* Endereço */}
+      <div className="border-t pt-4">
+        <h3 className="mb-3 text-xl font-bold text-pink-500">
+          📍 Endereço
+        </h3>
 
-{statusCep === "encontrado" && (
-  <p className="text-green-600 font-bold mb-4">
-    ✅ Endereço localizado automaticamente.
-  </p>
-)}
+        {/* CEP e número */}
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_140px]">
+          <input
+            type="text"
+            placeholder="CEP"
+            value={cep}
+            onChange={(e) => {
+              const valor = e.target.value
+                .replace(/\D/g, "")
+                .replace(/^(\d{5})(\d)/, "$1-$2")
+                .slice(0, 9);
 
-{statusCep === "erro" && (
-  <p className="text-red-600 font-bold mb-4">
-    ⚠️ CEP não encontrado. Verifique e tente novamente.
-  </p>
-)}
+              setCep(valor);
 
-  <input
-    type="text"
-    placeholder="Rua"
-    value={endereco}
-    onChange={(e) => setEndereco(e.target.value)}
-    className="w-full border p-4 rounded-xl mb-4"
-  />
+              buscarCep(
+                valor,
+                setEndereco,
+                setBairro,
+                setCidade,
+                setEstado,
+                setStatusCep
+              );
+            }}
+            className="w-full rounded-xl border p-3"
+          />
 
-  <input
-    type="text"
-    placeholder="Número"
-    value={numero}
-    onChange={(e) => setNumero(e.target.value)}
-    className="w-full border p-4 rounded-xl mb-4"
-  />
+          <input
+            type="text"
+            placeholder="Número"
+            value={numero}
+            onChange={(e) => setNumero(e.target.value)}
+            className="w-full rounded-xl border p-3"
+          />
+        </div>
 
-  <input
-    type="text"
-    placeholder="Complemento"
-    value={complemento}
-    onChange={(e) => setComplemento(e.target.value)}
-    className="w-full border p-4 rounded-xl mb-4"
-  />
+        {statusCep === "encontrado" && (
+          <p className="mt-2 font-bold text-green-600">
+            ✅ Endereço localizado automaticamente.
+          </p>
+        )}
 
-  <input
-    type="text"
-    placeholder="Bairro"
-    value={bairro}
-    onChange={(e) => setBairro(e.target.value)}
-    className="w-full border p-4 rounded-xl mb-4"
-  />
+        {statusCep === "erro" && (
+          <p className="mt-2 font-bold text-red-600">
+            ⚠️ CEP não encontrado. Verifique e tente novamente.
+          </p>
+        )}
 
-  <input
-    type="text"
-    placeholder="Cidade"
-    value={cidade}
-    onChange={(e) => setCidade(e.target.value)}
-    className="w-full border p-4 rounded-xl mb-4"
-  />
+        {/* Rua e complemento */}
+        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-[2fr_1fr]">
+          <input
+            type="text"
+            placeholder="Rua"
+            value={endereco}
+            onChange={(e) => setEndereco(e.target.value)}
+            className="w-full rounded-xl border p-3"
+          />
 
-  <input
-    type="text"
-    placeholder="Estado"
-    value={estado}
-    onChange={(e) => setEstado(e.target.value)}
-    className="w-full border p-4 rounded-xl"
-  />
-</div>
+          <input
+            type="text"
+            placeholder="Complemento"
+            value={complemento}
+            onChange={(e) => setComplemento(e.target.value)}
+            className="w-full rounded-xl border p-3"
+          />
+        </div>
 
+        {/* Bairro, cidade e UF */}
+        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-[1fr_1.5fr_90px]">
+          <input
+            type="text"
+            placeholder="Bairro"
+            value={bairro}
+            onChange={(e) => setBairro(e.target.value)}
+            className="w-full rounded-xl border p-3"
+          />
+
+          <input
+            type="text"
+            placeholder="Cidade"
+            value={cidade}
+            onChange={(e) => setCidade(e.target.value)}
+            className="w-full rounded-xl border p-3"
+          />
+
+          <input
+            type="text"
+            placeholder="UF"
+            value={estado}
+            onChange={(e) =>
+              setEstado(
+                e.target.value
+                  .replace(/[^a-zA-Z]/g, "")
+                  .toUpperCase()
+                  .slice(0, 2)
+              )
+            }
+            maxLength={2}
+            className="w-full rounded-xl border p-3 uppercase"
+          />
+        </div>
+      </div>
     </div>
   );
 }

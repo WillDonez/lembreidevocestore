@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { formatarMoeda } from "@/lib/formatadores";
 
 export default function PedidosPage() {
 
@@ -249,7 +250,7 @@ export default function PedidosPage() {
     </p>
 
     <p className="text-pink-500 font-bold">
-      R$ {produto.preco}
+      {formatarMoeda(produto.preco)}
     </p>
   </div>
 </div>
@@ -263,7 +264,7 @@ export default function PedidosPage() {
             <div className="mt-6 flex justify-between items-center">
 
               <h3 className="text-3xl font-bold">
-                Total: R$ {pedido.total}
+                Total: {formatarMoeda(pedido.total)}
               </h3>
 
               <p className="text-gray-500">
