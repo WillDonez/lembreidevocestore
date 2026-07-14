@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { formatarMoeda } from "@/lib/formatadores";
 
 export default function DashboardAdmin() {
   const [produtos, setProdutos] = useState<any[]>([]);
@@ -60,7 +61,7 @@ export default function DashboardAdmin() {
         <div className="bg-white p-6 rounded-3xl shadow">
           <p className="text-gray-500">Faturamento</p>
           <h2 className="text-4xl font-bold text-pink-500">
-            R$ {faturamento.toFixed(2)}
+          {formatarMoeda(faturamento)}
           </h2>
         </div>
       </div>

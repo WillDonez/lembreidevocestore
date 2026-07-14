@@ -38,9 +38,9 @@ export default function DashboardAdmin() {
 
   return (
     <main className="min-h-screen bg-pink-50 p-10">
-      <h1 className="text-5xl font-bold text-pink-500 mb-10">
-        Dashboard
-      </h1>
+      <h1 className="text-5xl font-bold text-blue-600 mb-10">
+  🚀 DASHBOARD AURI TESTE
+</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-3xl shadow">
@@ -59,11 +59,19 @@ export default function DashboardAdmin() {
         </div>
 
         <div className="bg-white p-6 rounded-3xl shadow">
-          <p className="text-gray-500">Faturamento</p>
-          <p className="text-3xl font-bold">
-  {formatarMoeda(faturamento)}
-</p>
-        </div>
+  <p className="text-gray-500">
+    Faturamento BR
+  </p>
+
+  <h2 className="text-4xl font-bold text-pink-500">
+    {new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(Number(faturamento))}
+  </h2>
+</div>
       </div>
     </main>
   );
