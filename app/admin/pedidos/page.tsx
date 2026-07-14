@@ -33,11 +33,23 @@ export default function PedidosPage() {
   pedidoId: number,
   novoStatus: string
 ) {
+  const statusLiberaDownload =
+    novoStatus === "aprovado" || novoStatus === "pago";
+
+  const atualizacao: {
+    status: string;
+    download_liberado?: boolean;
+  } = {
+    status: novoStatus,
+  };
+
+  if (statusLiberaDownload) {
+    atualizacao.download_liberado = true;
+  }
+
   const { error } = await supabase
     .from("pedidos")
-    .update({
-      status: novoStatus,
-    })
+    .update(atualizacao)
     .eq("id", pedidoId);
 
   if (error) {
@@ -52,6 +64,9 @@ export default function PedidosPage() {
         ? {
             ...pedido,
             status: novoStatus,
+            download_liberado: statusLiberaDownload
+              ? true
+              : pedido.download_liberado,
           }
         : pedido
     )
