@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { formatarMoeda } from "@/lib/formatadores";
+import StatusBadge from "@/components/StatusBadge";
 
 export default function DashboardAdmin() {
   const [produtos, setProdutos] = useState<any[]>([]);
@@ -140,9 +141,7 @@ const ultimosPedidos = [...pedidos]
               </td>
 
               <td className="px-4 py-4">
-                <span className="inline-block rounded-xl bg-pink-100 px-3 py-2 text-sm font-bold text-pink-600">
-                  {pedido.status}
-                </span>
+                <StatusBadge status={pedido.status} />
               </td>
 
               <td className="px-4 py-4 text-right font-bold text-pink-500">
