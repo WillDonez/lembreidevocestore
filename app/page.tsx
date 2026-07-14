@@ -11,6 +11,7 @@ import BuscaProdutos from "@/components/BuscaProdutos";
 import { useCarrinho } from "@/app/context/CarrinhoContext";
 import ListaProdutos from "@/components/ListaProdutos";
 import { useRouter } from "next/navigation";
+import { formatarMoeda } from "@/lib/formatadores";
 
 export default function Home() {
 
@@ -173,47 +174,16 @@ const novidades = [...produtos]
         ⭐ Produtos em Destaque
       </h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {produtosDestaque.slice(0, 4).map((produto) => (
-          <div
-            key={produto.id}
-            className="bg-white rounded-3xl shadow-lg overflow-hidden hover:shadow-2xl hover:-translate-y-2 transition relative"
-          >
-            <span className="absolute top-4 left-4 bg-yellow-500 text-white px-4 py-2 rounded-full text-sm font-bold z-10">
-              Destaque
-            </span>
-
-            <Link href={`/produtos/${produto.id}`}>
-              {produto.imagem && (
-                <img
-                  src={produto.imagem}
-                  alt={produto.nome}
-                  className="w-full h-56 object-cover cursor-pointer"
-                />
-              )}
-            </Link>
-
-            <div className="p-5">
-              <Link href={`/produtos/${produto.id}`}>
-                <h3 className="text-2xl font-bold text-gray-800 hover:text-pink-500 cursor-pointer">
-                  {produto.nome}
-                </h3>
-              </Link>
-
-              <p className="text-pink-500 text-2xl font-bold mt-3">
-                R$ {produto.preco}
-              </p>
-
-              <button
-                onClick={() => adicionarCarrinho(produto)}
-                className="mt-5 bg-pink-500 text-white w-full py-3 rounded-2xl text-lg font-bold hover:bg-pink-600 transition"
-              >
-                🛒 Adicionar
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+  {produtosDestaque.slice(0, 5).map((produto) => (
+    <ProdutoCard
+      key={produto.id}
+      produto={produto}
+      adicionarCarrinho={adicionarCarrinho}
+    />
+  ))}
+</div>
+        
     </div>
   </section>
 )}
@@ -226,57 +196,15 @@ const novidades = [...produtos]
         🆕 Novidades
       </h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-
-        {novidades.map((produto: any) => (
-
-          <div
-            key={produto.id}
-            className="bg-white rounded-3xl shadow-lg overflow-hidden hover:shadow-2xl transition"
-          >
-
-            <Link href={`/produtos/${produto.id}`}>
-
-              {produto.imagem && (
-
-                <img
-                  src={produto.imagem}
-                  alt={produto.nome}
-                  className="w-full h-56 object-cover cursor-pointer"
-                />
-
-              )}
-
-            </Link>
-
-            <div className="p-5">
-
-              <Link href={`/produtos/${produto.id}`}>
-
-                <h3 className="text-2xl font-bold hover:text-pink-500">
-                  {produto.nome}
-                </h3>
-
-              </Link>
-
-              <p className="text-pink-500 text-2xl font-bold mt-3">
-                R$ {produto.preco}
-              </p>
-
-              <button
-                onClick={() => adicionarCarrinho(produto)}
-                className="mt-5 bg-pink-500 text-white w-full py-3 rounded-2xl font-bold hover:bg-pink-600"
-              >
-                🛒 Adicionar
-              </button>
-
-            </div>
-
-          </div>
-
-        ))}
-
-      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+  {novidades.slice(0, 5).map((produto: any) => (
+    <ProdutoCard
+      key={produto.id}
+      produto={produto}
+      adicionarCarrinho={adicionarCarrinho}
+    />
+  ))}
+</div>
 
     </div>
   </section>

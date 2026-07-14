@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import StatusBadge from "@/components/StatusBadge";
+import { formatarMoeda } from "@/lib/formatadores";
 
 type PedidoCardProps = {
   pedido: any;
@@ -41,8 +42,8 @@ export default function PedidoCard({ pedido }: PedidoCardProps) {
           <StatusBadge status={pedido.status} />
 
           <p className="text-3xl font-bold text-pink-500 mt-4">
-            R$ {Number(pedido.total).toFixed(2)}
-          </p>
+  {formatarMoeda(pedido.total)}
+</p>
         </div>
       </div>
 
@@ -79,7 +80,7 @@ export default function PedidoCard({ pedido }: PedidoCardProps) {
                 </p>
 
                 <p className="text-pink-500 font-bold mt-1">
-                  R$ {Number(produto.preco).toFixed(2)}
+                  {formatarMoeda(produto.preco)}
                 </p>
 
                 {pedido.download_liberado &&

@@ -2,6 +2,7 @@
 
 import { useCarrinho } from "@/app/context/CarrinhoContext";
 import Link from "next/link";
+import { formatarMoeda } from "@/lib/formatadores";
 
 export default function CarrinhoPage() {
 
@@ -56,8 +57,8 @@ export default function CarrinhoPage() {
             </p>
 
             <p className="text-pink-500 font-bold text-xl mt-4">
-              R$ {Number(produto.preco).toFixed(2)}
-            </p>
+  {formatarMoeda(produto.preco)}
+</p>
 
           </div>
 
@@ -75,10 +76,8 @@ export default function CarrinhoPage() {
       <div className="border-t pt-8">
 
         <h2 className="text-4xl font-bold text-pink-500">
-
-          Total: R$ {total.toFixed(2)}
-
-        </h2>
+  Total: {formatarMoeda(total)}
+</h2>
 
         <Link
   href="/checkout"
