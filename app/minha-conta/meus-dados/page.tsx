@@ -79,6 +79,44 @@ console.log("Erro:", error);
     carregarCliente();
   }, [router]);
 
+  async function salvarDados() {
+  setMensagem("");
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    router.push("/login");
+    return;
+  }
+
+  const { error } = await supabase
+    .from("clientes")
+    .update({
+      nome,
+      whatsapp,
+      cpf_cnpj: cpfCnpj,
+      cep,
+      endereco,
+      numero,
+      complemento,
+      bairro,
+      cidade,
+      estado,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("auth_user_id", user.id);
+
+  if (error) {
+    console.log("Erro ao salvar dados:", error);
+    setMensagem("Não foi possível atualizar seus dados.");
+    return;
+  }
+
+  setMensagem("✅ Dados atualizados com sucesso!");
+}
+
   if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-pink-50 p-6">
@@ -99,6 +137,14 @@ console.log("Erro:", error);
         <p className="mt-2 text-gray-500">
           Consulte e atualize suas informações cadastrais.
         </p>
+
+        <button
+        type="button"
+        onClick={() => router.push("/minha-conta")}
+        className="mt-4 inline-flex items-center gap-2 font-bold text-pink-500 transition hover:text-pink-600"
+         >
+        ← Voltar para Minha Conta
+        </button>
 
         {mensagem && (
           <div className="mt-6 rounded-2xl bg-yellow-50 p-4 font-bold text-yellow-700">
@@ -202,6 +248,16 @@ console.log("Erro:", error);
             maxLength={2}
             className="w-full rounded-xl border p-4 uppercase"
           />
+
+          <div className="mt-8 flex justify-center md:col-span-2">
+  <button
+    type="button"
+    onClick={salvarDados}
+    className="w-80 rounded-2xl bg-pink-500 py-4 text-xl font-bold text-white transition hover:bg-pink-600 hover:scale-[1.02] active:scale-[0.98]"
+  >
+    💾 Salvar Alterações
+  </button>
+</div>
         </div>
       </div>
     </main>

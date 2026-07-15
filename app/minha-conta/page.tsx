@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import PedidoCard from "@/components/PedidoCard";
+import { useRouter } from "next/navigation";
 
 type Aba =
   | "inicio"
@@ -13,25 +14,86 @@ type Aba =
 
 export default function MinhaContaPage() {
 
+  const router = useRouter();
   const [abaAtiva, setAbaAtiva] = useState<Aba>("inicio");
   const [pedidos, setPedidos] = useState<any[]>([]);
+  const [nomeCliente, setNomeCliente] = useState("");
 
   useEffect(() => {
   buscarPedidos();
+  buscarClienteLogado();
 }, []);
 
 async function buscarPedidos() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    router.push("/login");
+    return;
+  }
+
+  const emailUsuario = user.email?.trim().toLowerCase();
+
+  if (!emailUsuario) {
+    setPedidos([]);
+    return;
+  }
+
   const { data, error } = await supabase
     .from("pedidos")
     .select("*")
+    .eq("email_cliente", emailUsuario)
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.log(error);
+    console.log("Erro ao buscar pedidos do cliente:", error);
+    setPedidos([]);
     return;
   }
 
   setPedidos(data || []);
+}
+
+const downloadsLiberados = pedidos.flatMap((pedido) => {
+  if (!pedido.download_liberado) {
+    return [];
+  }
+
+  return (pedido.produtos || [])
+    .filter((produto: any) => produto.arquivo_digital)
+    .map((produto: any) => ({
+      ...produto,
+      pedidoId: pedido.id,
+      dataPedido: pedido.created_at,
+    }));
+});
+
+async function buscarClienteLogado() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    router.push("/login");
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("clientes")
+    .select("nome")
+    .eq("auth_user_id", user.id)
+    .maybeSingle();
+
+  if (error) {
+    console.log("Erro ao buscar cliente:", error);
+    return;
+  }
+
+  if (data?.nome) {
+    setNomeCliente(data.nome);
+  }
 }
 
   function renderizarConteudo() {
@@ -61,17 +123,67 @@ async function buscarPedidos() {
   );
 
 case "downloads":
-        return (
-          <div>
-            <h2 className="text-4xl font-bold text-gray-800">
-              ⬇ Downloads
-            </h2>
+  return (
+    <div>
+      <h2 className="text-4xl font-bold text-gray-800">
+        ⬇ Downloads
+      </h2>
 
-            <p className="text-gray-500 mt-4 text-lg">
-              Seus arquivos digitais liberados aparecerão aqui.
-            </p>
-          </div>
-        );
+      <p className="mt-2 text-gray-500">
+        Acesse os arquivos digitais liberados das suas compras.
+      </p>
+
+      {downloadsLiberados.length === 0 ? (
+        <div className="mt-8 rounded-2xl bg-pink-50 p-8 text-center text-gray-500">
+          Nenhum arquivo disponível para download.
+        </div>
+      ) : (
+        <div className="mt-8 space-y-4">
+          {downloadsLiberados.map((produto: any, index: number) => (
+            <div
+              key={`${produto.pedidoId}-${index}`}
+              className="flex flex-col gap-4 rounded-2xl border p-5 sm:flex-row sm:items-center"
+            >
+              {produto.imagem && (
+                <img
+                  src={produto.imagem}
+                  alt={produto.nome}
+                  className="h-20 w-20 rounded-xl border object-cover"
+                />
+              )}
+
+              <div className="min-w-0 flex-1">
+                <h3 className="text-xl font-bold text-gray-800">
+                  {produto.nome}
+                </h3>
+
+                <p className="mt-1 text-sm text-gray-500">
+                  Pedido LVS-
+                  {String(produto.pedidoId).padStart(6, "0")}
+                </p>
+
+                <p className="mt-1 text-sm text-gray-500">
+                  Compra realizada em{" "}
+                  {new Date(produto.dataPedido).toLocaleDateString(
+                    "pt-BR"
+                  )}
+                </p>
+              </div>
+
+              <a
+                href={produto.arquivo_digital}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-xl bg-green-500 px-5 py-3 text-center font-bold text-white transition hover:bg-green-600"
+              >
+                ⬇ Baixar Arquivo
+              </a>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 
       case "dados":
         return (
@@ -103,17 +215,23 @@ case "downloads":
         return (
           <div>
             <p className="text-pink-500 font-bold text-xl">
-              Bem-vindo à sua área exclusiva
-            </p>
+  😄 Seja bem-vindo(a),
+</p>
 
-            <h2 className="text-5xl font-bold text-gray-800 mt-2">
-              Olá! 👋
-            </h2>
+<h2 className="text-4xl md:text-5xl font-bold text-gray-800 mt-2">
+  {nomeCliente || "Cliente"}! 👋
+</h2>
 
-            <p className="text-gray-500 mt-5 text-xl">
-              Use o menu ao lado para acompanhar pedidos, acessar downloads
-              e consultar seus dados.
-            </p>
+<p className="text-gray-500 mt-10 text-xl">
+  Estamos felizes em ter você novamente na{" "}
+  <strong className="text-pink-500">
+    Lembrei de Você Store
+  </strong>.
+</p>
+
+<p className="text-green-500 mt-2 text-lg">
+  Acompanhe seus pedidos, acesse seus downloads e gerencie sua conta.
+</p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
               <button
@@ -143,7 +261,7 @@ case "downloads":
               </button>
 
               <button
-                onClick={() => setAbaAtiva("dados")}
+                onClick={() => router.push("/minha-conta/meus-dados")}
                 className="text-left bg-pink-50 hover:bg-pink-100 p-6 rounded-2xl transition"
               >
                 <h3 className="text-2xl font-bold">
@@ -219,15 +337,12 @@ case "downloads":
             </button>
 
             <button
-              onClick={() => setAbaAtiva("dados")}
-              className={`${itemMenu} mt-2 ${
-                abaAtiva === "dados"
-                  ? "bg-pink-500 text-white"
-                  : "hover:bg-pink-50"
-              }`}
-            >
-              👤 Meus Dados
-            </button>
+  type="button"
+  onClick={() => router.push("/minha-conta/meus-dados")}
+  className={`${itemMenu} mt-2 hover:bg-pink-50`}
+>
+  👤 Meus Dados
+</button>
 
             <button
               onClick={() => setAbaAtiva("favoritos")}
