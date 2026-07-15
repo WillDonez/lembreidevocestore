@@ -241,11 +241,15 @@ case "downloads":
             </button>
 
             <button
-              type="button"
-              className={`${itemMenu} mt-8 text-red-500 hover:bg-red-50`}
-            >
-              🚪 Sair
-            </button>
+  type="button"
+  onClick={async () => {
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  }}
+  className={`${itemMenu} mt-8 text-red-500 hover:bg-red-50`}
+>
+  🚪 Sair
+</button>
           </aside>
 
           <section className="bg-white rounded-3xl shadow-xl p-8 md:p-10 min-h-[520px]">
