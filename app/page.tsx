@@ -17,6 +17,7 @@ export default function Home() {
 
 const [produtos, setProdutos] = useState<any[]>([]);
 const [busca, setBusca] = useState("");
+const [tipoSelecionado, setTipoSelecionado] = useState("fisico");
 const [categorias, setCategorias] = useState<any[]>([]);
 const [categoriaSelecionada, setCategoriaSelecionada] = useState("Todos");
 const [nomeCliente, setNomeCliente] = useState("");
@@ -91,12 +92,19 @@ async function buscarCategorias() {
   const combinaCategoria =
     categoriaSelecionada === "Todos" ||
     produto.categoria === categoriaSelecionada;
-    
-  const combinaBusca =
-    produto.nome.toLowerCase().includes(busca.toLowerCase()) ||
-    produto.descricao?.toLowerCase().includes(busca.toLowerCase());
 
-  return combinaCategoria && combinaBusca;
+  const textoBusca = busca.trim().toLowerCase();
+
+  const combinaBusca =
+    produto.nome?.toLowerCase().includes(textoBusca) ||
+    produto.descricao?.toLowerCase().includes(textoBusca);
+
+  const combinaTipo =
+    tipoSelecionado === "fisico"
+      ? produto.tipo_produto === "fisico"
+      : produto.tipo_produto === "pdf";
+
+  return combinaCategoria && combinaBusca && combinaTipo;
 });
 
 const produtosDestaque = produtos.filter(
@@ -137,13 +145,46 @@ const novidades = [...produtos]
   Produtos personalizados feitos com carinho para momentos especiais.
 </p>
 
-    <input
-  type="text"
-  placeholder="🔍 O que você procura hoje?"
-  value={busca}
-  onChange={(e) => setBusca(e.target.value)}
-  className="w-full max-w-2xl mx-auto mt-8 border p-4 rounded-2xl text-lg shadow"
-/>
+    <div className="mx-auto mt-8 flex w-full max-w-3xl overflow-hidden rounded-2xl border border-gray-300 bg-white shadow">
+  <select
+    value={tipoSelecionado}
+    onChange={(e) => {
+      setTipoSelecionado(e.target.value);
+      setCategoriaSelecionada("Todos");
+    }}
+    className="cursor-pointer border-r border-gray-300 bg-gray-50 px-5 py-4 text-lg font-medium text-gray-700 outline-none"
+    aria-label="Tipo de produto"
+  >
+    <option value="fisico">Físico</option>
+    <option value="digital">Digital</option>
+  </select>
+
+  <input
+    type="text"
+    placeholder="O que você procura hoje?"
+    value={busca}
+    onChange={(e) => setBusca(e.target.value)}
+    className="min-w-0 flex-1 px-5 py-4 text-lg text-gray-700 outline-none"
+  />
+
+  <button
+    type="button"
+    aria-label="Pesquisar produtos"
+    className="flex items-center justify-center border-l border-gray-300 bg-gray-50 px-5 text-gray-800 transition hover:bg-pink-50 hover:text-pink-500"
+  >
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className="h-7 w-7"
+      aria-hidden="true"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-4-4" />
+    </svg>
+  </button>
+</div>
 
 <div className="flex flex-wrap justify-center gap-3 mt-8">
   {[

@@ -16,27 +16,34 @@ export default function DashboardAdmin() {
   }, []);
 
   async function buscarDados() {
-    const { data: produtosData } = await supabase
-      .from("produtos")
-      .select("*");
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-    const { data: categoriasData } = await supabase
-      .from("categorias")
-      .select("*");
-
-    const { data: pedidosData } = await supabase
-      .from("pedidos")
-      .select("*");
-
-    const { data: clientesData } = await supabase
-      .from("clientes")
-      .select("*");
-
-    setProdutos(produtosData || []);
-    setCategorias(categoriasData || []);
-    setPedidos(pedidosData || []);
-    setClientes(clientesData || []);
+  if (!session) {
+    return;
   }
+
+  const response = await fetch("/api/admin/dashboard", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    cache: "no-store",
+  });
+
+  const resultado = await response.json();
+
+  if (!response.ok) {
+    console.error("Erro ao carregar dashboard:", resultado);
+    return;
+  }
+
+  setProdutos(resultado.produtos || []);
+  setCategorias(resultado.categorias || []);
+  setPedidos(resultado.pedidos || []);
+  setClientes(resultado.clientes || []);
+}
 
   const faturamento = pedidos.reduce(
   (acc, pedido) => acc + Number(pedido.total),

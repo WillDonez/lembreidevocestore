@@ -18,18 +18,34 @@ export default function AdminLayout({
     verificarLogin();
   }, []);
 
-  async function verificarLogin() {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+ async function verificarLogin() {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-    if (!session) {
-      router.push("/login");
-      return;
-    }
-
-    setCarregando(false);
+  if (!session) {
+    router.push("/login");
+    return;
   }
+
+  const { data: cliente, error } = await supabase
+    .from("clientes")
+    .select("role")
+    .eq("auth_user_id", session.user.id)
+    .single();
+
+  if (error || !cliente) {
+    router.push("/login");
+    return;
+  }
+
+  if (cliente.role !== "admin") {
+    router.push("/minha-conta");
+    return;
+  }
+
+  setCarregando(false);
+}
 
   async function sair() {
     await supabase.auth.signOut();

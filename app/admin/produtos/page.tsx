@@ -1,186 +1,112 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { obterFormatoArquivo } from "@/lib/helpers/produto";
-import { formatarMoeda } from "@/lib/formatadores";
+import ProdutoForm from "./components/ProdutoForm";
+import ListaProdutos from "./components/ListaProdutos";
+import type { ProdutoAdministrativo } from "./hooks/useProdutoForm";
 
-export default function Admin() {
-  const [nome, setNome] = useState("");
-  const [preco, setPreco] = useState("");
-  const [arquivo, setArquivo] = useState<any>(null);
-  const [arquivoDigital, setArquivoDigital] = useState<any>(null);
-  const [descricao, setDescricao] = useState("");
-  const [categoria, setCategoria] = useState("Canecas");
-  const [tipoProduto, setTipoProduto] = useState("fisico");
-  const [destaque, setDestaque] = useState(false);
-  const [produtoEditando, setProdutoEditando] = useState<any>(null);
-  const [produtos, setProdutos] = useState<any[]>([]);
-  const [mostrarBotaoLoja, setMostrarBotaoLoja] = useState(false);
+export default function AdminProdutosPage() {
+  const [produtos, setProdutos] = useState<
+    ProdutoAdministrativo[]
+  >([]);
 
-  useEffect(() => {
-    buscarProdutos();
-  }, []);
+  const [produtoEditando, setProdutoEditando] =
+    useState<ProdutoAdministrativo | null>(null);
 
-  async function buscarProdutos() {
-    const { data, error } = await supabase
-      .from("produtos")
-      .select("*")
-      .order("created_at", { ascending: false });
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState("");
 
-    if (error) {
-      console.log(error);
-      return;
-    }
+  const buscarProdutos = useCallback(async () => {
+    setErro("");
 
-    if (data) {
-      setProdutos(data);
-    }
-  }
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-  async function uploadImagem() {
-    if (!arquivo) return "";
-
-    const nomeArquivo = `${Date.now()}-${arquivo.name
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-zA-Z0-9.]/g, "-")}`;
-
-    const { error } = await supabase.storage
-      .from("produtos")
-      .upload(nomeArquivo, arquivo);
-
-    if (error) {
-      console.error("UPLOAD ERROR:", error);
-      alert("Erro ao enviar imagem");
-      return "";
-    }
-
-    const { data } = supabase.storage
-      .from("produtos")
-      .getPublicUrl(nomeArquivo);
-
-    return data.publicUrl;
-  }
-
-  async function uploadArquivoDigital() {
-    console.log("Arquivo Digital:", arquivoDigital);
-  if (!arquivoDigital) return "";
-
-  const nomeArquivo = `${Date.now()}-${arquivoDigital.name
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9.]/g, "-")}`;
-
-  const { error } = await supabase.storage
-    .from("arquivos-digitais")
-    .upload(nomeArquivo, arquivoDigital);
-
-    console.log("Erro upload:", error);
-
-  if (error) {
-    console.error("UPLOAD ARQUIVO DIGITAL ERROR:", error);
-    alert("Erro ao enviar arquivo digital");
-    return "";
-  }
-
-  const { data } = supabase.storage
-    .from("arquivos-digitais")
-    .getPublicUrl(nomeArquivo);
-
-    console.log("URL pública:", data.publicUrl);
-
-  return data.publicUrl;
-}
-
-  async function cadastrarProduto() {
-    const imagemUrl = await uploadImagem();
-    const arquivoDigitalUrl = await uploadArquivoDigital();
-
-    if (produtoEditando) {
-      const { error } = await supabase
-        .from("produtos")
-        .update({
-  nome,
-  preco: Number(preco),
-  imagem: imagemUrl || produtoEditando.imagem,
-  descricao,
-  categoria,
-  tipo_produto: tipoProduto,
-
-  arquivo_digital:
-    arquivoDigitalUrl || produtoEditando.arquivo_digital,
-
-  formato_arquivo: obterFormatoArquivo(tipoProduto),
-
-  destaque,
-})
-        .eq("id", produtoEditando.id);
-
-      if (error) {
-        alert("Erro ao editar produto");
-        console.log(error);
+      if (!session) {
+        setErro(
+          "Sessão administrativa não encontrada. Entre novamente."
+        );
+        setProdutos([]);
         return;
       }
 
-      alert("Produto atualizado!");
-      setMostrarBotaoLoja(true);
-      limparFormulario();
-      buscarProdutos();
-      return;
+      const resposta = await fetch("/api/admin/produtos", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        cache: "no-store",
+      });
+
+      const resultado = await resposta.json();
+
+      if (!resposta.ok) {
+        console.error(
+          "Erro ao carregar produtos:",
+          resultado
+        );
+
+        setErro(
+          resultado.erro ||
+            "Não foi possível carregar os produtos."
+        );
+
+        setProdutos([]);
+        return;
+      }
+
+      setProdutos(resultado.produtos || []);
+    } catch (error) {
+      console.error(
+        "Erro interno ao carregar produtos:",
+        error
+      );
+
+      setErro(
+        "Ocorreu um erro ao carregar os produtos."
+      );
+    } finally {
+      setCarregando(false);
     }
+  }, []);
 
-    const { error } = await supabase.from("produtos")
-      .insert([
-  {
-    nome,
-    preco: Number(preco),
-    imagem: imagemUrl,
-    descricao,
-    categoria,
-    tipo_produto: tipoProduto,
-
-    arquivo_digital: arquivoDigitalUrl,
-
-    formato_arquivo: obterFormatoArquivo(tipoProduto),
-
-    destaque,
-  },
-]);
-
-    if (error) {
-      alert("Erro ao cadastrar produto");
-      console.log(error);
-      return;
-    }
-
-    alert("Produto cadastrado!");
-    setMostrarBotaoLoja(true);
-    limparFormulario();
+  useEffect(() => {
     buscarProdutos();
-  }
 
-  function limparFormulario() {
-    setProdutoEditando(null);
-    setNome("");
-    setPreco("");
-    setArquivo(null);
-    setArquivoDigital(null);
-    setDescricao("");
-    setCategoria("Canecas");
-    setTipoProduto("fisico");
-    setDestaque(false);
-  }
+    function atualizarListaProdutos() {
+      buscarProdutos();
+    }
 
-  function editarProduto(produto: any) {
+    window.addEventListener(
+      "produto-salvo",
+      atualizarListaProdutos
+    );
+
+    window.addEventListener(
+      "produto-cadastrado",
+      atualizarListaProdutos
+    );
+
+    return () => {
+      window.removeEventListener(
+        "produto-salvo",
+        atualizarListaProdutos
+      );
+
+      window.removeEventListener(
+        "produto-cadastrado",
+        atualizarListaProdutos
+      );
+    };
+  }, [buscarProdutos]);
+
+  function editarProduto(
+    produto: ProdutoAdministrativo
+  ) {
     setProdutoEditando(produto);
-    setNome(produto.nome || "");
-    setPreco(String(produto.preco || ""));
-    setDescricao(produto.descricao || "");
-    setCategoria(produto.categoria || "Canecas");
-    setTipoProduto(produto.tipo_produto || "fisico");
-    setDestaque(produto.destaque || false);
-    setArquivo(null);
 
     window.scrollTo({
       top: 0,
@@ -188,263 +114,110 @@ export default function Admin() {
     });
   }
 
-  async function excluirProduto(id: number, nomeProduto: string) {
-    const confirmar = confirm(
+  function cancelarEdicao() {
+    setProdutoEditando(null);
+  }
+
+  async function excluirProduto(
+    id: number,
+    nomeProduto: string
+  ) {
+    const confirmar = window.confirm(
       `Deseja realmente excluir "${nomeProduto}"?`
     );
 
-    if (!confirmar) return;
-
-    const { error } = await supabase
-      .from("produtos")
-      .delete()
-      .eq("id", id);
-
-    if (error) {
-      alert("Erro ao excluir produto");
-      console.log(error);
+    if (!confirmar) {
       return;
     }
 
-    buscarProdutos();
+    setErro("");
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        setErro(
+          "Sua sessão expirou. Entre novamente no painel."
+        );
+        return;
+      }
+
+      const resposta = await fetch(
+        `/api/admin/produtos?id=${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      const resultado = await resposta.json();
+
+      if (!resposta.ok) {
+        console.error(
+          "Erro ao excluir produto:",
+          resultado
+        );
+
+        setErro(
+          resultado.erro ||
+            "Não foi possível excluir o produto."
+        );
+
+        return;
+      }
+
+      if (produtoEditando?.id === id) {
+        setProdutoEditando(null);
+      }
+
+      await buscarProdutos();
+    } catch (error) {
+      console.error(
+        "Erro interno ao excluir produto:",
+        error
+      );
+
+      setErro(
+        "Ocorreu um erro ao excluir o produto."
+      );
+    }
   }
 
   return (
-    <main className="min-h-screen bg-pink-50 p-10">
-      <div className="max-w-3xl mx-auto bg-white p-10 rounded-3xl shadow-xl">
-        <div className="flex justify-between items-center mb-10">
-          <div>
-            <h1 className="text-4xl font-bold text-pink-500">
-              Produtos
-            </h1>
+    <main className="min-h-screen bg-pink-50 p-5 md:p-10">
+      <div className="mx-auto max-w-7xl">
+        <ProdutoForm
+          produtoEditando={produtoEditando}
+          onConcluido={() => {
+            setProdutoEditando(null);
+            buscarProdutos();
+          }}
+          onCancelarEdicao={cancelarEdicao}
+        />
 
-            {produtoEditando && (
-              <p className="text-blue-500 font-bold mt-2">
-                Editando produto: {produtoEditando.nome}
-              </p>
-            )}
+        {erro && (
+          <div className="mt-8 rounded-2xl border border-red-300 bg-red-50 p-5 font-bold text-red-700">
+            ⚠️ {erro}
           </div>
+        )}
 
-          {produtoEditando && (
-            <button
-              onClick={limparFormulario}
-              className="bg-gray-200 text-gray-700 px-5 py-3 rounded-2xl font-bold"
-            >
-              Cancelar edição
-            </button>
-          )}
-        </div>
-
-        <div className="space-y-6">
-          <input
-            type="text"
-            placeholder="Nome do produto"
-            value={nome}
-            onChange={(e) => setNome(e.target.value)}
-            className="w-full border p-4 rounded-xl"
+        {carregando ? (
+          <div className="mt-10 rounded-3xl bg-white p-10 text-center shadow">
+            <p className="text-xl font-bold text-pink-500">
+              Carregando produtos...
+            </p>
+          </div>
+        ) : (
+          <ListaProdutos
+            produtos={produtos}
+            onEditar={editarProduto}
+            onExcluir={excluirProduto}
           />
-
-          <input
-            type="number"
-            placeholder="Preço"
-            value={preco}
-            onChange={(e) => setPreco(e.target.value)}
-            className="w-full border p-4 rounded-xl"
-          />
-
-          <input
-            type="file"
-            onChange={(e) => {
-              if (e.target.files) {
-                setArquivo(e.target.files[0]);
-              }
-            }}
-            className="w-full border p-4 rounded-xl"
-          />
-
-          {tipoProduto !== "fisico" && (
-  <div>
-    <label className="block font-bold mb-2">
-      📁 Arquivo Digital
-    </label>
-
-    <input
-      type="file"
-      accept={tipoProduto === "pdf" ? ".pdf" : ".zip"}
-      onChange={(e) => {
-        const arquivoSelecionado = e.target.files?.[0];
-
-        console.log("Arquivo selecionado:", arquivoSelecionado);
-
-        if (arquivoSelecionado) {
-          setArquivoDigital(arquivoSelecionado);
-        }
-      }}
-      className="w-full border p-4 rounded-xl"
-    />
-
-    {arquivoDigital && (
-      <p className="text-green-600 font-bold mt-2">
-        Arquivo selecionado: {arquivoDigital.name}
-      </p>
-    )}
-  </div>
-)}
-
-          {produtoEditando?.imagem && (
-            <div>
-              <p className="font-bold mb-2">Imagem atual:</p>
-              <img
-                src={produtoEditando.imagem}
-                alt={produtoEditando.nome}
-                className="w-28 h-28 object-cover rounded-xl border"
-              />
-            </div>
-          )}
-
-          {produtoEditando?.arquivo_digital && (
-  <div className="bg-green-50 border border-green-300 rounded-2xl p-5">
-    <h3 className="font-bold text-green-700 text-lg">
-      📁 Biblioteca Digital
-    </h3>
-
-    <p className="mt-2 text-green-700">
-      ✅ Arquivo digital enviado com sucesso.
-    </p>
-
-    <a
-      href={produtoEditando.arquivo_digital}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-block mt-4 bg-green-600 text-white px-5 py-3 rounded-xl font-bold hover:bg-green-700 transition"
-    >
-      📥 Abrir Arquivo
-    </a>
-  </div>
-)}
-
-          <textarea
-            placeholder="Descrição"
-            value={descricao}
-            onChange={(e) => setDescricao(e.target.value)}
-            className="w-full border p-4 rounded-xl h-40"
-          />
-
-          <select
-            value={categoria}
-            onChange={(e) => setCategoria(e.target.value)}
-            className="w-full border p-4 rounded-xl"
-          >
-            <option>Canecas</option>
-            <option>Topos de Bolo</option>
-            <option>Lembrancinhas</option>
-            <option>Marcadores</option>
-            <option>Papelaria</option>
-            <option>Festas</option>
-            <option>Outros</option>
-          </select>
-
-          <select
-  value={tipoProduto}
-  onChange={(e) => setTipoProduto(e.target.value)}
-  className="w-full border p-4 rounded-xl"
->
-  <option value="fisico">🛍 Produto Físico</option>
-  <option value="pdf">📄 PDF</option>
-  <option value="kit">📦 Kit Digital (.ZIP)</option>
-</select>
-
-          <label className="flex items-center gap-3 text-lg font-semibold">
-            <input
-              type="checkbox"
-              checked={destaque}
-              onChange={(e) => setDestaque(e.target.checked)}
-              className="w-5 h-5"
-            />
-            ⭐ Produto em Destaque
-          </label>
-
-          <button
-            onClick={cadastrarProduto}
-            className="bg-pink-500 text-white px-6 py-4 rounded-2xl font-bold w-full"
-          >
-            {produtoEditando ? "Salvar Alterações" : "Cadastrar Produto"}
-          </button>
-
-          {mostrarBotaoLoja && (
-            <a
-              href="/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block text-center bg-green-500 text-white px-6 py-4 rounded-2xl font-bold w-full hover:bg-green-600 transition"
-            >
-              👁️ Visualizar na Loja
-            </a>
-          )}
-        </div>
-      </div>
-
-      <div className="max-w-5xl mx-auto mt-10">
-        <h2 className="text-3xl font-bold mb-6">
-          Produtos Cadastrados
-        </h2>
-
-        <div className="space-y-4">
-          {produtos.map((produto) => (
-            <div
-              key={produto.id}
-              className="bg-white p-6 rounded-2xl shadow flex justify-between items-center"
-            >
-              <div className="flex items-center gap-4">
-                {produto.imagem && (
-                  <img
-                    src={produto.imagem}
-                    alt={produto.nome}
-                    className="w-20 h-20 object-cover rounded-xl"
-                  />
-                )}
-
-                <div>
-                  <h3 className="text-2xl font-bold">
-                    {produto.nome}
-                  </h3>
-
-                  <p className="text-pink-500 font-bold">
-                   {formatarMoeda(produto.preco)}
-                  </p>
-
-                  <p className="text-gray-500">
-                    Categoria: {produto.categoria || "Sem categoria"}
-                  </p>
-
-                  {produto.destaque && (
-                    <p className="text-yellow-500 font-bold">
-                      ⭐ Destaque
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => editarProduto(produto)}
-                  className="bg-blue-500 text-white px-4 py-2 rounded-xl"
-                >
-                  Editar
-                </button>
-
-                <button
-                  onClick={() =>
-                    excluirProduto(produto.id, produto.nome)
-                  }
-                  className="bg-red-500 text-white px-4 py-2 rounded-xl"
-                >
-                  Excluir
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+        )}
       </div>
     </main>
   );
