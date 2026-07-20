@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type CheckoutClienteProps = {
   nomeCliente: string;
@@ -37,6 +37,12 @@ type CheckoutClienteProps = {
   setEstado: (value: string) => void;
 };
 
+type StatusCep =
+  | ""
+  | "carregando"
+  | "encontrado"
+  | "erro";
+
 function formatarWhatsApp(valor: string) {
   const numeros = valor.replace(/\D/g, "").slice(0, 11);
 
@@ -48,7 +54,10 @@ function formatarWhatsApp(valor: string) {
     return `(${numeros.slice(0, 2)}) ${numeros.slice(2)}`;
   }
 
-  return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 7)}-${numeros.slice(7)}`;
+  return `(${numeros.slice(0, 2)}) ${numeros.slice(
+    2,
+    7
+  )}-${numeros.slice(7)}`;
 }
 
 function formatarCpfCnpj(valor: string) {
@@ -63,56 +72,22 @@ function formatarCpfCnpj(valor: string) {
 
   return numeros
     .replace(/^(\d{2})(\d)/, "$1.$2")
-    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(
+      /^(\d{2})\.(\d{3})(\d)/,
+      "$1.$2.$3"
+    )
     .replace(/\.(\d{3})(\d)/, ".$1/$2")
     .replace(/(\d{4})(\d{1,2})$/, "$1-$2");
 }
 
-async function buscarCep(
-  cep: string,
-  setEndereco: (value: string) => void,
-  setBairro: (value: string) => void,
-  setCidade: (value: string) => void,
-  setEstado: (value: string) => void,
-  setStatusCep: (value: string) => void
-) {
-  const cepLimpo = cep.replace(/\D/g, "");
+function formatarCep(valor: string) {
+  const numeros = valor.replace(/\D/g, "").slice(0, 8);
 
-  if (cepLimpo.length !== 8) {
-    setStatusCep("");
-    return;
+  if (numeros.length <= 5) {
+    return numeros;
   }
 
-  try {
-    const response = await fetch(
-      `https://viacep.com.br/ws/${cepLimpo}/json/`
-    );
-
-    const data = await response.json();
-
-    if (data.erro) {
-      setEndereco("");
-      setBairro("");
-      setCidade("");
-      setEstado("");
-      setStatusCep("erro");
-      return;
-    }
-
-    setEndereco(data.logradouro || "");
-    setBairro(data.bairro || "");
-    setCidade(data.localidade || "");
-    setEstado(data.uf || "");
-    setStatusCep("encontrado");
-  } catch (error) {
-    console.log("Erro ao consultar CEP:", error);
-
-    setEndereco("");
-    setBairro("");
-    setCidade("");
-    setEstado("");
-    setStatusCep("erro");
-  }
+  return `${numeros.slice(0, 5)}-${numeros.slice(5)}`;
 }
 
 export default function CheckoutCliente({
@@ -149,33 +124,141 @@ export default function CheckoutCliente({
   estado,
   setEstado,
 }: CheckoutClienteProps) {
-  const [statusCep, setStatusCep] = useState("");
-  const [clienteEncontrado, setClienteEncontrado] = useState(false);
+  const [statusCep, setStatusCep] =
+    useState<StatusCep>("");
 
-  async function localizarCliente(cpfCnpjDigitado: string) {
-    const emailDigitado = emailCliente.trim().toLowerCase();
+  const [clienteEncontrado, setClienteEncontrado] =
+    useState(false);
 
-    if (!emailDigitado || !cpfCnpjDigitado) {
+  const ultimoCepConsultado = useRef("");
+
+  async function consultarCep(
+    cepDigitado: string,
+    forcarConsulta = false
+  ) {
+    const cepLimpo = cepDigitado.replace(/\D/g, "");
+
+    if (cepLimpo.length !== 8) {
+      setStatusCep("");
+      return;
+    }
+
+    if (
+      !forcarConsulta &&
+      ultimoCepConsultado.current === cepLimpo
+    ) {
+      return;
+    }
+
+    ultimoCepConsultado.current = cepLimpo;
+    setStatusCep("carregando");
+
+    try {
+      const response = await fetch(
+        `https://viacep.com.br/ws/${cepLimpo}/json/`,
+        {
+          method: "GET",
+          cache: "no-store",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Erro HTTP ao consultar CEP: ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+
+      if (data.erro) {
+        setEndereco("");
+        setBairro("");
+        setCidade("");
+        setEstado("");
+        setStatusCep("erro");
+        return;
+      }
+
+      setEndereco(data.logradouro ?? "");
+      setBairro(data.bairro ?? "");
+      setCidade(data.localidade ?? "");
+      setEstado(data.uf ?? "");
+      setStatusCep("encontrado");
+    } catch (error) {
+      console.error("Erro ao consultar CEP:", error);
+
+      ultimoCepConsultado.current = "";
+      setStatusCep("erro");
+    }
+  }
+
+  useEffect(() => {
+  const cepSalvo =
+    sessionStorage.getItem("cepFrete");
+
+  if (!cepSalvo) return;
+
+  setCep(formatarCep(cepSalvo));
+}, []);
+
+  useEffect(() => {
+    const cepLimpo = cep.replace(/\D/g, "");
+
+    if (cepLimpo.length !== 8) {
+      setStatusCep("");
+      ultimoCepConsultado.current = "";
+      return;
+    }
+
+    const temporizador = window.setTimeout(() => {
+      consultarCep(cep);
+    }, 400);
+
+    return () => {
+      window.clearTimeout(temporizador);
+    };
+  }, [cep]);
+
+  async function localizarCliente(
+    cpfCnpjDigitado: string
+  ) {
+    const emailDigitado = emailCliente
+      .trim()
+      .toLowerCase();
+
+    const documentoLimpo = cpfCnpjDigitado.replace(
+      /\D/g,
+      ""
+    );
+
+    if (!emailDigitado || documentoLimpo.length < 11) {
       setClienteEncontrado(false);
       return;
     }
 
     try {
-      const response = await fetch("/api/clientes/buscar", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: emailDigitado,
-          cpfCnpj: cpfCnpjDigitado,
-        }),
-      });
+      const response = await fetch(
+        "/api/clientes/buscar",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: emailDigitado,
+            cpfCnpj: cpfCnpjDigitado,
+          }),
+        }
+      );
 
       const data = await response.json();
 
       if (!response.ok) {
-        console.log("Erro ao buscar cliente:", data);
+        console.error(
+          "Erro ao buscar cliente:",
+          data
+        );
+
         setClienteEncontrado(false);
         return;
       }
@@ -189,19 +272,42 @@ export default function CheckoutCliente({
 
       setClienteEncontrado(true);
 
-      setNomeCliente(cliente.nome || "");
-      setEmailCliente(cliente.email || emailDigitado);
-      setWhatsappCliente(cliente.whatsapp || "");
-      setCpfCnpj(cliente.cpf_cnpj || cpfCnpjDigitado);
-      setCep(cliente.cep || "");
-      setEndereco(cliente.endereco || "");
-      setNumero(cliente.numero || "");
-      setComplemento(cliente.complemento || "");
-      setBairro(cliente.bairro || "");
-      setCidade(cliente.cidade || "");
-      setEstado(cliente.estado || "");
+      setNomeCliente(cliente.nome ?? "");
+      setEmailCliente(
+        cliente.email ?? emailDigitado
+      );
+      setWhatsappCliente(cliente.whatsapp ?? "");
+      setCpfCnpj(
+        formatarCpfCnpj(
+          cliente.cpf_cnpj ?? cpfCnpjDigitado
+        )
+      );
+
+      const cepCliente = cliente.cep ?? "";
+
+      setCep(formatarCep(cepCliente));
+      setEndereco(cliente.endereco ?? "");
+      setNumero(cliente.numero ?? "");
+      setComplemento(cliente.complemento ?? "");
+      setBairro(cliente.bairro ?? "");
+      setCidade(cliente.cidade ?? "");
+      setEstado(cliente.estado ?? "");
+
+      if (
+        cepCliente.replace(/\D/g, "").length === 8 &&
+        (!cliente.endereco ||
+          !cliente.cidade ||
+          !cliente.estado)
+      ) {
+        ultimoCepConsultado.current = "";
+        await consultarCep(cepCliente, true);
+      }
     } catch (error) {
-      console.log("Erro ao consultar cadastro:", error);
+      console.error(
+        "Erro ao consultar cadastro:",
+        error
+      );
+
       setClienteEncontrado(false);
     }
   }
@@ -212,13 +318,15 @@ export default function CheckoutCliente({
         👤 Dados do Cliente
       </h2>
 
-      {/* Nome e e-mail */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <input
           type="text"
           placeholder="Nome Completo"
           value={nomeCliente}
-          onChange={(e) => setNomeCliente(e.target.value)}
+          onChange={(e) =>
+            setNomeCliente(e.target.value)
+          }
+          autoComplete="name"
           className="w-full rounded-xl border p-3"
         />
 
@@ -226,25 +334,36 @@ export default function CheckoutCliente({
           type="email"
           placeholder="E-mail"
           value={emailCliente}
-          onChange={(e) =>
-            setEmailCliente(e.target.value.trimStart().toLowerCase())
-          }
+          onChange={(e) => {
+            setEmailCliente(
+              e.target.value
+                .trimStart()
+                .toLowerCase()
+            );
+
+            setClienteEncontrado(false);
+          }}
+          autoComplete="email"
           className="w-full rounded-xl border p-3"
         />
       </div>
 
-      {/* CPF/CNPJ e WhatsApp */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <input
           type="text"
           placeholder="CPF ou CNPJ"
           value={cpfCnpj}
-          onChange={(e) =>
-            setCpfCnpj(formatarCpfCnpj(e.target.value))
-          }
+          onChange={(e) => {
+            setCpfCnpj(
+              formatarCpfCnpj(e.target.value)
+            );
+
+            setClienteEncontrado(false);
+          }}
           onBlur={(e) =>
-            localizarCliente(e.currentTarget.value.trim())
+            localizarCliente(e.currentTarget.value)
           }
+          inputMode="numeric"
           className="w-full rounded-xl border p-3"
         />
 
@@ -253,8 +372,12 @@ export default function CheckoutCliente({
           placeholder="WhatsApp"
           value={whatsappCliente}
           onChange={(e) =>
-            setWhatsappCliente(formatarWhatsApp(e.target.value))
+            setWhatsappCliente(
+              formatarWhatsApp(e.target.value)
+            )
           }
+          autoComplete="tel"
+          inputMode="tel"
           className="w-full rounded-xl border p-3"
         />
       </div>
@@ -265,35 +388,24 @@ export default function CheckoutCliente({
         </p>
       )}
 
-      {/* Endereço */}
       <div className="border-t pt-4">
         <h3 className="mb-3 text-xl font-bold text-pink-500">
           📍 Endereço
         </h3>
 
-        {/* CEP e número */}
         <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_140px]">
           <input
             type="text"
             placeholder="CEP"
             value={cep}
             onChange={(e) => {
-              const valor = e.target.value
-                .replace(/\D/g, "")
-                .replace(/^(\d{5})(\d)/, "$1-$2")
-                .slice(0, 9);
-
-              setCep(valor);
-
-              buscarCep(
-                valor,
-                setEndereco,
-                setBairro,
-                setCidade,
-                setEstado,
-                setStatusCep
-              );
+              setCep(formatarCep(e.target.value));
+              setClienteEncontrado(false);
             }}
+            onBlur={() => consultarCep(cep, true)}
+            autoComplete="postal-code"
+            inputMode="numeric"
+            maxLength={9}
             className="w-full rounded-xl border p-3"
           />
 
@@ -301,10 +413,19 @@ export default function CheckoutCliente({
             type="text"
             placeholder="Número"
             value={numero}
-            onChange={(e) => setNumero(e.target.value)}
+            onChange={(e) =>
+              setNumero(e.target.value)
+            }
+            autoComplete="address-line2"
             className="w-full rounded-xl border p-3"
           />
         </div>
+
+        {statusCep === "carregando" && (
+          <p className="mt-2 font-bold text-blue-600">
+            🔎 Buscando endereço...
+          </p>
+        )}
 
         {statusCep === "encontrado" && (
           <p className="mt-2 font-bold text-green-600">
@@ -313,18 +434,32 @@ export default function CheckoutCliente({
         )}
 
         {statusCep === "erro" && (
-          <p className="mt-2 font-bold text-red-600">
-            ⚠️ CEP não encontrado. Verifique e tente novamente.
-          </p>
+          <div className="mt-2">
+            <p className="font-bold text-red-600">
+              ⚠️ Não foi possível localizar esse CEP.
+            </p>
+
+            <button
+              type="button"
+              onClick={() =>
+                consultarCep(cep, true)
+              }
+              className="mt-2 text-sm font-bold text-blue-600 underline"
+            >
+              Tentar consultar novamente
+            </button>
+          </div>
         )}
 
-        {/* Rua e complemento */}
         <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-[2fr_1fr]">
           <input
             type="text"
             placeholder="Rua"
             value={endereco}
-            onChange={(e) => setEndereco(e.target.value)}
+            onChange={(e) =>
+              setEndereco(e.target.value)
+            }
+            autoComplete="address-line1"
             className="w-full rounded-xl border p-3"
           />
 
@@ -332,18 +467,21 @@ export default function CheckoutCliente({
             type="text"
             placeholder="Complemento"
             value={complemento}
-            onChange={(e) => setComplemento(e.target.value)}
+            onChange={(e) =>
+              setComplemento(e.target.value)
+            }
             className="w-full rounded-xl border p-3"
           />
         </div>
 
-        {/* Bairro, cidade e UF */}
         <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-[1fr_1.5fr_90px]">
           <input
             type="text"
             placeholder="Bairro"
             value={bairro}
-            onChange={(e) => setBairro(e.target.value)}
+            onChange={(e) =>
+              setBairro(e.target.value)
+            }
             className="w-full rounded-xl border p-3"
           />
 
@@ -351,7 +489,10 @@ export default function CheckoutCliente({
             type="text"
             placeholder="Cidade"
             value={cidade}
-            onChange={(e) => setCidade(e.target.value)}
+            onChange={(e) =>
+              setCidade(e.target.value)
+            }
+            autoComplete="address-level2"
             className="w-full rounded-xl border p-3"
           />
 
@@ -367,6 +508,7 @@ export default function CheckoutCliente({
                   .slice(0, 2)
               )
             }
+            autoComplete="address-level1"
             maxLength={2}
             className="w-full rounded-xl border p-3 uppercase"
           />

@@ -17,16 +17,30 @@ export default function ProdutoCard({
   const router = useRouter();
   const { limparCarrinho } = useCarrinho();
 
-  function comprarAgora() {
-    limparCarrinho();
-    adicionarCarrinho(produto);
-    router.push("/checkout");
-  }
-
   const produtoDigital =
     Boolean(produto.arquivo_digital) ||
     produto.tipo_produto === "digital" ||
-    produto.tipo_produto === "pdf";
+    produto.tipo_produto === "pdf" ||
+    produto.tipo_produto === "kit";
+
+  function comprarAgora() {
+    limparCarrinho();
+    adicionarCarrinho(produto);
+
+    /*
+      Produto físico precisa passar pelo carrinho
+      para calcular e selecionar o frete.
+    */
+    if (!produtoDigital) {
+      router.push("/carrinho");
+      return;
+    }
+
+    /*
+      PDF e ZIP não precisam de frete.
+    */
+    router.push("/checkout");
+  }
 
   return (
     <article className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-pink-100 bg-white shadow-md transition duration-300 hover:-translate-y-1 hover:shadow-xl">
@@ -73,8 +87,8 @@ export default function ProdutoCard({
 
         <div className="mt-4">
           <p className="text-3xl font-bold text-pink-500">
-  {formatarMoeda(produto.preco)}
-</p>
+            {formatarMoeda(produto.preco)}
+          </p>
         </div>
 
         {produtoDigital && (

@@ -7,12 +7,13 @@ import {
   useState,
 } from "react";
 
-type Produto = {
+export type Produto = {
   id: number;
   nome: string;
   preco: number;
   imagem?: string;
   descricao?: string;
+  tipo_produto?: "fisico" | "pdf" | "kit";
 };
 
 type CarrinhoContextType = {
@@ -23,48 +24,71 @@ type CarrinhoContextType = {
   total: number;
 };
 
-const CarrinhoContext = createContext<CarrinhoContextType | null>(null);
+const CarrinhoContext =
+  createContext<CarrinhoContextType | null>(null);
 
 export function CarrinhoProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-
   const [carrinho, setCarrinho] = useState<Produto[]>([]);
-  const [carrinhoCarregado, setCarrinhoCarregado] = useState(false);
+  const [carrinhoCarregado, setCarrinhoCarregado] =
+    useState(false);
 
   useEffect(() => {
-  const carrinhoSalvo = localStorage.getItem("carrinho");
+    const carrinhoSalvo = localStorage.getItem("carrinho");
 
-  if (carrinhoSalvo) {
-    setCarrinho(JSON.parse(carrinhoSalvo));
-  }
+    if (carrinhoSalvo) {
+      try {
+        const carrinhoConvertido = JSON.parse(carrinhoSalvo);
 
-setCarrinhoCarregado(true);
+        if (Array.isArray(carrinhoConvertido)) {
+          setCarrinho(carrinhoConvertido);
+        }
+      } catch (error) {
+        console.error(
+          "Não foi possível carregar o carrinho salvo:",
+          error
+        );
 
-}, []);
+        localStorage.removeItem("carrinho");
+      }
+    }
 
-useEffect(() => {
-  if (!carrinhoCarregado) return;
+    setCarrinhoCarregado(true);
+  }, []);
 
-  localStorage.setItem("carrinho", JSON.stringify(carrinho));
-}, [carrinho, carrinhoCarregado]);
+  useEffect(() => {
+    if (!carrinhoCarregado) {
+      return;
+    }
+
+    localStorage.setItem(
+      "carrinho",
+      JSON.stringify(carrinho)
+    );
+  }, [carrinho, carrinhoCarregado]);
 
   function adicionarCarrinho(produto: Produto) {
     setCarrinho((atual) => [...atual, produto]);
   }
 
   function removerCarrinho(index: number) {
-    setCarrinho((atual) => atual.filter((_, i) => i !== index));
+    setCarrinho((atual) =>
+      atual.filter((_, i) => i !== index)
+    );
   }
 
   function limparCarrinho() {
     setCarrinho([]);
+    localStorage.removeItem("carrinho");
+    sessionStorage.removeItem("freteSelecionado");
   }
 
   const total = carrinho.reduce(
-    (acc, produto) => acc + Number(produto.preco),
+    (acc, produto) =>
+      acc + Number(produto.preco || 0),
     0
   );
 
@@ -87,7 +111,9 @@ export function useCarrinho() {
   const context = useContext(CarrinhoContext);
 
   if (!context) {
-    throw new Error("useCarrinho deve ser usado dentro de CarrinhoProvider");
+    throw new Error(
+      "useCarrinho deve ser usado dentro de CarrinhoProvider"
+    );
   }
 
   return context;
