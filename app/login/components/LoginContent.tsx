@@ -280,7 +280,7 @@ export default function LoginContent() {
     setCarregando(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: emailNormalizado,
         password: senha,
       });
@@ -291,7 +291,22 @@ export default function LoginContent() {
         return;
       }
 
-      router.replace(destinoAposLogin);
+      const { data: cliente, error: erroCliente } = await supabase
+        .from("clientes")
+        .select("role")
+        .eq("auth_user_id", data.user.id)
+        .single();
+
+      if (erroCliente) {
+        console.error("Erro ao consultar perfil do usuário:", erroCliente);
+      }
+
+      const destinoFinal =
+        cliente?.role === "admin"
+          ? "/admin"
+          : destinoAposLogin;
+
+      router.replace(destinoFinal);
       router.refresh();
     } catch (error) {
       console.error("Falha inesperada no login:", error);
