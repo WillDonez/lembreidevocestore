@@ -1,11 +1,60 @@
 "use client";
 
 import { formatarMoeda } from "@/lib/formatadores";
+import { obterFormato } from "@/lib/config/produtos";
 
 interface ListaProdutosProps {
   produtos: any[];
   onEditar: (produto: any) => void;
   onExcluir: (id: number, nome: string) => void;
+}
+
+function normalizarTipoProduto(tipo?: string) {
+  if (
+    tipo === "digital" ||
+    tipo === "pdf" ||
+    tipo === "kit"
+  ) {
+    return "digital";
+  }
+
+  return "fisico";
+}
+
+function obterFormatoProduto(produto: any) {
+  if (produto.formato_arquivo) {
+    return String(produto.formato_arquivo).toLowerCase();
+  }
+
+  if (produto.tipo_produto === "pdf") {
+    return "pdf";
+  }
+
+  if (produto.tipo_produto === "kit") {
+    return "zip";
+  }
+
+  return "";
+}
+
+function obterIdentificacaoProduto(produto: any) {
+  const tipoProduto = normalizarTipoProduto(
+    produto.tipo_produto
+  );
+
+  if (tipoProduto === "fisico") {
+    return "🛍 Produto físico";
+  }
+
+  const formatoArquivo = obterFormatoProduto(produto);
+  const configuracaoFormato =
+    obterFormato(formatoArquivo);
+
+  if (configuracaoFormato) {
+    return `${configuracaoFormato.icone} ${configuracaoFormato.label}`;
+  }
+
+  return "💻 Produto digital";
 }
 
 export default function ListaProdutos({
@@ -51,12 +100,21 @@ export default function ListaProdutos({
 
       <div className="space-y-4">
         {produtos.map((produto) => {
-          const logistica = Array.isArray(produto.produto_logistica)
+          const logistica = Array.isArray(
+            produto.produto_logistica
+          )
             ? produto.produto_logistica[0]
             : produto.produto_logistica;
 
+          const tipoProduto = normalizarTipoProduto(
+            produto.tipo_produto
+          );
+
           const produtoFisico =
-            produto.tipo_produto === "fisico";
+            tipoProduto === "fisico";
+
+          const identificacaoProduto =
+            obterIdentificacaoProduto(produto);
 
           return (
             <article
@@ -73,7 +131,9 @@ export default function ListaProdutos({
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <span className="text-4xl">📦</span>
+                      <span className="text-4xl">
+                        📦
+                      </span>
                     )}
                   </div>
 
@@ -88,7 +148,8 @@ export default function ListaProdutos({
 
                     <div className="mt-3 flex flex-wrap gap-2 text-sm font-bold">
                       <span className="rounded-full bg-gray-100 px-3 py-1 text-gray-600">
-                        {produto.categoria || "Sem categoria"}
+                        {produto.categoria ||
+                          "Sem categoria"}
                       </span>
 
                       <span
@@ -98,11 +159,7 @@ export default function ListaProdutos({
                             : "bg-green-100 text-green-700"
                         }`}
                       >
-                        {produtoFisico
-                          ? "🛍 Produto físico"
-                          : produto.tipo_produto === "pdf"
-                          ? "📄 PDF"
-                          : "📦 Kit digital"}
+                        {identificacaoProduto}
                       </span>
 
                       {produto.destaque && (
@@ -117,7 +174,8 @@ export default function ListaProdutos({
                         <span>
                           Estoque:{" "}
                           <strong>
-                            {logistica?.estoque_fisico ?? 0}
+                            {logistica?.estoque_fisico ??
+                              0}
                           </strong>
                         </span>
 
@@ -139,7 +197,9 @@ export default function ListaProdutos({
                         {logistica?.peso > 0 && (
                           <span>
                             Peso:{" "}
-                            <strong>{logistica.peso} kg</strong>
+                            <strong>
+                              {logistica.peso} kg
+                            </strong>
                           </span>
                         )}
                       </div>
@@ -159,7 +219,9 @@ export default function ListaProdutos({
 
                   <button
                     type="button"
-                    onClick={() => onEditar(produto)}
+                    onClick={() =>
+                      onEditar(produto)
+                    }
                     className="rounded-xl bg-blue-500 px-4 py-3 font-bold text-white transition hover:bg-blue-600"
                   >
                     ✏️ Editar
@@ -168,7 +230,10 @@ export default function ListaProdutos({
                   <button
                     type="button"
                     onClick={() =>
-                      onExcluir(produto.id, produto.nome)
+                      onExcluir(
+                        produto.id,
+                        produto.nome
+                      )
                     }
                     className="rounded-xl bg-red-500 px-4 py-3 font-bold text-white transition hover:bg-red-600"
                   >

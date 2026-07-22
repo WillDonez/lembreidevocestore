@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { FORMATOS_ARQUIVO } from "@/lib/config/produtos";
 
 type DadosLogistica = {
   peso?: number;
@@ -21,13 +22,16 @@ type DadosProduto = {
   categoria?: string;
   tipo_produto?: string;
   arquivo_digital?: string;
-  formato_arquivo?: string;
+  formato_arquivo?: string | null;
   destaque?: boolean;
   logistica?: DadosLogistica;
 };
 
+type TipoProduto = "fisico" | "digital";
+
 async function obterAdministrador(request: NextRequest) {
-  const authorization = request.headers.get("authorization");
+  const authorization =
+    request.headers.get("authorization");
 
   if (!authorization?.startsWith("Bearer ")) {
     return {
@@ -39,7 +43,9 @@ async function obterAdministrador(request: NextRequest) {
     };
   }
 
-  const accessToken = authorization.replace("Bearer ", "").trim();
+  const accessToken = authorization
+    .replace("Bearer ", "")
+    .trim();
 
   const {
     data: { user },
@@ -56,17 +62,24 @@ async function obterAdministrador(request: NextRequest) {
     };
   }
 
-  const { data: perfil, error: perfilErro } = await supabaseAdmin
-    .from("clientes")
-    .select("role")
-    .eq("auth_user_id", user.id)
-    .single();
+  const { data: perfil, error: perfilErro } =
+    await supabaseAdmin
+      .from("clientes")
+      .select("role")
+      .eq("auth_user_id", user.id)
+      .single();
 
-  if (perfilErro || !perfil || perfil.role !== "admin") {
+  if (
+    perfilErro ||
+    !perfil ||
+    perfil.role !== "admin"
+  ) {
     return {
       usuario: null,
       erro: NextResponse.json(
-        { erro: "Acesso permitido somente para administradores." },
+        {
+          erro: "Acesso permitido somente para administradores.",
+        },
         { status: 403 }
       ),
     };
@@ -78,12 +91,142 @@ async function obterAdministrador(request: NextRequest) {
   };
 }
 
+/**
+ * Mantém compatibilidade com produtos antigos.
+ *
+ * Antes:
+ * - fisico
+ * - pdf
+ * - kit
+ *
+ * Agora:
+ * - fisico
+ * - digital
+ */
+function normalizarTipoProduto(
+  tipo?: string
+): TipoProduto {
+  if (
+    tipo === "digital" ||
+    tipo === "pdf" ||
+    tipo === "kit"
+  ) {
+    return "digital";
+  }
+
+  return "fisico";
+}
+
+/**
+ * Mantém compatibilidade com os formatos antigos.
+ */
+function normalizarFormatoArquivo(
+  tipoOriginal?: string,
+  formatoOriginal?: string | null
+) {
+  if (formatoOriginal?.trim()) {
+    return formatoOriginal.trim().toLowerCase();
+  }
+
+  if (tipoOriginal === "kit") {
+    return "zip";
+  }
+
+  if (tipoOriginal === "pdf") {
+    return "pdf";
+  }
+
+  return null;
+}
+
+function formatoArquivoValido(formato: string) {
+  return FORMATOS_ARQUIVO.some(
+    (item) => item.value === formato
+  );
+}
+
+function validarProduto(body: DadosProduto) {
+  if (!body.nome?.trim()) {
+    return "Informe o nome do produto.";
+  }
+
+  const preco = Number(body.preco);
+
+  if (
+    !Number.isFinite(preco) ||
+    preco < 0
+  ) {
+    return "Informe um preço válido.";
+  }
+
+  const tipoProduto =
+    normalizarTipoProduto(body.tipo_produto);
+
+  if (tipoProduto === "digital") {
+    const formatoArquivo =
+      normalizarFormatoArquivo(
+        body.tipo_produto,
+        body.formato_arquivo
+      );
+
+    if (!formatoArquivo) {
+      return "Informe o formato do arquivo digital.";
+    }
+
+    if (!formatoArquivoValido(formatoArquivo)) {
+      return "O formato do arquivo digital não é válido.";
+    }
+
+    if (!body.arquivo_digital?.trim()) {
+      return "Informe o arquivo digital do produto.";
+    }
+  }
+
+  return null;
+}
+
+function montarDadosProduto(body: DadosProduto) {
+  const tipoProduto =
+    normalizarTipoProduto(body.tipo_produto);
+
+  const produtoDigital =
+    tipoProduto === "digital";
+
+  const formatoArquivo = produtoDigital
+    ? normalizarFormatoArquivo(
+        body.tipo_produto,
+        body.formato_arquivo
+      )
+    : null;
+
+  return {
+    nome: body.nome?.trim() || "",
+    preco: Number(body.preco),
+    imagem: body.imagem?.trim() || "",
+    descricao: body.descricao?.trim() || "",
+    categoria: body.categoria?.trim() || "Outros",
+
+    tipo_produto: tipoProduto,
+
+    arquivo_digital: produtoDigital
+      ? body.arquivo_digital?.trim() || ""
+      : "",
+
+    formato_arquivo: produtoDigital
+      ? formatoArquivo
+      : null,
+
+    destaque: Boolean(body.destaque),
+  };
+}
+
 function montarLogistica(
   produtoId: number,
-  tipoProduto: string,
+  tipoProduto: TipoProduto,
   logistica?: DadosLogistica
 ) {
-  const produtoFisico = tipoProduto === "fisico";
+  const produtoFisico =
+    tipoProduto === "fisico";
 
   return {
     produto_id: produtoId,
@@ -129,7 +272,8 @@ function montarLogistica(
 */
 export async function GET(request: NextRequest) {
   try {
-    const autenticacao = await obterAdministrador(request);
+    const autenticacao =
+      await obterAdministrador(request);
 
     if (autenticacao.erro) {
       return autenticacao.erro;
@@ -150,13 +294,20 @@ export async function GET(request: NextRequest) {
           embalagem
         )
       `)
-      .order("created_at", { ascending: false });
+      .order("created_at", {
+        ascending: false,
+      });
 
     if (error) {
-      console.error("Erro ao listar produtos:", error);
+      console.error(
+        "Erro ao listar produtos:",
+        error
+      );
 
       return NextResponse.json(
-        { erro: "Não foi possível carregar os produtos." },
+        {
+          erro: "Não foi possível carregar os produtos.",
+        },
         { status: 500 }
       );
     }
@@ -165,10 +316,15 @@ export async function GET(request: NextRequest) {
       produtos: data || [],
     });
   } catch (error) {
-    console.error("Erro interno ao listar produtos:", error);
+    console.error(
+      "Erro interno ao listar produtos:",
+      error
+    );
 
     return NextResponse.json(
-      { erro: "Ocorreu um erro interno ao carregar os produtos." },
+      {
+        erro: "Ocorreu um erro interno ao carregar os produtos.",
+      },
       { status: 500 }
     );
   }
@@ -179,66 +335,63 @@ export async function GET(request: NextRequest) {
 */
 export async function POST(request: NextRequest) {
   try {
-    const autenticacao = await obterAdministrador(request);
+    const autenticacao =
+      await obterAdministrador(request);
 
     if (autenticacao.erro) {
       return autenticacao.erro;
     }
 
-    const body = (await request.json()) as DadosProduto;
+    const body =
+      (await request.json()) as DadosProduto;
 
-    if (!body.nome?.trim()) {
+    const erroValidacao =
+      validarProduto(body);
+
+    if (erroValidacao) {
       return NextResponse.json(
-        { erro: "Informe o nome do produto." },
+        { erro: erroValidacao },
         { status: 400 }
       );
     }
 
-    if (!Number.isFinite(Number(body.preco))) {
-      return NextResponse.json(
-        { erro: "Informe um preço válido." },
-        { status: 400 }
-      );
-    }
+    const dadosProduto =
+      montarDadosProduto(body);
 
-    const tipoProduto = body.tipo_produto || "fisico";
-
-    const { data: produto, error: produtoErro } = await supabaseAdmin
-      .from("produtos")
-      .insert({
-        nome: body.nome.trim(),
-        preco: Number(body.preco),
-        imagem: body.imagem || "",
-        descricao: body.descricao || "",
-        categoria: body.categoria || "Outros",
-        tipo_produto: tipoProduto,
-        arquivo_digital: body.arquivo_digital || "",
-        formato_arquivo: body.formato_arquivo || null,
-        destaque: Boolean(body.destaque),
-      })
-      .select("*")
-      .single();
+    const { data: produto, error: produtoErro } =
+      await supabaseAdmin
+        .from("produtos")
+        .insert(dadosProduto)
+        .select("*")
+        .single();
 
     if (produtoErro || !produto) {
-      console.error("Erro ao cadastrar produto:", produtoErro);
+      console.error(
+        "Erro ao cadastrar produto:",
+        produtoErro
+      );
 
       return NextResponse.json(
-        { erro: "Não foi possível cadastrar o produto." },
+        {
+          erro: "Não foi possível cadastrar o produto.",
+        },
         { status: 500 }
       );
     }
 
-    const dadosLogistica = montarLogistica(
-      produto.id,
-      tipoProduto,
-      body.logistica
-    );
+    const dadosLogistica =
+      montarLogistica(
+        produto.id,
+        dadosProduto.tipo_produto,
+        body.logistica
+      );
 
-    const { error: logisticaErro } = await supabaseAdmin
-      .from("produto_logistica")
-      .upsert(dadosLogistica, {
-        onConflict: "produto_id",
-      });
+    const { error: logisticaErro } =
+      await supabaseAdmin
+        .from("produto_logistica")
+        .upsert(dadosLogistica, {
+          onConflict: "produto_id",
+        });
 
     if (logisticaErro) {
       console.error(
@@ -262,16 +415,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         sucesso: true,
-        mensagem: "Produto cadastrado com sucesso.",
+        mensagem:
+          "Produto cadastrado com sucesso.",
         produto,
       },
       { status: 201 }
     );
   } catch (error) {
-    console.error("Erro interno ao cadastrar produto:", error);
+    console.error(
+      "Erro interno ao cadastrar produto:",
+      error
+    );
 
     return NextResponse.json(
-      { erro: "Ocorreu um erro interno ao cadastrar o produto." },
+      {
+        erro: "Ocorreu um erro interno ao cadastrar o produto.",
+      },
       { status: 500 }
     );
   }
@@ -282,69 +441,93 @@ export async function POST(request: NextRequest) {
 */
 export async function PUT(request: NextRequest) {
   try {
-    const autenticacao = await obterAdministrador(request);
+    const autenticacao =
+      await obterAdministrador(request);
 
     if (autenticacao.erro) {
       return autenticacao.erro;
     }
 
-    const body = (await request.json()) as DadosProduto;
+    const body =
+      (await request.json()) as DadosProduto;
+
     const produtoId = Number(body.id);
 
-    if (!Number.isInteger(produtoId) || produtoId <= 0) {
+    if (
+      !Number.isInteger(produtoId) ||
+      produtoId <= 0
+    ) {
       return NextResponse.json(
         { erro: "Produto inválido." },
         { status: 400 }
       );
     }
 
-    if (!body.nome?.trim()) {
+    const erroValidacao =
+      validarProduto(body);
+
+    if (erroValidacao) {
       return NextResponse.json(
-        { erro: "Informe o nome do produto." },
+        { erro: erroValidacao },
         { status: 400 }
       );
     }
 
-    const tipoProduto = body.tipo_produto || "fisico";
+    const dadosProduto =
+      montarDadosProduto(body);
 
-    const { error: produtoErro } = await supabaseAdmin
+    const {
+      data: produtoAtualizado,
+      error: produtoErro,
+    } = await supabaseAdmin
       .from("produtos")
-      .update({
-        nome: body.nome.trim(),
-        preco: Number(body.preco),
-        imagem: body.imagem || "",
-        descricao: body.descricao || "",
-        categoria: body.categoria || "Outros",
-        tipo_produto: tipoProduto,
-        arquivo_digital: body.arquivo_digital || "",
-        formato_arquivo: body.formato_arquivo || null,
-        destaque: Boolean(body.destaque),
-      })
-      .eq("id", produtoId);
+      .update(dadosProduto)
+      .eq("id", produtoId)
+      .select("id")
+      .maybeSingle();
 
     if (produtoErro) {
-      console.error("Erro ao editar produto:", produtoErro);
+      console.error(
+        "Erro ao editar produto:",
+        produtoErro
+      );
 
       return NextResponse.json(
-        { erro: "Não foi possível editar o produto." },
+        {
+          erro: "Não foi possível editar o produto.",
+        },
         { status: 500 }
       );
     }
 
-    const dadosLogistica = montarLogistica(
-      produtoId,
-      tipoProduto,
-      body.logistica
-    );
+    if (!produtoAtualizado) {
+      return NextResponse.json(
+        {
+          erro: "O produto informado não foi encontrado.",
+        },
+        { status: 404 }
+      );
+    }
 
-    const { error: logisticaErro } = await supabaseAdmin
-      .from("produto_logistica")
-      .upsert(dadosLogistica, {
-        onConflict: "produto_id",
-      });
+    const dadosLogistica =
+      montarLogistica(
+        produtoId,
+        dadosProduto.tipo_produto,
+        body.logistica
+      );
+
+    const { error: logisticaErro } =
+      await supabaseAdmin
+        .from("produto_logistica")
+        .upsert(dadosLogistica, {
+          onConflict: "produto_id",
+        });
 
     if (logisticaErro) {
-      console.error("Erro ao atualizar logística:", logisticaErro);
+      console.error(
+        "Erro ao atualizar logística:",
+        logisticaErro
+      );
 
       return NextResponse.json(
         {
@@ -356,13 +539,19 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({
       sucesso: true,
-      mensagem: "Produto atualizado com sucesso.",
+      mensagem:
+        "Produto atualizado com sucesso.",
     });
   } catch (error) {
-    console.error("Erro interno ao editar produto:", error);
+    console.error(
+      "Erro interno ao editar produto:",
+      error
+    );
 
     return NextResponse.json(
-      { erro: "Ocorreu um erro interno ao editar o produto." },
+      {
+        erro: "Ocorreu um erro interno ao editar o produto.",
+      },
       { status: 500 }
     );
   }
@@ -371,9 +560,12 @@ export async function PUT(request: NextRequest) {
 /*
   EXCLUIR PRODUTO
 */
-export async function DELETE(request: NextRequest) {
+export async function DELETE(
+  request: NextRequest
+) {
   try {
-    const autenticacao = await obterAdministrador(request);
+    const autenticacao =
+      await obterAdministrador(request);
 
     if (autenticacao.erro) {
       return autenticacao.erro;
@@ -383,36 +575,64 @@ export async function DELETE(request: NextRequest) {
       request.nextUrl.searchParams.get("id")
     );
 
-    if (!Number.isInteger(produtoId) || produtoId <= 0) {
+    if (
+      !Number.isInteger(produtoId) ||
+      produtoId <= 0
+    ) {
       return NextResponse.json(
         { erro: "Produto inválido." },
         { status: 400 }
       );
     }
 
-    const { error } = await supabaseAdmin
+    const {
+      data: produtoExcluido,
+      error,
+    } = await supabaseAdmin
       .from("produtos")
       .delete()
-      .eq("id", produtoId);
+      .eq("id", produtoId)
+      .select("id")
+      .maybeSingle();
 
     if (error) {
-      console.error("Erro ao excluir produto:", error);
+      console.error(
+        "Erro ao excluir produto:",
+        error
+      );
 
       return NextResponse.json(
-        { erro: "Não foi possível excluir o produto." },
+        {
+          erro: "Não foi possível excluir o produto.",
+        },
         { status: 500 }
+      );
+    }
+
+    if (!produtoExcluido) {
+      return NextResponse.json(
+        {
+          erro: "O produto informado não foi encontrado.",
+        },
+        { status: 404 }
       );
     }
 
     return NextResponse.json({
       sucesso: true,
-      mensagem: "Produto excluído com sucesso.",
+      mensagem:
+        "Produto excluído com sucesso.",
     });
   } catch (error) {
-    console.error("Erro interno ao excluir produto:", error);
+    console.error(
+      "Erro interno ao excluir produto:",
+      error
+    );
 
     return NextResponse.json(
-      { erro: "Ocorreu um erro interno ao excluir o produto." },
+      {
+        erro: "Ocorreu um erro interno ao excluir o produto.",
+      },
       { status: 500 }
     );
   }

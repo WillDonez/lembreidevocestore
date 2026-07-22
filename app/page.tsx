@@ -1,261 +1,256 @@
 "use client";
 
-import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { useEffect } from "react";
 import ProdutoCard from "@/components/ProdutoCard";
 import Header from "@/components/Header";
-import BannerPrincipal from "@/components/BannerPrincipal";
-import BuscaProdutos from "@/components/BuscaProdutos";
 import { useCarrinho } from "@/app/context/CarrinhoContext";
 import ListaProdutos from "@/components/ListaProdutos";
-import { useRouter } from "next/navigation";
-import { formatarMoeda } from "@/lib/formatadores";
+import HeroCarousel from "@/components/storefront/HeroCarousel";
+import BenefitsBar from "@/components/storefront/BenefitsBar";
+import CategoryShowcase from "@/components/storefront/home/CategoryShowcase";
 
 export default function Home() {
+  const [produtos, setProdutos] = useState<any[]>([]);
+  const [busca, setBusca] = useState("");
+  const [tipoSelecionado, setTipoSelecionado] = useState("todos");
+  const [categorias, setCategorias] = useState<any[]>([]);
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState("Todos");
+  const [nomeCliente, setNomeCliente] = useState("");
+  const [whatsappCliente, setWhatsappCliente] = useState("");
+  const [emailCliente, setEmailCliente] = useState("");
+  const [cpfCnpj, setCpfCnpj] = useState("");
+  const [cep, setCep] = useState("");
+  const [endereco, setEndereco] = useState("");
+  const [numero, setNumero] = useState("");
+  const [complemento, setComplemento] = useState("");
+  const [bairro, setBairro] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [estado, setEstado] = useState("");
 
-const [produtos, setProdutos] = useState<any[]>([]);
-const [busca, setBusca] = useState("");
-const [tipoSelecionado, setTipoSelecionado] = useState("fisico");
-const [categorias, setCategorias] = useState<any[]>([]);
-const [categoriaSelecionada, setCategoriaSelecionada] = useState("Todos");
-const [nomeCliente, setNomeCliente] = useState("");
-const [whatsappCliente, setWhatsappCliente] = useState("");
-const [emailCliente, setEmailCliente] = useState("");
-const [cpfCnpj, setCpfCnpj] = useState("");
-const [cep, setCep] = useState("");
-const [endereco, setEndereco] = useState("");
-const [numero, setNumero] = useState("");
-const [complemento, setComplemento] = useState("");
-const [bairro, setBairro] = useState("");
-const [cidade, setCidade] = useState("");
-const [estado, setEstado] = useState("");
-const router = useRouter();
+  const router = useRouter();
 
-const {
-  carrinho,
-  adicionarCarrinho,
-  removerCarrinho,
-  total,
-} = useCarrinho();
+  const { carrinho, adicionarCarrinho } = useCarrinho();
 
-useEffect(() => {
-  buscarProdutos();
-  buscarCategorias();
-}, []);
- 
-async function buscarProdutos() {
-  const { data, error } = await supabase
-  .from("produtos")
-  .select("*")
-  .order("destaque", { ascending: false })
-  .order("created_at", { ascending: false });
+  const quantidadePorCategoria = produtos.reduce<Record<string, number>>(
+    (acumulador, produto) => {
+      const categoria = produto.categoria || "Sem categoria";
 
-  if (error) {
-    alert("ERRO SUPABASE");
-    console.log(error);
-    return;
+      acumulador[categoria] = (acumulador[categoria] || 0) + 1;
+
+      return acumulador;
+    },
+    {}
+  );
+
+  const nomesCategorias = [
+    "Todos",
+    ...categorias.map((categoria) => categoria.nome),
+  ];
+
+  useEffect(() => {
+    buscarProdutos();
+    buscarCategorias();
+  }, []);
+
+  async function buscarProdutos() {
+    const { data, error } = await supabase
+      .from("produtos")
+      .select("*")
+      .order("destaque", { ascending: false })
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      alert("ERRO SUPABASE");
+      console.log(error);
+      return;
+    }
+
+    alert("Produtos carregados!");
+    console.log(data);
+
+    if (data) {
+      setProdutos(data);
+    }
   }
 
-  alert("Produtos carregados!");
+  async function buscarCategorias() {
+    const { data, error } = await supabase
+      .from("categorias")
+      .select("*")
+      .order("ordem");
 
-  console.log(data);
+    if (error) {
+      console.log(error);
+      return;
+    }
 
-  if (data) {
-    setProdutos(data);
+    if (data) {
+      data.sort((a, b) => {
+        if (a.nome === "Outros") return 1;
+        if (b.nome === "Outros") return -1;
+        return a.nome.localeCompare(b.nome);
+      });
+
+      setCategorias(data);
+    }
   }
-}
-
-async function buscarCategorias() {
-  const { data, error } = await supabase
-  .from("categorias")
-  .select("*")
-  .order("ordem");
-
-  if (error) {
-    console.log(error);
-    return;
-  }
-
-  if (data) {
-    data.sort((a, b) => {
-  if (a.nome === "Outros") return 1;
-  if (b.nome === "Outros") return -1;
-  return a.nome.localeCompare(b.nome);
-});
-    setCategorias(data);
-  }
-}
 
   const produtosFiltrados = produtos.filter((produto) => {
-  const combinaCategoria =
-    categoriaSelecionada === "Todos" ||
-    produto.categoria === categoriaSelecionada;
+    const combinaCategoria =
+      categoriaSelecionada === "Todos" ||
+      produto.categoria === categoriaSelecionada;
 
-  const textoBusca = busca.trim().toLowerCase();
+    const textoBusca = busca.trim().toLowerCase();
 
-  const combinaBusca =
-    produto.nome?.toLowerCase().includes(textoBusca) ||
-    produto.descricao?.toLowerCase().includes(textoBusca);
+    const combinaBusca =
+      produto.nome?.toLowerCase().includes(textoBusca) ||
+      produto.descricao?.toLowerCase().includes(textoBusca);
 
-  const combinaTipo =
-    tipoSelecionado === "fisico"
-      ? produto.tipo_produto === "fisico"
-      : produto.tipo_produto === "pdf";
+    const combinaTipo =
+      tipoSelecionado === "todos" ||
+      (tipoSelecionado === "fisico" &&
+        produto.tipo_produto === "fisico") ||
+      (tipoSelecionado === "digital" && produto.tipo_produto === "pdf");
 
-  return combinaCategoria && combinaBusca && combinaTipo;
-});
+    return combinaCategoria && combinaBusca && combinaTipo;
+  });
 
-const produtosDestaque = produtos.filter(
-  (produto: any) => produto.destaque === true
-);
+  const produtosDestaque = produtos.filter(
+    (produto: any) => produto.destaque === true
+  );
 
-const novidades = [...produtos]
-  .sort(
-    (a: any, b: any) =>
-      new Date(b.created_at).getTime() -
-      new Date(a.created_at).getTime()
-  )
-  .slice(0, 4);
+  const novidades = [...produtos]
+    .sort(
+      (a: any, b: any) =>
+        new Date(b.created_at).getTime() -
+        new Date(a.created_at).getTime()
+    )
+    .slice(0, 4);
 
   return (
     <main className="min-h-screen bg-pink-50">
-
       <Header
-  quantidadeCarrinho={carrinho.length}
-  abrirCarrinho={() => {
-    router.push("/carrinho");
-  }}
-/>
+        quantidadeCarrinho={carrinho.length}
+        abrirCarrinho={() => {
+          router.push("/carrinho");
+        }}
+      />
 
-      <BannerPrincipal />
+      <HeroCarousel />
 
-     <section className="p-10 bg-white">
-  <div className="max-w-7xl mx-auto text-center">
-    <p className="text-pink-500 font-bold text-xl">
-      ⭐ Produtos em Destaque
-    </p>
+      <BenefitsBar />
 
-    <h2 className="text-5xl font-bold text-gray-800 mt-2">
-      Escolha o produto perfeito
-    </h2>
+      <section className="bg-white p-10">
+        <div className="mx-auto max-w-7xl text-center">
+          <p className="text-xl font-bold text-pink-500">
+            ⭐ Produtos em Destaque
+          </p>
 
-    <p className="text-gray-500 text-xl mt-4">
-  Produtos personalizados feitos com carinho para momentos especiais.
-</p>
+          <h2 className="mt-2 text-5xl font-bold text-gray-800">
+            Escolha o produto perfeito
+          </h2>
 
-    <div className="mx-auto mt-8 flex w-full max-w-3xl overflow-hidden rounded-2xl border border-gray-300 bg-white shadow">
-  <select
-    value={tipoSelecionado}
-    onChange={(e) => {
-      setTipoSelecionado(e.target.value);
-      setCategoriaSelecionada("Todos");
-    }}
-    className="cursor-pointer border-r border-gray-300 bg-gray-50 px-5 py-4 text-lg font-medium text-gray-700 outline-none"
-    aria-label="Tipo de produto"
-  >
-    <option value="fisico">Físico</option>
-    <option value="digital">Digital</option>
-  </select>
+          <p className="mt-4 text-xl text-gray-500">
+            Produtos personalizados feitos com carinho para momentos especiais.
+          </p>
 
-  <input
-    type="text"
-    placeholder="O que você procura hoje?"
-    value={busca}
-    onChange={(e) => setBusca(e.target.value)}
-    className="min-w-0 flex-1 px-5 py-4 text-lg text-gray-700 outline-none"
-  />
+          <div className="mx-auto mt-8 flex w-full max-w-3xl overflow-hidden rounded-2xl border border-gray-300 bg-white shadow">
+            <select
+              value={tipoSelecionado}
+              onChange={(e) => {
+                setTipoSelecionado(e.target.value);
+                setCategoriaSelecionada("Todos");
+              }}
+              className="cursor-pointer border-r border-gray-300 bg-gray-50 px-5 py-4 text-lg font-medium text-gray-700 outline-none"
+              aria-label="Tipo de produto"
+            >
+              <option value="todos">Todos os Produtos</option>
+              <option value="fisico">Produtos Físicos</option>
+              <option value="digital">Produtos Digitais</option>
+            </select>
 
-  <button
-    type="button"
-    aria-label="Pesquisar produtos"
-    className="flex items-center justify-center border-l border-gray-300 bg-gray-50 px-5 text-gray-800 transition hover:bg-pink-50 hover:text-pink-500"
-  >
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      className="h-7 w-7"
-      aria-hidden="true"
-    >
-      <circle cx="11" cy="11" r="7" />
-      <path d="m20 20-4-4" />
-    </svg>
-  </button>
-</div>
+            <input
+              type="text"
+              placeholder="O que você procura hoje?"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              className="min-w-0 flex-1 px-5 py-4 text-lg text-gray-700 outline-none"
+            />
 
-<div className="flex flex-wrap justify-center gap-3 mt-8">
-  {[
-  { nome: "Todos", icone: "🏠" },
-  ...categorias,
-].map((categoria) => (
-    <button
-     key={categoria.nome}
-      onClick={() => setCategoriaSelecionada(categoria.nome)}
-      className={`px-5 py-3 rounded-full font-bold transition ${
-        categoriaSelecionada === categoria.nome
-          ? "bg-pink-500 text-white"
-          : "bg-pink-100 text-pink-600 hover:bg-pink-200"
-      }`}
-    >
-      {categoria.icone} {categoria.nome}
-    </button>
-  ))}
-</div>
+            <button
+              type="button"
+              aria-label="Pesquisar produtos"
+              className="flex items-center justify-center border-l border-gray-300 bg-gray-50 px-5 text-gray-800 transition hover:bg-pink-50 hover:text-pink-500"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="h-7 w-7"
+                aria-hidden="true"
+              >
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-4-4" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </section>
 
-  </div>
-</section>
+      <CategoryShowcase
+        categorias={nomesCategorias}
+        categoriaSelecionada={categoriaSelecionada}
+        aoSelecionarCategoria={setCategoriaSelecionada}
+        quantidadePorCategoria={quantidadePorCategoria}
+      />
 
-{produtosDestaque.length > 0 && (
-  <section className="bg-white px-10 pb-10">
-    <div className="max-w-7xl mx-auto">
-      <h2 className="text-4xl font-bold text-gray-800 mb-6">
-        ⭐ Produtos em Destaque
-      </h2>
+      {produtosDestaque.length > 0 && (
+        <section className="bg-white px-10 pb-10">
+          <div className="mx-auto max-w-7xl">
+            <h2 className="mb-6 text-4xl font-bold text-gray-800">
+              ⭐ Produtos em Destaque
+            </h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
-  {produtosDestaque.slice(0, 5).map((produto) => (
-    <ProdutoCard
-      key={produto.id}
-      produto={produto}
-      adicionarCarrinho={adicionarCarrinho}
-    />
-  ))}
-</div>
-        
-    </div>
-  </section>
-)}
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {produtosDestaque.slice(0, 5).map((produto) => (
+                <ProdutoCard
+                  key={produto.id}
+                  produto={produto}
+                  adicionarCarrinho={adicionarCarrinho}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
-{novidades.length > 0 && (
-  <section className="bg-pink-50 px-10 py-10">
-    <div className="max-w-7xl mx-auto">
+      {novidades.length > 0 && (
+        <section className="bg-pink-50 px-10 py-10">
+          <div className="mx-auto max-w-7xl">
+            <h2 className="mb-6 text-4xl font-bold text-gray-800">
+              🆕 Novidades
+            </h2>
 
-      <h2 className="text-4xl font-bold text-gray-800 mb-6">
-        🆕 Novidades
-      </h2>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {novidades.slice(0, 5).map((produto: any) => (
+                <ProdutoCard
+                  key={produto.id}
+                  produto={produto}
+                  adicionarCarrinho={adicionarCarrinho}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
-  {novidades.slice(0, 5).map((produto: any) => (
-    <ProdutoCard
-      key={produto.id}
-      produto={produto}
-      adicionarCarrinho={adicionarCarrinho}
-    />
-  ))}
-</div>
-
-    </div>
-  </section>
-)}
-
-<ListaProdutos
-  produtos={produtosFiltrados}
-  adicionarCarrinho={adicionarCarrinho}
-/>
-
+      <ListaProdutos
+        produtos={produtosFiltrados}
+        adicionarCarrinho={adicionarCarrinho}
+      />
     </main>
   );
 }

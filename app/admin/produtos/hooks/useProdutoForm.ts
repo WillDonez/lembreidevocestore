@@ -2,7 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { obterFormatoArquivo } from "@/lib/helpers/produto";
+import {
+  ehProdutoDigital,
+  obterFormato,
+} from "@/lib/config/produtos";
 import type { DadosLogisticaForm } from "../components/LogisticaForm";
 
 export type ProdutoAdministrativo = {
@@ -57,6 +60,58 @@ const LOGISTICA_INICIAL: DadosLogisticaForm = {
   freteAtivo: true,
 };
 
+/**
+ * Converte os tipos antigos para a nova estrutura.
+ *
+ * Antes:
+ * - fisico
+ * - pdf
+ * - kit
+ *
+ * Agora:
+ * - fisico
+ * - digital
+ */
+function normalizarTipoProduto(tipo?: string) {
+  if (tipo === "pdf" || tipo === "kit" || tipo === "digital") {
+    return "digital";
+  }
+
+  return "fisico";
+}
+
+/**
+ * Descobre o formato dos produtos antigos.
+ */
+function normalizarFormatoArquivo(
+  tipoProduto?: string,
+  formatoArquivo?: string
+) {
+  if (formatoArquivo) {
+    return formatoArquivo.toLowerCase();
+  }
+
+  if (tipoProduto === "kit") {
+    return "zip";
+  }
+
+  if (tipoProduto === "pdf") {
+    return "pdf";
+  }
+
+  return "pdf";
+}
+
+function obterExtensaoArquivo(nomeArquivo: string) {
+  const partes = nomeArquivo.toLowerCase().split(".");
+
+  if (partes.length < 2) {
+    return "";
+  }
+
+  return `.${partes.pop()}`;
+}
+
 export default function useProdutoForm({
   produtoEditando = null,
   onConcluido,
@@ -69,17 +124,28 @@ export default function useProdutoForm({
   const [preco, setPreco] = useState("");
   const [descricao, setDescricao] = useState("");
   const [categoria, setCategoria] = useState("Canecas");
+
   const [tipoProduto, setTipoProduto] =
     useState("fisico");
+
+  const [formatoArquivo, setFormatoArquivo] =
+    useState("pdf");
+
   const [destaque, setDestaque] = useState(false);
 
-  const [imagem, setImagem] = useState<File | null>(null);
+  const [imagem, setImagem] =
+    useState<File | null>(null);
+
   const [arquivoDigital, setArquivoDigital] =
     useState<File | null>(null);
 
-  const [imagemAtual, setImagemAtual] = useState("");
-  const [arquivoDigitalAtual, setArquivoDigitalAtual] =
+  const [imagemAtual, setImagemAtual] =
     useState("");
+
+  const [
+    arquivoDigitalAtual,
+    setArquivoDigitalAtual,
+  ] = useState("");
 
   const [logistica, setLogistica] =
     useState<DadosLogisticaForm>(LOGISTICA_INICIAL);
@@ -101,39 +167,75 @@ export default function useProdutoForm({
       ? produtoEditando.produto_logistica[0]
       : produtoEditando.produto_logistica;
 
+    const tipoNormalizado = normalizarTipoProduto(
+      produtoEditando.tipo_produto
+    );
+
+    const formatoNormalizado = normalizarFormatoArquivo(
+      produtoEditando.tipo_produto,
+      produtoEditando.formato_arquivo
+    );
+
     setNome(produtoEditando.nome || "");
-    setPreco(String(produtoEditando.preco ?? ""));
-    setDescricao(produtoEditando.descricao || "");
+
+    setPreco(
+      String(produtoEditando.preco ?? "")
+    );
+
+    setDescricao(
+      produtoEditando.descricao || ""
+    );
+
     setCategoria(
       produtoEditando.categoria || "Canecas"
     );
-    setTipoProduto(
-      produtoEditando.tipo_produto || "fisico"
+
+    setTipoProduto(tipoNormalizado);
+    setFormatoArquivo(formatoNormalizado);
+
+    setDestaque(
+      Boolean(produtoEditando.destaque)
     );
-    setDestaque(Boolean(produtoEditando.destaque));
 
     setImagem(null);
     setArquivoDigital(null);
 
-    setImagemAtual(produtoEditando.imagem || "");
+    setImagemAtual(
+      produtoEditando.imagem || ""
+    );
+
     setArquivoDigitalAtual(
       produtoEditando.arquivo_digital || ""
     );
 
     setLogistica({
-      peso: String(logisticaProduto?.peso ?? ""),
-      largura: String(logisticaProduto?.largura ?? ""),
-      altura: String(logisticaProduto?.altura ?? ""),
+      peso: String(
+        logisticaProduto?.peso ?? ""
+      ),
+
+      largura: String(
+        logisticaProduto?.largura ?? ""
+      ),
+
+      altura: String(
+        logisticaProduto?.altura ?? ""
+      ),
+
       comprimento: String(
         logisticaProduto?.comprimento ?? ""
       ),
+
       valorDeclarado: String(
         logisticaProduto?.valor_declarado ?? ""
       ),
+
       estoqueFisico: String(
         logisticaProduto?.estoque_fisico ?? ""
       ),
-      embalagem: logisticaProduto?.embalagem || "",
+
+      embalagem:
+        logisticaProduto?.embalagem || "",
+
       freteAtivo:
         logisticaProduto?.frete_ativo ?? true,
     });
@@ -158,11 +260,15 @@ export default function useProdutoForm({
     setPreco("");
     setDescricao("");
     setCategoria("Canecas");
+
     setTipoProduto("fisico");
+    setFormatoArquivo("pdf");
+
     setDestaque(false);
 
     setImagem(null);
     setArquivoDigital(null);
+
     setImagemAtual("");
     setArquivoDigitalAtual("");
 
@@ -177,11 +283,30 @@ export default function useProdutoForm({
     limparFormulario();
     setMensagem("");
     setErro("");
+
     onCancelarEdicao?.();
   }
 
   function alterarTipoProduto(novoTipo: string) {
-    setTipoProduto(novoTipo);
+    const tipoNormalizado =
+      novoTipo === "digital"
+        ? "digital"
+        : "fisico";
+
+    setTipoProduto(tipoNormalizado);
+    setArquivoDigital(null);
+
+    if (tipoNormalizado === "fisico") {
+      setArquivoDigitalAtual("");
+    }
+
+    limparCampoArquivoDigital();
+  }
+
+  function alterarFormatoArquivo(
+    novoFormato: string
+  ) {
+    setFormatoArquivo(novoFormato);
     setArquivoDigital(null);
     limparCampoArquivoDigital();
   }
@@ -223,7 +348,7 @@ export default function useProdutoForm({
   }
 
   async function uploadDigital(): Promise<string> {
-    if (tipoProduto === "fisico") {
+    if (!ehProdutoDigital(tipoProduto)) {
       return "";
     }
 
@@ -257,6 +382,56 @@ export default function useProdutoForm({
     return data.publicUrl;
   }
 
+  function validarArquivoDigital() {
+    if (!ehProdutoDigital(tipoProduto)) {
+      return;
+    }
+
+    const configuracaoFormato =
+      obterFormato(formatoArquivo);
+
+    if (!configuracaoFormato) {
+      throw new Error(
+        "Selecione um formato de arquivo válido."
+      );
+    }
+
+    if (
+      !arquivoDigital &&
+      !arquivoDigitalAtual
+    ) {
+      throw new Error(
+        `Selecione o arquivo principal no formato ${configuracaoFormato.label}.`
+      );
+    }
+
+    if (!arquivoDigital) {
+      return;
+    }
+
+    const extensaoSelecionada =
+      obterExtensaoArquivo(
+        arquivoDigital.name
+      );
+
+    const extensoesPermitidas =
+      configuracaoFormato.accept
+        .split(",")
+        .map((extensao) =>
+          extensao.trim().toLowerCase()
+        );
+
+    if (
+      !extensoesPermitidas.includes(
+        extensaoSelecionada
+      )
+    ) {
+      throw new Error(
+        `O arquivo selecionado não corresponde ao formato ${configuracaoFormato.label}. Formatos permitidos: ${configuracaoFormato.accept}.`
+      );
+    }
+  }
+
   function validarFormulario() {
     if (!nome.trim()) {
       throw new Error(
@@ -275,17 +450,7 @@ export default function useProdutoForm({
       );
     }
 
-    if (
-      tipoProduto !== "fisico" &&
-      !arquivoDigital &&
-      !arquivoDigitalAtual
-    ) {
-      throw new Error(
-        tipoProduto === "pdf"
-          ? "Selecione o arquivo PDF."
-          : "Selecione o arquivo ZIP."
-      );
-    }
+    validarArquivoDigital();
 
     if (
       tipoProduto === "fisico" &&
@@ -294,6 +459,7 @@ export default function useProdutoForm({
       const peso = Number(logistica.peso);
       const largura = Number(logistica.largura);
       const altura = Number(logistica.altura);
+
       const comprimento = Number(
         logistica.comprimento
       );
@@ -329,7 +495,9 @@ export default function useProdutoForm({
         );
       }
 
-      const imagemUrl = await uploadImagem();
+      const imagemUrl =
+        await uploadImagem();
+
       const arquivoDigitalUrl =
         await uploadDigital();
 
@@ -341,54 +509,88 @@ export default function useProdutoForm({
         "/api/admin/produtos",
         {
           method: metodo,
+
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
+
+            Authorization:
+              `Bearer ${session.access_token}`,
           },
+
           body: JSON.stringify({
             id: produtoEditando?.id,
+
             nome: nome.trim(),
+
             preco: Number(preco),
+
             imagem: imagemUrl,
+
             descricao: descricao.trim(),
+
             categoria,
+
             tipo_produto: tipoProduto,
-            arquivo_digital: arquivoDigitalUrl,
+
+            arquivo_digital:
+              ehProdutoDigital(tipoProduto)
+                ? arquivoDigitalUrl
+                : "",
+
             formato_arquivo:
-              obterFormatoArquivo(tipoProduto),
+              ehProdutoDigital(tipoProduto)
+                ? formatoArquivo
+                : null,
+
             destaque,
 
             logistica: {
-              peso: Number(logistica.peso || 0),
+              peso: Number(
+                logistica.peso || 0
+              ),
+
               largura: Number(
                 logistica.largura || 0
               ),
+
               altura: Number(
                 logistica.altura || 0
               ),
+
               comprimento: Number(
                 logistica.comprimento || 0
               ),
+
               valor_declarado: Number(
                 logistica.valorDeclarado ||
                   preco ||
                   0
               ),
+
               frete_ativo:
                 tipoProduto === "fisico"
                   ? logistica.freteAtivo
                   : false,
-              estoque_fisico: Number(
-                logistica.estoqueFisico || 0
-              ),
+
+              estoque_fisico:
+                tipoProduto === "fisico"
+                  ? Number(
+                      logistica.estoqueFisico ||
+                        0
+                    )
+                  : 0,
+
               embalagem:
-                logistica.embalagem.trim(),
+                tipoProduto === "fisico"
+                  ? logistica.embalagem.trim()
+                  : "",
             },
           }),
         }
       );
 
-      const resultado = await resposta.json();
+      const resultado =
+        await resposta.json();
 
       if (!resposta.ok) {
         console.error(
@@ -414,7 +616,8 @@ export default function useProdutoForm({
         new CustomEvent("produto-salvo")
       );
 
-      // Mantém compatibilidade temporária com o evento antigo.
+      // Compatibilidade temporária
+      // com o evento utilizado anteriormente.
       window.dispatchEvent(
         new CustomEvent("produto-cadastrado")
       );
@@ -448,6 +651,9 @@ export default function useProdutoForm({
 
     tipoProduto,
     alterarTipoProduto,
+
+    formatoArquivo,
+    alterarFormatoArquivo,
 
     destaque,
     setDestaque,

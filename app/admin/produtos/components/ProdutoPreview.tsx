@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { formatarMoeda } from "@/lib/formatadores";
+import { obterFormato } from "@/lib/config/produtos";
 import { DadosLogisticaForm } from "./LogisticaForm";
 
 interface ProdutoPreviewProps {
@@ -9,6 +10,7 @@ interface ProdutoPreviewProps {
   preco: string;
   categoria: string;
   tipoProduto: string;
+  formatoArquivo: string;
   imagem: File | null;
   destaque: boolean;
   logistica: DadosLogisticaForm;
@@ -19,6 +21,7 @@ export default function ProdutoPreview({
   preco,
   categoria,
   tipoProduto,
+  formatoArquivo,
   imagem,
   destaque,
   logistica,
@@ -43,15 +46,18 @@ export default function ProdutoPreview({
   const precoNumero = Number(preco || 0);
 
   function nomeTipoProduto() {
-    if (tipoProduto === "pdf") {
-      return "📄 Arquivo PDF";
+    if (produtoFisico) {
+      return "🛍 Produto físico";
     }
 
-    if (tipoProduto === "kit") {
-      return "📦 Kit digital";
+    const configuracaoFormato =
+      obterFormato(formatoArquivo);
+
+    if (configuracaoFormato) {
+      return `${configuracaoFormato.icone} ${configuracaoFormato.label}`;
     }
 
-    return "🛍 Produto físico";
+    return "💻 Produto digital";
   }
 
   return (
@@ -102,7 +108,9 @@ export default function ProdutoPreview({
 
           <p className="mt-3 text-3xl font-bold text-pink-500">
             {formatarMoeda(
-              Number.isFinite(precoNumero) ? precoNumero : 0
+              Number.isFinite(precoNumero)
+                ? precoNumero
+                : 0
             )}
           </p>
 
@@ -118,7 +126,7 @@ export default function ProdutoPreview({
             </span>
           </div>
 
-          {produtoFisico && (
+          {produtoFisico ? (
             <div className="mt-5 space-y-2 rounded-2xl bg-gray-50 p-4 text-sm text-gray-600">
               <p>
                 Estoque:{" "}
@@ -148,6 +156,23 @@ export default function ProdutoPreview({
                   <strong>{logistica.peso} kg</strong>
                 </p>
               )}
+            </div>
+          ) : (
+            <div className="mt-5 rounded-2xl bg-green-50 p-4 text-sm text-green-700">
+              <p>
+                Entrega:{" "}
+                <strong>
+                  Download após a confirmação do pagamento
+                </strong>
+              </p>
+
+              <p className="mt-2">
+                Formato:{" "}
+                <strong>
+                  {obterFormato(formatoArquivo)?.label ||
+                    "Digital"}
+                </strong>
+              </p>
             </div>
           )}
 

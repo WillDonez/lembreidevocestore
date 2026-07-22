@@ -1,8 +1,16 @@
 "use client";
 
+import {
+  FORMATOS_ARQUIVO,
+  TIPOS_PRODUTO,
+  obterAcceptDoFormato,
+  obterFormato,
+} from "@/lib/config/produtos";
+
 import LogisticaForm from "./LogisticaForm";
 import UploadImagem from "./UploadImagem";
 import ProdutoPreview from "./ProdutoPreview";
+
 import useProdutoForm, {
   ProdutoAdministrativo,
 } from "../hooks/useProdutoForm";
@@ -34,6 +42,9 @@ export default function ProdutoForm({
     tipoProduto,
     alterarTipoProduto,
 
+    formatoArquivo,
+    alterarFormatoArquivo,
+
     destaque,
     setDestaque,
 
@@ -62,6 +73,11 @@ export default function ProdutoForm({
     onCancelarEdicao,
   });
 
+  const produtoDigital = tipoProduto === "digital";
+
+  const configuracaoFormato =
+    obterFormato(formatoArquivo);
+
   return (
     <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
       {/* COLUNA ESQUERDA */}
@@ -81,7 +97,7 @@ export default function ProdutoForm({
             <p className="mt-2 text-gray-500">
               {estaEditando
                 ? "Atualize os dados do produto selecionado."
-                : "Cadastre produtos físicos, PDFs e kits digitais."}
+                : "Cadastre produtos físicos e digitais."}
             </p>
 
             {estaEditando && (
@@ -133,7 +149,9 @@ export default function ProdutoForm({
 
               <select
                 value={categoria}
-                onChange={(e) => setCategoria(e.target.value)}
+                onChange={(e) =>
+                  setCategoria(e.target.value)
+                }
                 className="w-full rounded-xl border p-4"
               >
                 <option>Canecas</option>
@@ -158,18 +176,21 @@ export default function ProdutoForm({
                 }
                 className="w-full rounded-xl border p-4"
               >
-                <option value="fisico">
-                  🛍 Produto físico
-                </option>
-
-                <option value="pdf">
-                  📄 Arquivo PDF
-                </option>
-
-                <option value="kit">
-                  📦 Kit digital (.ZIP)
-                </option>
+                {TIPOS_PRODUTO.map((tipo) => (
+                  <option
+                    key={tipo.value}
+                    value={tipo.value}
+                  >
+                    {tipo.label}
+                  </option>
+                ))}
               </select>
+
+              <p className="mt-2 text-sm text-gray-500">
+                {produtoDigital
+                  ? "O cliente receberá o arquivo para download após a compra."
+                  : "O produto utilizará estoque, embalagem e cálculo de frete."}
+              </p>
             </div>
           </div>
 
@@ -180,7 +201,9 @@ export default function ProdutoForm({
 
             <textarea
               value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
+              onChange={(e) =>
+                setDescricao(e.target.value)
+              }
               placeholder="Descreva as características do produto."
               className="h-36 w-full rounded-xl border p-4"
             />
@@ -192,52 +215,118 @@ export default function ProdutoForm({
               onSelecionar={setImagem}
             />
 
-            {estaEditando && imagemAtual && !imagem && (
-              <div className="mt-4 rounded-2xl border bg-gray-50 p-4">
-                <p className="mb-3 font-bold text-gray-700">
-                  Imagem atual
-                </p>
+            {estaEditando &&
+              imagemAtual &&
+              !imagem && (
+                <div className="mt-4 rounded-2xl border bg-gray-50 p-4">
+                  <p className="mb-3 font-bold text-gray-700">
+                    Imagem atual
+                  </p>
 
-                <img
-                  src={imagemAtual}
-                  alt={nome || "Imagem atual do produto"}
-                  className="h-32 w-32 rounded-xl object-cover"
-                />
+                  <img
+                    src={imagemAtual}
+                    alt={
+                      nome ||
+                      "Imagem atual do produto"
+                    }
+                    className="h-32 w-32 rounded-xl object-cover"
+                  />
 
-                <p className="mt-3 text-sm text-gray-500">
-                  Selecione uma nova imagem somente para substituir
-                  a atual.
-                </p>
-              </div>
-            )}
+                  <p className="mt-3 text-sm text-gray-500">
+                    Selecione uma nova imagem somente
+                    para substituir a atual.
+                  </p>
+                </div>
+              )}
           </div>
 
-          {tipoProduto !== "fisico" && (
-            <div className="mt-6 rounded-2xl border border-green-200 bg-green-50 p-5">
-              <label className="mb-2 block font-bold text-green-800">
-                📁 Arquivo digital
-              </label>
+          {produtoDigital && (
+            <div className="mt-6 space-y-5 rounded-2xl border border-green-200 bg-green-50 p-5">
+              <div>
+                <p className="font-bold text-green-900">
+                  💻 Configuração do produto digital
+                </p>
 
-              <input
-                ref={inputArquivoDigitalRef}
-                type="file"
-                accept={
-                  tipoProduto === "pdf" ? ".pdf" : ".zip"
-                }
-                onChange={(e) =>
-                  setArquivoDigital(
-                    e.target.files?.[0] || null
-                  )
-                }
-                className="w-full rounded-xl border bg-white p-4"
-              />
+                <p className="mt-1 text-sm text-green-700">
+                  Escolha o formato e envie o arquivo
+                  principal que será entregue ao cliente.
+                </p>
+              </div>
+
+              <div>
+                <label className="mb-2 block font-bold text-green-800">
+                  Formato do arquivo
+                </label>
+
+                <select
+                  value={formatoArquivo}
+                  onChange={(e) =>
+                    alterarFormatoArquivo(
+                      e.target.value
+                    )
+                  }
+                  className="w-full rounded-xl border border-green-200 bg-white p-4"
+                >
+                  {FORMATOS_ARQUIVO.map(
+                    (formato) => (
+                      <option
+                        key={formato.value}
+                        value={formato.value}
+                      >
+                        {formato.icone}{" "}
+                        {formato.label}
+                      </option>
+                    )
+                  )}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block font-bold text-green-800">
+                  📁 Arquivo principal
+                </label>
+
+                <input
+                  ref={inputArquivoDigitalRef}
+                  type="file"
+                  accept={obterAcceptDoFormato(
+                    formatoArquivo
+                  )}
+                  onChange={(e) =>
+                    setArquivoDigital(
+                      e.target.files?.[0] || null
+                    )
+                  }
+                  className="w-full rounded-xl border border-green-200 bg-white p-4"
+                />
+
+                <p className="mt-2 text-sm text-green-700">
+                  Formato selecionado:{" "}
+                  <strong>
+                    {configuracaoFormato?.label ||
+                      formatoArquivo}
+                  </strong>
+                  .
+                  {" "}Extensões permitidas:{" "}
+                  <strong>
+                    {configuracaoFormato?.accept ||
+                      "*"}
+                  </strong>
+                  .
+                </p>
+              </div>
 
               {estaEditando &&
                 arquivoDigitalAtual &&
                 !arquivoDigital && (
-                  <div className="mt-4 rounded-xl bg-white p-4">
+                  <div className="rounded-xl bg-white p-4">
                     <p className="font-bold text-green-700">
                       ✅ Arquivo digital atual mantido
+                    </p>
+
+                    <p className="mt-1 text-sm text-gray-500">
+                      Selecione um novo arquivo somente
+                      para substituir o arquivo atual.
                     </p>
 
                     <a
@@ -252,9 +341,15 @@ export default function ProdutoForm({
                 )}
 
               {arquivoDigital && (
-                <p className="mt-3 text-sm font-bold text-green-700">
-                  ✅ Arquivo selecionado: {arquivoDigital.name}
-                </p>
+                <div className="rounded-xl bg-white p-4">
+                  <p className="font-bold text-green-700">
+                    ✅ Arquivo selecionado
+                  </p>
+
+                  <p className="mt-1 break-all text-sm text-gray-600">
+                    {arquivoDigital.name}
+                  </p>
+                </div>
               )}
             </div>
           )}
@@ -263,7 +358,9 @@ export default function ProdutoForm({
             <input
               type="checkbox"
               checked={destaque}
-              onChange={(e) => setDestaque(e.target.checked)}
+              onChange={(e) =>
+                setDestaque(e.target.checked)
+              }
               className="h-5 w-5"
             />
 
@@ -308,14 +405,15 @@ export default function ProdutoForm({
 
       {/* COLUNA DIREITA */}
       <ProdutoPreview
-        nome={nome}
-        preco={preco}
-        categoria={categoria}
-        tipoProduto={tipoProduto}
-        imagem={imagem}
-        destaque={destaque}
-        logistica={logistica}
-      />
+  nome={nome}
+  preco={preco}
+  categoria={categoria}
+  tipoProduto={tipoProduto}
+  formatoArquivo={formatoArquivo}
+  imagem={imagem}
+  destaque={destaque}
+  logistica={logistica}
+/>
     </div>
   );
 }
