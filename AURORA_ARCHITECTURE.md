@@ -1,126 +1,37 @@
-# 🌅 PROJETO AURORA
+# Aurora Commerce — Guia de Arquitetura
 
-## Arquitetura Oficial da Plataforma
+## 1. Visão do projeto
 
-Versão: 1.0
+Aurora Commerce é uma plataforma reutilizável de comércio eletrônico.
 
----
+A primeira implementação oficial é a Lembrei de Você Store, mas a estrutura deve permitir a criação futura de diferentes lojas, segmentos, temas e modelos de negócio sem duplicar toda a aplicação.
 
-# Missão
+A plataforma deve atender produtos:
 
-Construir a melhor plataforma brasileira para venda de produtos personalizados físicos e digitais.
-
----
-
-# Filosofia
-
-Primeiro construímos a estrutura.
-
-Depois construímos as funcionalidades.
+- físicos;
+- digitais;
+- personalizados;
+- sob encomenda;
+- kits;
+- serviços, futuramente.
 
 ---
 
-# Regras do Projeto
+## 2. Princípios fundamentais
 
-1. Nunca criar gambiarras.
+### 2.1 Reutilização
 
-2. Sempre pensar na escalabilidade.
+Todo componente deve ser desenvolvido pensando em sua utilização por diferentes lojas.
 
-3. Cada funcionalidade deve gerar valor.
+Evitar componentes dependentes do nome, das cores ou dos textos da Lembrei de Você Store.
 
-4. O código deve ser simples de entender.
+### 2.2 Configuração externa
 
-5. Componentes reutilizáveis sempre que possível.
+Textos, opções visuais, slides, benefícios, links e comportamentos configuráveis não devem permanecer fixos dentro dos componentes.
 
----
+Exemplo:
 
-# Estrutura do Projeto
-
-app/
-
-- Loja
-- Admin
-- API
-- Login
-- Pedido
-- Produto
-
-components/
-
-- Header
-- Banner
-- Cards
-- Footer
-- Busca
-- Categorias
-
-lib/
-
-- Supabase
-- Helpers
-- Funções
-
----
-
-# Aurora Core
-
-O Aurora Core representa toda a regra de negócio do sistema.
-
-Ele será dividido em módulos.
-
-## Módulos
-
-- Produtos
-- Categorias
-- Pedidos
-- Clientes
-- Biblioteca Digital
-- Financeiro
-- Dashboard
-- Configurações
-
----
-
-# Tipos de Produto
-
-O sistema deverá suportar:
-
-- Produto Físico
-- PDF
-- Kit Digital (.ZIP)
-
----
-
-# Padrão de Desenvolvimento
-
-Planejamento
-
-↓
-
-Arquitetura
-
-↓
-
-Desenvolvimento
-
-↓
-
-Testes
-
-↓
-
-Deploy
-
-↓
-
-Registro no ROADMAP
-
----
-
-# Objetivo Final
-
-Criar uma plataforma capaz de vender produtos físicos e digitais de forma automática, organizada e escalável.
-
----
-
-Projeto Aurora 🌅
+```ts
+storefrontConfig.hero.enabled
+storefrontConfig.hero.autoplay
+storefrontConfig.hero.slides

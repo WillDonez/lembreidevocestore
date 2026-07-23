@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useCarrinho } from "@/app/context/CarrinhoContext";
 import Link from "next/link";
 import { formatarMoeda } from "@/lib/formatadores";
+import EmptyCart from "./components/EmptyCart";
+import CartItem from "./components/CartItem";
 
 type OpcaoFrete = {
   id: number;
@@ -24,10 +26,14 @@ export default function CarrinhoPage() {
   const router = useRouter();
 
   const {
-    carrinho,
-    removerCarrinho,
-    total,
-  } = useCarrinho();
+  carrinho,
+  itens,
+  removerItem,
+  aumentarQuantidade,
+  diminuirQuantidade,
+  alternarSelecionado,
+  total,
+} = useCarrinho();
 
   const [cep, setCep] = useState("");
   const [calculandoFrete, setCalculandoFrete] =
@@ -192,73 +198,20 @@ sessionStorage.setItem(
         </div>
 
         <div className="space-y-6">
-          {carrinho.length === 0 ? (
-            <div className="rounded-2xl border-2 border-dashed p-12 text-center text-gray-500">
-              <p className="text-5xl">🛒</p>
-
-              <p className="mt-4 text-xl font-bold">
-                Seu carrinho está vazio.
-              </p>
-
-              <Link
-                href="/"
-                className="mt-6 inline-block rounded-xl bg-pink-500 px-6 py-3 font-bold text-white"
-              >
-                Ver produtos
-              </Link>
-            </div>
-          ) : (
+          {itens.length === 0 ? (
+           <EmptyCart />
+             ) : (
             <>
-              {carrinho.map((produto, index) => (
-                <div
-                  key={`${produto.id}-${index}`}
-                  className="flex flex-col items-start gap-6 rounded-2xl border p-5 sm:flex-row sm:items-center"
-                >
-                  {produto.imagem && (
-                    <img
-                      src={produto.imagem}
-                      alt={produto.nome}
-                      className="h-28 w-28 rounded-xl object-cover"
-                    />
-                  )}
-
-                  <div className="flex-1">
-                    <h2 className="text-2xl font-bold">
-                      {produto.nome}
-                    </h2>
-
-                    <p className="mt-2 text-gray-500">
-                      {produto.descricao}
-                    </p>
-
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <span
-                        className={`rounded-full px-3 py-1 text-sm font-bold ${
-                          produto.tipo_produto === "fisico"
-                            ? "bg-blue-100 text-blue-700"
-                            : "bg-green-100 text-green-700"
-                        }`}
-                      >
-                        {produto.tipo_produto === "fisico"
-                          ? "🛍 Produto físico"
-                          : "📄 Produto digital"}
-                      </span>
-                    </div>
-
-                    <p className="mt-4 text-xl font-bold text-pink-500">
-                      {formatarMoeda(produto.preco)}
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => removerCarrinho(index)}
-                    className="rounded-xl bg-red-500 px-5 py-3 font-bold text-white transition hover:bg-red-600"
-                  >
-                    Remover
-                  </button>
-                </div>
-              ))}
+              {itens.map((item) => (
+  <CartItem
+    key={item.idCarrinho}
+    item={item}
+    onAlternarSelecionado={alternarSelecionado}
+    onAumentarQuantidade={aumentarQuantidade}
+    onDiminuirQuantidade={diminuirQuantidade}
+    onRemover={removerItem}
+  />
+))}
 
               {possuiProdutoFisico ? (
                 <section className="mt-8 rounded-3xl border border-pink-100 bg-pink-50 p-6">
