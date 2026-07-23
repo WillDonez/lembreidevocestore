@@ -3,9 +3,9 @@ import {
   type CarrinhoItem as CarrinhoItemType,
 } from "@/app/context/CarrinhoContext";
 
-import QuantitySelector from "@/components/ui/QuantitySelector";
-import { formatarMoeda } from "@/lib/formatadores";
+import ProductPrice from "@/components/ui/ProductPrice";
 import ProductTypeBadge from "@/components/ui/ProductTypeBadge";
+import QuantitySelector from "@/components/ui/QuantitySelector";
 
 type CartItemProps = {
   item: CarrinhoItemType;
@@ -88,23 +88,26 @@ export default function CartItem({
               )}
 
               <div className="mt-3 flex flex-wrap gap-2">
-  <ProductTypeBadge
-    tipoProduto={produto.tipo_produto}
-  />
-</div>
+                <ProductTypeBadge
+                  tipoProduto={produto.tipo_produto}
+                />
+              </div>
             </div>
 
             <div className="grid gap-5 border-t pt-5 sm:grid-cols-3">
+              {/* Preço Unitário */}
               <div>
                 <p className="text-sm font-medium text-gray-500">
                   Preço unitário
                 </p>
 
-                <p className="mt-1 text-xl font-bold text-pink-500">
-                  {formatarMoeda(produto.preco)}
-                </p>
+                <ProductPrice
+                  value={Number(produto.preco)}
+                  className="mt-1"
+                />
               </div>
 
+              {/* Quantidade */}
               <div>
                 <p className="mb-2 text-sm font-medium text-gray-500">
                   Quantidade
@@ -136,14 +139,19 @@ export default function CartItem({
                 ) : null}
               </div>
 
+              {/* Subtotal */}
               <div className="sm:text-right">
                 <p className="text-sm font-medium text-gray-500">
                   Subtotal
                 </p>
 
-                <p className="mt-1 text-2xl font-bold text-gray-800">
-                  {formatarMoeda(subtotal)}
-                </p>
+                <ProductPrice
+                  value={subtotal}
+                  size="xl"
+                  color="default"
+                  align="right"
+                  className="mt-1"
+                />
               </div>
             </div>
           </div>
