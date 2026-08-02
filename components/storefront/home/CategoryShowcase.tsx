@@ -62,8 +62,12 @@ export default function CategoryShowcase({
     return null;
   }
 
+  const totalProdutos = Object.values(
+    quantidadePorCategoria,
+  ).reduce((total, atual) => total + atual, 0);
+
   return (
-    <section className="bg-gradient-to-b from-white to-pink-50/40 py-14 sm:py-16">
+    <section className="bg-gradient-to-b from-white to-pink-50/50 py-12 sm:py-14">
       <div className="mx-auto max-w-7xl px-6 sm:px-10 lg:px-12">
         <SectionHeader
           etiqueta="Explore a loja"
@@ -73,7 +77,7 @@ export default function CategoryShowcase({
         />
 
         <div className="-mx-6 overflow-x-auto px-6 pb-3 sm:mx-0 sm:px-0">
-          <div className="flex min-w-max gap-4 sm:grid sm:min-w-0 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+          <div className="flex min-w-max gap-3 sm:grid sm:min-w-0 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {categorias.map((categoria) => {
               const Icone = obterIconeCategoria(categoria);
               const selecionada =
@@ -81,40 +85,42 @@ export default function CategoryShowcase({
 
               const quantidade =
                 categoria === "Todos"
-                  ? Object.values(quantidadePorCategoria).reduce(
-                      (total, atual) => total + atual,
-                      0
-                    )
+                  ? totalProdutos
                   : quantidadePorCategoria[categoria] ?? 0;
 
               return (
                 <button
                   key={categoria}
                   type="button"
-                  onClick={() => aoSelecionarCategoria(categoria)}
+                  onClick={() =>
+                    aoSelecionarCategoria(categoria)
+                  }
                   aria-pressed={selecionada}
-                  className={`group w-52 shrink-0 rounded-3xl border p-5 text-left transition duration-200 sm:w-auto ${
+                  className={`group relative w-44 shrink-0 overflow-hidden rounded-2xl border px-4 py-4 text-left transition-all duration-200 sm:w-auto ${
                     selecionada
-                      ? "border-pink-500 bg-pink-500 text-white shadow-xl shadow-pink-200/60"
-                      : "border-pink-100 bg-white text-gray-800 shadow-sm hover:-translate-y-1 hover:border-pink-300 hover:shadow-xl"
+                      ? "border-pink-500 bg-pink-500 text-white shadow-lg shadow-pink-200/60"
+                      : "border-pink-100 bg-white text-gray-900 shadow-sm hover:-translate-y-1 hover:border-pink-300 hover:shadow-lg"
                   }`}
                 >
                   <div
-                    className={`flex h-14 w-14 items-center justify-center rounded-2xl transition ${
+                    className={`flex h-11 w-11 items-center justify-center rounded-xl transition ${
                       selecionada
                         ? "bg-white/20 text-white"
                         : "bg-pink-100 text-pink-600 group-hover:bg-pink-500 group-hover:text-white"
                     }`}
                   >
-                    <Icone className="h-7 w-7" strokeWidth={1.8} />
+                    <Icone
+                      className="h-5 w-5"
+                      strokeWidth={1.9}
+                    />
                   </div>
 
-                  <h3 className="mt-5 text-lg font-black leading-tight">
+                  <h3 className="mt-4 text-base font-black leading-tight">
                     {categoria}
                   </h3>
 
                   <p
-                    className={`mt-2 text-sm ${
+                    className={`mt-1.5 text-sm ${
                       selecionada
                         ? "text-pink-50"
                         : "text-gray-500"
@@ -126,7 +132,7 @@ export default function CategoryShowcase({
                   </p>
 
                   <div
-                    className={`mt-5 h-1 w-10 rounded-full transition-all group-hover:w-16 ${
+                    className={`mt-4 h-1 w-8 rounded-full transition-all duration-200 group-hover:w-12 ${
                       selecionada
                         ? "bg-white"
                         : "bg-pink-400"

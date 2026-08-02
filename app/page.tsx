@@ -1,53 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
-import ProdutoCard from "@/components/ProdutoCard";
-import Header from "@/components/Header";
+
 import { useCarrinho } from "@/app/context/CarrinhoContext";
+import Header from "@/components/Header";
 import ListaProdutos from "@/components/ListaProdutos";
-import HeroCarousel from "@/components/storefront/HeroCarousel";
+import ProdutoCard from "@/components/ProdutoCard";
 import BenefitsBar from "@/components/storefront/BenefitsBar";
+import Footer from "@/components/storefront/Footer";
+import HeroCarousel from "@/components/storefront/HeroCarousel";
+import SectionHeader from "@/components/storefront/SectionHeader";
 import CategoryShowcase from "@/components/storefront/home/CategoryShowcase";
+import { supabase } from "@/lib/supabase";
 
 export default function Home() {
   const [produtos, setProdutos] = useState<any[]>([]);
   const [busca, setBusca] = useState("");
-  const [tipoSelecionado, setTipoSelecionado] = useState("todos");
+  const [tipoSelecionado, setTipoSelecionado] =
+    useState("todos");
   const [categorias, setCategorias] = useState<any[]>([]);
-  const [categoriaSelecionada, setCategoriaSelecionada] = useState("Todos");
-  const [nomeCliente, setNomeCliente] = useState("");
-  const [whatsappCliente, setWhatsappCliente] = useState("");
-  const [emailCliente, setEmailCliente] = useState("");
-  const [cpfCnpj, setCpfCnpj] = useState("");
-  const [cep, setCep] = useState("");
-  const [endereco, setEndereco] = useState("");
-  const [numero, setNumero] = useState("");
-  const [complemento, setComplemento] = useState("");
-  const [bairro, setBairro] = useState("");
-  const [cidade, setCidade] = useState("");
-  const [estado, setEstado] = useState("");
+  const [categoriaSelecionada, setCategoriaSelecionada] =
+    useState("Todos");
 
   const router = useRouter();
 
   const { carrinho, adicionarCarrinho } = useCarrinho();
-
-  const quantidadePorCategoria = produtos.reduce<Record<string, number>>(
-    (acumulador, produto) => {
-      const categoria = produto.categoria || "Sem categoria";
-
-      acumulador[categoria] = (acumulador[categoria] || 0) + 1;
-
-      return acumulador;
-    },
-    {}
-  );
-
-  const nomesCategorias = [
-    "Todos",
-    ...categorias.map((categoria) => categoria.nome),
-  ];
 
   useEffect(() => {
     buscarProdutos();
@@ -62,17 +40,11 @@ export default function Home() {
       .order("created_at", { ascending: false });
 
     if (error) {
-      alert("ERRO SUPABASE");
-      console.log(error);
+      console.error("Erro ao buscar produtos:", error);
       return;
     }
 
-    alert("Produtos carregados!");
-    console.log(data);
-
-    if (data) {
-      setProdutos(data);
-    }
+    setProdutos(data ?? []);
   }
 
   async function buscarCategorias() {
@@ -82,52 +54,113 @@ export default function Home() {
       .order("ordem");
 
     if (error) {
-      console.log(error);
+      console.error("Erro ao buscar categorias:", error);
       return;
     }
 
-    if (data) {
-      data.sort((a, b) => {
+    const categoriasOrdenadas = [...(data ?? [])].sort(
+      (a, b) => {
         if (a.nome === "Outros") return 1;
         if (b.nome === "Outros") return -1;
-        return a.nome.localeCompare(b.nome);
-      });
 
-      setCategorias(data);
-    }
+        return a.nome.localeCompare(b.nome);
+      },
+    );
+
+    setCategorias(categoriasOrdenadas);
   }
 
-  const produtosFiltrados = produtos.filter((produto) => {
-    const combinaCategoria =
-      categoriaSelecionada === "Todos" ||
-      produto.categoria === categoriaSelecionada;
+  const quantidadePorCategoria = useMemo(() => {
+    return produtos.reduce<Record<string, number>>(
+      (acumulador, produto) => {
+        const categoria =
+          produto.categoria || "Sem categoria";
 
-    const textoBusca = busca.trim().toLowerCase();
+        acumulador[categoria] =
+          (acumulador[categoria] || 0) + 1;
 
-    const combinaBusca =
-      produto.nome?.toLowerCase().includes(textoBusca) ||
-      produto.descricao?.toLowerCase().includes(textoBusca);
+        return acumulador;
+      },
+      {},
+    );
+  }, [produtos]);
 
-    const combinaTipo =
-      tipoSelecionado === "todos" ||
-      (tipoSelecionado === "fisico" &&
-        produto.tipo_produto === "fisico") ||
-      (tipoSelecionado === "digital" && produto.tipo_produto === "pdf");
-
-    return combinaCategoria && combinaBusca && combinaTipo;
-  });
-
-  const produtosDestaque = produtos.filter(
-    (produto: any) => produto.destaque === true
+  const nomesCategorias = useMemo(
+    () => [
+      "Todos",
+      ...categorias.map((categoria) => categoria.nome),
+    ],
+    [categorias],
   );
 
-  const novidades = [...produtos]
-    .sort(
-      (a: any, b: any) =>
-        new Date(b.created_at).getTime() -
-        new Date(a.created_at).getTime()
-    )
-    .slice(0, 4);
+  const produtosFiltrados = useMemo(() => {
+    const textoBusca = busca.trim().toLowerCase();
+
+    return produtos.filter((produto) => {
+      const combinaCategoria =
+        categoriaSelecionada === "Todos" ||
+        produto.categoria === categoriaSelecionada;
+
+      const nomeProduto = String(
+        produto.nome ?? "",
+      ).toLowerCase();
+
+      const descricaoProduto = String(
+        produto.descricao ?? "",
+      ).toLowerCase();
+
+      const combinaBusca =
+        textoBusca.length === 0 ||
+        nomeProduto.includes(textoBusca) ||
+        descricaoProduto.includes(textoBusca);
+
+      const produtoDigital =
+        produto.tipo_produto === "pdf" ||
+        produto.tipo_produto === "digital" ||
+        produto.tipo_produto === "kit" ||
+        Boolean(produto.arquivo_digital);
+
+      const combinaTipo =
+        tipoSelecionado === "todos" ||
+        (tipoSelecionado === "fisico" &&
+          !produtoDigital) ||
+        (tipoSelecionado === "digital" &&
+          produtoDigital);
+
+      return (
+        combinaCategoria &&
+        combinaBusca &&
+        combinaTipo
+      );
+    });
+  }, [
+    busca,
+    categoriaSelecionada,
+    produtos,
+    tipoSelecionado,
+  ]);
+
+  const produtosDestaque = useMemo(
+    () =>
+      produtos
+        .filter(
+          (produto: any) => produto.destaque === true,
+        )
+        .slice(0, 5),
+    [produtos],
+  );
+
+  const novidades = useMemo(
+    () =>
+      [...produtos]
+        .sort(
+          (a: any, b: any) =>
+            new Date(b.created_at).getTime() -
+            new Date(a.created_at).getTime(),
+        )
+        .slice(0, 5),
+    [produtos],
+  );
 
   return (
     <main className="min-h-screen bg-pink-50">
@@ -142,54 +175,59 @@ export default function Home() {
 
       <BenefitsBar />
 
-      <section className="bg-white p-10">
+      <section className="bg-white px-6 py-12 sm:px-10 sm:py-14">
         <div className="mx-auto max-w-7xl text-center">
-          <p className="text-xl font-bold text-pink-500">
-            ⭐ Produtos em Destaque
-          </p>
+          <SectionHeader
+            etiqueta="Encontre seu presente"
+            titulo="Escolha o produto perfeito"
+            descricao="Produtos personalizados e digitais feitos com carinho para transformar momentos especiais em lembranças inesquecíveis."
+            alinhamento="centro"
+          />
 
-          <h2 className="mt-2 text-5xl font-bold text-gray-800">
-            Escolha o produto perfeito
-          </h2>
-
-          <p className="mt-4 text-xl text-gray-500">
-            Produtos personalizados feitos com carinho para momentos especiais.
-          </p>
-
-          <div className="mx-auto mt-8 flex w-full max-w-3xl overflow-hidden rounded-2xl border border-gray-300 bg-white shadow">
+          <div className="mx-auto mt-8 flex w-full max-w-3xl overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-md shadow-gray-100">
             <select
               value={tipoSelecionado}
-              onChange={(e) => {
-                setTipoSelecionado(e.target.value);
+              onChange={(evento) => {
+                setTipoSelecionado(evento.target.value);
                 setCategoriaSelecionada("Todos");
               }}
-              className="cursor-pointer border-r border-gray-300 bg-gray-50 px-5 py-4 text-lg font-medium text-gray-700 outline-none"
+              className="cursor-pointer border-r border-gray-200 bg-gray-50 px-4 py-4 text-sm font-bold text-gray-700 outline-none transition hover:bg-pink-50 sm:px-5 sm:text-base"
               aria-label="Tipo de produto"
             >
-              <option value="todos">Todos os Produtos</option>
-              <option value="fisico">Produtos Físicos</option>
-              <option value="digital">Produtos Digitais</option>
+              <option value="todos">
+                Todos os produtos
+              </option>
+
+              <option value="fisico">
+                Produtos físicos
+              </option>
+
+              <option value="digital">
+                Produtos digitais
+              </option>
             </select>
 
             <input
-              type="text"
+              type="search"
               placeholder="O que você procura hoje?"
               value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-              className="min-w-0 flex-1 px-5 py-4 text-lg text-gray-700 outline-none"
+              onChange={(evento) =>
+                setBusca(evento.target.value)
+              }
+              className="min-w-0 flex-1 px-4 py-4 text-sm text-gray-700 outline-none placeholder:text-gray-400 sm:px-5 sm:text-base"
             />
 
             <button
               type="button"
               aria-label="Pesquisar produtos"
-              className="flex items-center justify-center border-l border-gray-300 bg-gray-50 px-5 text-gray-800 transition hover:bg-pink-50 hover:text-pink-500"
+              className="flex items-center justify-center border-l border-gray-200 bg-gray-50 px-4 text-gray-700 transition hover:bg-pink-50 hover:text-pink-500 sm:px-5"
             >
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
-                className="h-7 w-7"
+                className="h-6 w-6"
                 aria-hidden="true"
               >
                 <circle cx="11" cy="11" r="7" />
@@ -203,23 +241,32 @@ export default function Home() {
       <CategoryShowcase
         categorias={nomesCategorias}
         categoriaSelecionada={categoriaSelecionada}
-        aoSelecionarCategoria={setCategoriaSelecionada}
-        quantidadePorCategoria={quantidadePorCategoria}
+        aoSelecionarCategoria={
+          setCategoriaSelecionada
+        }
+        quantidadePorCategoria={
+          quantidadePorCategoria
+        }
       />
 
       {produtosDestaque.length > 0 && (
-        <section className="bg-white px-10 pb-10">
+        <section className="bg-white px-6 py-14 sm:px-10 sm:py-16">
           <div className="mx-auto max-w-7xl">
-            <h2 className="mb-6 text-4xl font-bold text-gray-800">
-              ⭐ Produtos em Destaque
-            </h2>
+            <SectionHeader
+              etiqueta="Seleção especial"
+              titulo="Produtos em destaque"
+              descricao="Uma seleção de produtos especiais escolhidos para surpreender, presentear e tornar cada ocasião ainda mais marcante."
+              alinhamento="centro"
+            />
 
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-              {produtosDestaque.slice(0, 5).map((produto) => (
+            <div className="mt-10 grid grid-cols-1 justify-center gap-5 sm:grid-cols-[repeat(auto-fit,minmax(220px,260px))]">
+              {produtosDestaque.map((produto) => (
                 <ProdutoCard
                   key={produto.id}
                   produto={produto}
-                  adicionarCarrinho={adicionarCarrinho}
+                  adicionarCarrinho={
+                    adicionarCarrinho
+                  }
                 />
               ))}
             </div>
@@ -228,18 +275,23 @@ export default function Home() {
       )}
 
       {novidades.length > 0 && (
-        <section className="bg-pink-50 px-10 py-10">
+        <section className="bg-gradient-to-b from-pink-50 to-white px-6 py-14 sm:px-10 sm:py-16">
           <div className="mx-auto max-w-7xl">
-            <h2 className="mb-6 text-4xl font-bold text-gray-800">
-              🆕 Novidades
-            </h2>
+            <SectionHeader
+              etiqueta="Acabaram de chegar"
+              titulo="Novidades da loja"
+              descricao="Conheça os produtos adicionados recentemente e encontre novas ideias para presentear e celebrar."
+              alinhamento="centro"
+            />
 
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-              {novidades.slice(0, 5).map((produto: any) => (
+            <div className="mt-10 grid grid-cols-1 justify-center gap-5 sm:grid-cols-[repeat(auto-fit,minmax(220px,260px))]">
+              {novidades.map((produto: any) => (
                 <ProdutoCard
                   key={produto.id}
                   produto={produto}
-                  adicionarCarrinho={adicionarCarrinho}
+                  adicionarCarrinho={
+                    adicionarCarrinho
+                  }
                 />
               ))}
             </div>
@@ -251,6 +303,9 @@ export default function Home() {
         produtos={produtosFiltrados}
         adicionarCarrinho={adicionarCarrinho}
       />
+
+      <Footer />
+      
     </main>
   );
 }
