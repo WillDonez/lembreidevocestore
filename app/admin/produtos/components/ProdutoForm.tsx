@@ -10,6 +10,8 @@ import {
 import LogisticaForm from "./LogisticaForm";
 import UploadImagem from "./UploadImagem";
 import ProdutoPreview from "./ProdutoPreview";
+import ProductGalleryManager from "./ProductGalleryManager";
+import ProductVideoManager from "./ProductVideoManager";
 
 import useProdutoForm, {
   ProdutoAdministrativo,
@@ -51,6 +53,13 @@ export default function ProdutoForm({
     imagem,
     setImagem,
     imagemAtual,
+
+    imagensGaleria,
+    setImagensGaleria,
+
+    videoProduto,
+    setVideoProduto,
+    videoProdutoAtual,
 
     arquivoDigital,
     setArquivoDigital,
@@ -240,6 +249,21 @@ export default function ProdutoForm({
               )}
           </div>
 
+          <div className="mt-8">
+            <ProductGalleryManager
+              imagens={imagensGaleria}
+              onChange={setImagensGaleria}
+            />
+          </div>
+
+          <div className="mt-8">
+            <ProductVideoManager
+              video={videoProduto}
+              videoAtual={videoProdutoAtual}
+              onChange={setVideoProduto}
+            />
+          </div>
+
           {produtoDigital && (
             <div className="mt-6 space-y-5 rounded-2xl border border-green-200 bg-green-50 p-5">
               <div>
@@ -262,7 +286,7 @@ export default function ProdutoForm({
                   value={formatoArquivo}
                   onChange={(e) =>
                     alterarFormatoArquivo(
-                      e.target.value
+                      e.target.value,
                     )
                   }
                   className="w-full rounded-xl border border-green-200 bg-white p-4"
@@ -276,7 +300,7 @@ export default function ProdutoForm({
                         {formato.icone}{" "}
                         {formato.label}
                       </option>
-                    )
+                    ),
                   )}
                 </select>
               </div>
@@ -290,11 +314,11 @@ export default function ProdutoForm({
                   ref={inputArquivoDigitalRef}
                   type="file"
                   accept={obterAcceptDoFormato(
-                    formatoArquivo
+                    formatoArquivo,
                   )}
                   onChange={(e) =>
                     setArquivoDigital(
-                      e.target.files?.[0] || null
+                      e.target.files?.[0] || null,
                     )
                   }
                   className="w-full rounded-xl border border-green-200 bg-white p-4"
@@ -306,8 +330,7 @@ export default function ProdutoForm({
                     {configuracaoFormato?.label ||
                       formatoArquivo}
                   </strong>
-                  .
-                  {" "}Extensões permitidas:{" "}
+                  . Extensões permitidas:{" "}
                   <strong>
                     {configuracaoFormato?.accept ||
                       "*"}
@@ -405,15 +428,15 @@ export default function ProdutoForm({
 
       {/* COLUNA DIREITA */}
       <ProdutoPreview
-  nome={nome}
-  preco={preco}
-  categoria={categoria}
-  tipoProduto={tipoProduto}
-  formatoArquivo={formatoArquivo}
-  imagem={imagem}
-  destaque={destaque}
-  logistica={logistica}
-/>
+        nome={nome}
+        preco={preco}
+        categoria={categoria}
+        tipoProduto={tipoProduto}
+        formatoArquivo={formatoArquivo}
+        imagem={imagem}
+        destaque={destaque}
+        logistica={logistica}
+      />
     </div>
   );
 }

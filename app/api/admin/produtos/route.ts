@@ -22,9 +22,13 @@ type DadosProduto = {
   categoria?: string;
   tipo_produto?: string;
   arquivo_digital?: string;
-  formato_arquivo?: string | null;
-  destaque?: boolean;
-  logistica?: DadosLogistica;
+formato_arquivo?: string | null;
+
+video_produto?: string;
+capa_video?: string;
+
+destaque?: boolean;
+logistica?: DadosLogistica;
 };
 
 type TipoProduto = "fisico" | "digital";
@@ -216,7 +220,13 @@ function montarDadosProduto(body: DadosProduto) {
       ? formatoArquivo
       : null,
 
-    destaque: Boolean(body.destaque),
+    video_produto:
+  body.video_produto?.trim() || "",
+
+capa_video:
+  body.capa_video?.trim() || "",
+
+destaque: Boolean(body.destaque),
   };
 }
 

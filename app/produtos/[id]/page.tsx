@@ -2,7 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import {
+  useParams,
+  useRouter,
+} from "next/navigation";
+
 import {
   ArrowLeft,
   Download,
@@ -13,16 +17,30 @@ import {
   Truck,
 } from "lucide-react";
 
-import { useCarrinho } from "@/app/context/CarrinhoContext";
+import {
+  useCarrinho,
+} from "@/app/context/CarrinhoContext";
+
 import Header from "@/components/Header";
 import ProdutoCard from "@/components/ProdutoCard";
+
 import FavoriteButton from "@/components/product/FavoriteButton";
 import ProductBadges from "@/components/product/ProductBadges";
+import ProductMediaGallery from "@/components/product/media/ProductMediaGallery";
+import { montarMidiasProduto } from "@/lib/produto/montarMidiasProduto";
 import ProductPrice from "@/components/product/ProductPrice";
 import ProductTypeBadge from "@/components/product/ProductTypeBadge";
+
 import Footer from "@/components/storefront/Footer";
 import SectionHeader from "@/components/storefront/SectionHeader";
+
 import { supabase } from "@/lib/supabase";
+
+type ImagemGaleriaProduto = {
+  id: number;
+  url: string;
+  ordem: number;
+};
 
 export default function ProdutoDetalhe() {
   const params = useParams();
@@ -32,10 +50,24 @@ export default function ProdutoDetalhe() {
     ? params.id[0]
     : params.id;
 
-  const [produto, setProduto] = useState<any>(null);
-  const [relacionados, setRelacionados] = useState<any[]>([]);
-  const [carregando, setCarregando] = useState(true);
-  const [erro, setErro] = useState("");
+  const [produto, setProduto] =
+    useState<any>(null);
+
+  const [
+    imagensGaleria,
+    setImagensGaleria,
+  ] = useState<ImagemGaleriaProduto[]>([]);
+
+  const [
+    relacionados,
+    setRelacionados,
+  ] = useState<any[]>([]);
+
+  const [carregando, setCarregando] =
+    useState(true);
+
+  const [erro, setErro] =
+    useState("");
 
   const {
     carrinho,
@@ -44,7 +76,9 @@ export default function ProdutoDetalhe() {
   } = useCarrinho();
 
   useEffect(() => {
-    if (!id) return;
+    if (!id) {
+      return;
+    }
 
     buscarProduto();
   }, [id]);
@@ -52,42 +86,107 @@ export default function ProdutoDetalhe() {
   async function buscarProduto() {
     setCarregando(true);
     setErro("");
+    setProduto(null);
+    setImagensGaleria([]);
+    setRelacionados([]);
 
-    const { data, error } = await supabase
-      .from("produtos")
-      .select("*")
-      .eq("id", id)
-      .single();
+    try {
+      const {
+        data: produtoData,
+        error: produtoError,
+      } = await supabase
+        .from("produtos")
+        .select("*")
+        .eq("id", id)
+        .single();
 
-    if (error || !data) {
-      console.error("Erro ao buscar produto:", error);
-      setErro("Não foi possível carregar este produto.");
-      setCarregando(false);
-      return;
-    }
-
-    setProduto(data);
-
-    if (data.categoria) {
-      const { data: relacionadosData, error: relacionadosError } =
-        await supabase
-          .from("produtos")
-          .select("*")
-          .eq("categoria", data.categoria)
-          .neq("id", data.id)
-          .limit(4);
-
-      if (relacionadosError) {
+      if (produtoError || !produtoData) {
         console.error(
-          "Erro ao buscar produtos relacionados:",
-          relacionadosError,
+          "Erro ao buscar produto:",
+          produtoError,
+        );
+
+        throw new Error(
+          "Não foi possível carregar este produto.",
         );
       }
 
-      setRelacionados(relacionadosData ?? []);
-    }
+      setProduto(produtoData);
 
-    setCarregando(false);
+      const [
+        resultadoGaleria,
+        resultadoRelacionados,
+      ] = await Promise.all([
+        supabase
+          .from("produto_imagens")
+          .select("id, url, ordem")
+          .eq("produto_id", produtoData.id)
+          .order("ordem", {
+            ascending: true,
+          }),
+
+        produtoData.categoria
+          ? supabase
+              .from("produtos")
+              .select("*")
+              .eq(
+                "categoria",
+                produtoData.categoria,
+              )
+              .neq("id", produtoData.id)
+              .limit(4)
+          : Promise.resolve({
+              data: [],
+              error: null,
+            }),
+      ]);
+
+      if (resultadoGaleria.error) {
+        console.error(
+          "Erro ao buscar galeria do produto:",
+          resultadoGaleria.error,
+        );
+
+        /*
+          A página continua funcionando com a imagem
+          principal mesmo que a galeria falhe.
+        */
+        setImagensGaleria([]);
+      } else {
+        setImagensGaleria(
+          (
+            resultadoGaleria.data ?? []
+          ).map((imagem) => ({
+            id: Number(imagem.id),
+            url: String(imagem.url),
+            ordem: Number(imagem.ordem),
+          })),
+        );
+      }
+
+      if (resultadoRelacionados.error) {
+        console.error(
+          "Erro ao buscar produtos relacionados:",
+          resultadoRelacionados.error,
+        );
+
+        setRelacionados([]);
+      } else {
+        setRelacionados(
+          resultadoRelacionados.data ?? [],
+        );
+      }
+    } catch (error) {
+      console.error(error);
+
+      setErro(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível carregar este produto.",
+      );
+    } finally {
+      setCarregando(false);
+    }
   }
 
   const produtoDigital =
@@ -96,7 +195,10 @@ export default function ProdutoDetalhe() {
     produto?.tipo_produto === "pdf" ||
     produto?.tipo_produto === "kit";
 
-  const preco = Number(produto?.preco || 0);
+  const preco = Number(
+    produto?.preco || 0,
+  );
+
   const precoAnterior = Number(
     produto?.preco_anterior || 0,
   );
@@ -106,21 +208,34 @@ export default function ProdutoDetalhe() {
     preco > 0 &&
     precoAnterior > preco;
 
-  const percentualDesconto = possuiDesconto
-    ? Math.round(
-        ((precoAnterior - preco) / precoAnterior) * 100,
+  const percentualDesconto =
+    possuiDesconto
+      ? Math.round(
+          (
+            (precoAnterior - preco) /
+            precoAnterior
+          ) * 100,
+        )
+      : 0;
+
+  const midiasProduto = produto
+    ? montarMidiasProduto(
+        produto,
+        imagensGaleria,
       )
-    : 0;
+    : [];
 
   function comprarAgora() {
-    if (!produto) return;
+    if (!produto) {
+      return;
+    }
 
     limparCarrinho();
     adicionarCarrinho(produto);
 
     /*
       Produtos físicos precisam passar pelo carrinho
-      para o cliente calcular e escolher o frete.
+      para calcular e selecionar o frete.
     */
     if (!produtoDigital) {
       router.push("/carrinho");
@@ -175,7 +290,9 @@ export default function ProdutoDetalhe() {
   return (
     <main className="min-h-screen bg-pink-50">
       <Header
-        quantidadeCarrinho={carrinho.length}
+        quantidadeCarrinho={
+          carrinho.length
+        }
         abrirCarrinho={() => {
           router.push("/carrinho");
         }}
@@ -194,34 +311,36 @@ export default function ProdutoDetalhe() {
           <div className="mt-6 grid gap-8 lg:grid-cols-2 lg:items-start">
             <div className="relative overflow-hidden rounded-[2rem] border border-pink-100 bg-white p-4 shadow-xl shadow-pink-100/50 sm:p-6">
               <ProductBadges
-                destaque={produto.destaque}
-                produtoDigital={produtoDigital}
-                possuiDesconto={possuiDesconto}
-                percentualDesconto={percentualDesconto}
+                destaque={
+                  produto.destaque
+                }
+                produtoDigital={
+                  produtoDigital
+                }
+                possuiDesconto={
+                  possuiDesconto
+                }
+                percentualDesconto={
+                  percentualDesconto
+                }
               />
 
               <div className="absolute right-6 top-20 z-20">
                 <FavoriteButton
-                  nomeProduto={produto.nome}
+                  nomeProduto={
+                    produto.nome
+                  }
                 />
               </div>
 
-              {produto.imagem ? (
-                <img
-                  src={produto.imagem}
-                  alt={produto.nome}
-                  className="aspect-square w-full rounded-[1.5rem] object-contain"
-                />
-              ) : (
-                <div className="flex aspect-square w-full items-center justify-center rounded-[1.5rem] bg-gray-50 px-6 text-center font-medium text-gray-400">
-                  Imagem não disponível
-                </div>
-              )}
-
-              <p className="mt-4 text-center text-xs font-medium text-gray-400">
-                Em breve: galeria com miniaturas e ampliação
-                da imagem
-              </p>
+              <ProductMediaGallery
+                nomeProduto={
+                  produto.nome
+                }
+                midias={
+                  midiasProduto
+                }
+              />
             </div>
 
             <div className="rounded-[2rem] border border-pink-100 bg-white p-6 shadow-xl shadow-pink-100/50 sm:p-8 lg:p-10">
@@ -243,13 +362,21 @@ export default function ProdutoDetalhe() {
 
               <ProductPrice
                 preco={preco}
-                precoAnterior={precoAnterior}
-                parcelas={produto.parcelas}
-                produtoDigital={produtoDigital}
+                precoAnterior={
+                  precoAnterior
+                }
+                parcelas={
+                  produto.parcelas
+                }
+                produtoDigital={
+                  produtoDigital
+                }
               />
 
               <ProductTypeBadge
-                produtoDigital={produtoDigital}
+                produtoDigital={
+                  produtoDigital
+                }
               />
 
               <div className="mt-7 grid gap-3 sm:grid-cols-3">
@@ -281,8 +408,8 @@ export default function ProdutoDetalhe() {
                   </p>
 
                   <p className="mt-1 text-xs leading-5 text-gray-500">
-                    Pagamento processado em ambiente
-                    protegido.
+                    Pagamento processado em
+                    ambiente protegido.
                   </p>
                 </div>
 
@@ -294,8 +421,8 @@ export default function ProdutoDetalhe() {
                   </p>
 
                   <p className="mt-1 text-xs leading-5 text-gray-500">
-                    Produtos preparados para momentos
-                    especiais.
+                    Produtos preparados para
+                    momentos especiais.
                   </p>
                 </div>
               </div>
@@ -304,7 +431,9 @@ export default function ProdutoDetalhe() {
                 <button
                   type="button"
                   onClick={() =>
-                    adicionarCarrinho(produto)
+                    adicionarCarrinho(
+                      produto,
+                    )
                   }
                   className="flex w-full items-center justify-center gap-2 rounded-2xl bg-pink-500 px-6 py-4 text-base font-black text-white shadow-lg shadow-pink-200/70 transition hover:-translate-y-0.5 hover:bg-pink-600 hover:shadow-xl active:scale-[0.99]"
                 >
@@ -337,15 +466,17 @@ export default function ProdutoDetalhe() {
             />
 
             <div className="mt-10 grid grid-cols-1 justify-center gap-5 sm:grid-cols-[repeat(auto-fit,minmax(220px,260px))]">
-              {relacionados.map((item) => (
-                <ProdutoCard
-                  key={item.id}
-                  produto={item}
-                  adicionarCarrinho={
-                    adicionarCarrinho
-                  }
-                />
-              ))}
+              {relacionados.map(
+                (item) => (
+                  <ProdutoCard
+                    key={item.id}
+                    produto={item}
+                    adicionarCarrinho={
+                      adicionarCarrinho
+                    }
+                  />
+                ),
+              )}
             </div>
           </div>
         </section>
