@@ -40,14 +40,15 @@ export default function CheckoutPage() {
   const [finalizando, setFinalizando] = useState(false);
 
   const {
-    carrinho,
+    itens,
     total,
+    quantidadeTotal,
   } = useCarrinho();
 
-  const possuiProdutoFisico = carrinho.some(
-    (produto) =>
-      !produto.tipo_produto ||
-      produto.tipo_produto === "fisico"
+  const possuiProdutoFisico = itens.some(
+    (item) =>
+      !item.produto.tipo_produto ||
+      item.produto.tipo_produto === "fisico"
   );
 
   const valorFrete =
@@ -82,7 +83,7 @@ export default function CheckoutPage() {
   }, []);
 
   async function finalizarPedido() {
-    if (carrinho.length === 0) {
+    if (itens.length === 0) {
       alert("Seu carrinho está vazio.");
       return;
     }
@@ -132,9 +133,9 @@ export default function CheckoutPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          produtos: carrinho.map((produto) => ({
-            id: produto.id,
-            quantidade: 1,
+          produtos: itens.map((item) => ({
+            id: item.produto.id,
+            quantidade: item.quantidade,
           })),
 
           nomeCliente,
@@ -256,20 +257,23 @@ if (!abaPagamento) {
               </div>
 
               <span className="rounded-full bg-pink-100 px-4 py-2 text-sm font-bold text-pink-600">
-                {carrinho.length} item(ns)
+                {quantidadeTotal} item(ns)
               </span>
             </div>
 
             <div className="mt-5 max-h-[430px] space-y-3 overflow-y-auto pr-1">
-              {carrinho.length === 0 && (
+              {itens.length === 0 && (
                 <div className="rounded-2xl border-2 border-dashed p-8 text-center text-gray-500">
                   Nenhum produto no pedido.
                 </div>
               )}
 
-              {carrinho.map((produto, index) => (
+              {itens.map((item) => {
+                const produto = item.produto;
+
+                return (
                 <div
-                  key={`${produto.id}-${index}`}
+                  key={item.idCarrinho}
                   className="flex items-center gap-3 rounded-2xl bg-pink-50 p-3"
                 >
                   {produto.imagem && (
@@ -286,15 +290,18 @@ if (!abaPagamento) {
                     </h3>
 
                     <p className="mt-1 text-sm text-gray-500">
-                      Quantidade: 1
+                      Quantidade: {item.quantidade}
                     </p>
 
                     <p className="mt-1 font-bold text-pink-500">
-                      {formatarMoeda(produto.preco)}
+                      {formatarMoeda(
+                        Number(produto.preco || 0) * item.quantidade
+                      )}
                     </p>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             {possuiProdutoFisico &&
@@ -330,7 +337,7 @@ if (!abaPagamento) {
                 </div>
               )}
 
-            {carrinho.length > 0 && (
+            {itens.length > 0 && (
               <div className="mt-5 border-t pt-5">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-4">
@@ -406,7 +413,7 @@ if (!abaPagamento) {
               type="button"
               onClick={finalizarPedido}
               disabled={
-                carrinho.length === 0 || finalizando
+                itens.length === 0 || finalizando
               }
               className="mt-4 w-full rounded-2xl bg-green-500 py-3.5 text-xl font-bold text-white transition hover:bg-green-600 disabled:cursor-not-allowed disabled:bg-gray-300"
             >

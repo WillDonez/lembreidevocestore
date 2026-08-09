@@ -1,64 +1,118 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import {
-  HeroSlide,
-  storefrontConfig,
-} from "@/lib/config/storefront";
+import { useEffect, useState } from "react";
+
+import { supabase } from "@/lib/supabase";
+
+type BannerHome = {
+  id: number;
+  titulo: string | null;
+  destaque: string | null;
+  descricao: string | null;
+  imagem: string | null;
+  botao_texto: string | null;
+  botao_link: string | null;
+  tema: string | null;
+  ordem: number;
+  ativo: boolean;
+};
 
 const temas = {
-  rosa: {
-    fundo:
-      "from-rose-50 via-pink-50 to-fuchsia-100",
+  primary: {
+    fundo: "from-[#FDF2F8] via-[#FCE7F3] to-[#FBCFE8]",
     etiqueta:
-      "bg-white/80 text-pink-600 ring-pink-200",
-    destaque: "text-pink-600",
+      "bg-white/85 text-[#DB2777] ring-[#F9A8D4]",
+    destaque: "text-[#DB2777]",
     botao:
-      "bg-pink-500 text-white hover:bg-pink-600 focus:ring-pink-300",
-    decoracao:
-      "bg-pink-300/30",
+      "bg-[#DB2777] text-white hover:bg-[#BE185D] focus:ring-[#F9A8D4]",
+    decoracao: "bg-[#F9A8D4]/35",
   },
 
-  roxo: {
-    fundo:
-      "from-purple-50 via-fuchsia-50 to-pink-100",
+  secondary: {
+    fundo: "from-[#EFF6FF] via-[#DBEAFE] to-[#BFDBFE]",
     etiqueta:
-      "bg-white/80 text-purple-600 ring-purple-200",
-    destaque: "text-purple-600",
+      "bg-white/85 text-[#1E3A5F] ring-[#93C5FD]",
+    destaque: "text-[#1E3A5F]",
     botao:
-      "bg-purple-600 text-white hover:bg-purple-700 focus:ring-purple-300",
-    decoracao:
-      "bg-purple-300/30",
+      "bg-[#1E3A5F] text-white hover:bg-[#172F4D] focus:ring-[#93C5FD]",
+    decoracao: "bg-[#93C5FD]/30",
   },
 
-  dourado: {
-    fundo:
-      "from-amber-50 via-orange-50 to-rose-100",
+  accent: {
+    fundo: "from-[#FFFBEB] via-[#FEF3C7] to-[#FDE68A]",
     etiqueta:
-      "bg-white/80 text-amber-700 ring-amber-200",
-    destaque: "text-amber-700",
+      "bg-white/85 text-[#B7791F] ring-[#FCD34D]",
+    destaque: "text-[#B7791F]",
     botao:
-      "bg-amber-600 text-white hover:bg-amber-700 focus:ring-amber-300",
-    decoracao:
-      "bg-amber-300/30",
+      "bg-[#D4A72C] text-white hover:bg-[#B88D1E] focus:ring-[#FCD34D]",
+    decoracao: "bg-[#FCD34D]/30",
   },
 };
 
+type TemaKey = keyof typeof temas;
+
+function normalizarTema(tema: string | null): TemaKey {
+  const valor = String(tema ?? "")
+    .trim()
+    .toLowerCase();
+
+  if (
+    valor === "secondary" ||
+    valor === "azul" ||
+    valor === "azul petróleo" ||
+    valor === "azul petroleo"
+  ) {
+    return "secondary";
+  }
+
+  if (
+    valor === "accent" ||
+    valor === "dourado" ||
+    valor === "gold"
+  ) {
+    return "accent";
+  }
+
+  return "primary";
+}
+
 export default function HeroCarousel() {
-  const configuracao = storefrontConfig.hero;
-
-  const slides = useMemo(
-    () => configuracao.slides.filter((slide) => slide.ativo),
-    [configuracao.slides]
-  );
-
+  const [slides, setSlides] = useState<BannerHome[]>([]);
   const [slideAtual, setSlideAtual] = useState(0);
   const [pausado, setPausado] = useState(false);
+  const [carregando, setCarregando] = useState(true);
+
+  useEffect(() => {
+    async function buscarBanners() {
+      const { data, error } = await supabase
+        .from("banners_home")
+        .select("*")
+        .eq("ativo", true)
+        .order("ordem", {
+          ascending: true,
+        });
+
+      if (error) {
+        console.error(
+          "Erro ao carregar banners da Home:",
+          error,
+        );
+
+        setSlides([]);
+        setCarregando(false);
+        return;
+      }
+
+      setSlides((data ?? []) as BannerHome[]);
+      setCarregando(false);
+    }
+
+    buscarBanners();
+  }, []);
 
   useEffect(() => {
     if (
-      !configuracao.autoplay ||
       pausado ||
       slides.length <= 1
     ) {
@@ -69,47 +123,64 @@ export default function HeroCarousel() {
       setSlideAtual((indiceAtual) =>
         indiceAtual === slides.length - 1
           ? 0
-          : indiceAtual + 1
+          : indiceAtual + 1,
       );
-    }, configuracao.interval);
+    }, 6000);
 
     return () => {
       window.clearInterval(temporizador);
     };
   }, [
-    configuracao.autoplay,
-    configuracao.interval,
     pausado,
     slides.length,
   ]);
 
   useEffect(() => {
-    if (slideAtual >= slides.length) {
+    if (
+      slides.length > 0 &&
+      slideAtual >= slides.length
+    ) {
       setSlideAtual(0);
     }
-  }, [slideAtual, slides.length]);
+  }, [
+    slideAtual,
+    slides.length,
+  ]);
 
   function mostrarAnterior() {
+    if (slides.length <= 1) {
+      return;
+    }
+
     setSlideAtual((indiceAtual) =>
       indiceAtual === 0
         ? slides.length - 1
-        : indiceAtual - 1
+        : indiceAtual - 1,
     );
   }
 
   function mostrarProximo() {
+    if (slides.length <= 1) {
+      return;
+    }
+
     setSlideAtual((indiceAtual) =>
       indiceAtual === slides.length - 1
         ? 0
-        : indiceAtual + 1
+        : indiceAtual + 1,
     );
   }
 
-  function temaDoSlide(slide: HeroSlide) {
-    return temas[slide.tema];
+  if (carregando) {
+    return (
+      <section
+        className="min-h-[430px] w-full animate-pulse bg-gray-100 sm:min-h-[480px] lg:min-h-[520px]"
+        aria-label="Carregando destaques da loja"
+      />
+    );
   }
 
-  if (!configuracao.enabled || slides.length === 0) {
+  if (slides.length === 0) {
     return null;
   }
 
@@ -123,8 +194,11 @@ export default function HeroCarousel() {
     >
       <div className="relative min-h-[430px] sm:min-h-[480px] lg:min-h-[520px]">
         {slides.map((slide, indice) => {
-          const ativo = indice === slideAtual;
-          const tema = temaDoSlide(slide);
+          const ativo =
+            indice === slideAtual;
+
+          const tema =
+            temas[normalizarTema(slide.tema)];
 
           return (
             <article
@@ -179,20 +253,12 @@ export default function HeroCarousel() {
               )}
 
               <div className="relative z-10 mx-auto flex min-h-[430px] max-w-7xl items-center px-6 py-16 sm:min-h-[480px] sm:px-10 lg:min-h-[520px] lg:px-12">
-                <div
-                  className={`max-w-2xl ${
-                    slide.alinhamento === "centro"
-                      ? "mx-auto text-center"
-                      : "text-left"
-                  }`}
-                >
-                  {slide.etiqueta && (
-                    <span
-                      className={`inline-flex rounded-full px-4 py-2 text-sm font-bold shadow-sm ring-1 backdrop-blur-sm ${tema.etiqueta}`}
-                    >
-                      {slide.etiqueta}
-                    </span>
-                  )}
+                <div className="max-w-2xl text-left">
+                  <span
+                    className={`inline-flex rounded-full px-4 py-2 text-sm font-bold shadow-sm ring-1 backdrop-blur-sm ${tema.etiqueta}`}
+                  >
+                    Lembrei de Você Store
+                  </span>
 
                   <h1 className="mt-6 text-4xl font-black leading-tight text-gray-900 sm:text-5xl lg:text-6xl">
                     {slide.titulo}
@@ -206,36 +272,36 @@ export default function HeroCarousel() {
                     )}
                   </h1>
 
-                  <p className="mt-6 max-w-xl text-lg leading-relaxed text-gray-600 sm:text-xl">
-                    {slide.descricao}
-                  </p>
+                  {slide.descricao && (
+                    <p className="mt-6 max-w-xl text-lg leading-relaxed text-gray-600 sm:text-xl">
+                      {slide.descricao}
+                    </p>
+                  )}
 
-                  <div
-                    className={`mt-8 flex flex-wrap gap-4 ${
-                      slide.alinhamento === "centro"
-                        ? "justify-center"
-                        : ""
-                    }`}
-                  >
-                    <Link
-                      href={slide.botaoLink}
-                      className={`inline-flex min-h-12 items-center justify-center rounded-xl px-7 py-3 font-bold shadow-lg transition duration-200 hover:-translate-y-0.5 focus:outline-none focus:ring-4 ${tema.botao}`}
-                    >
-                      {slide.botaoTexto}
-
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        className="ml-2 h-5 w-5"
-                        aria-hidden="true"
+                  {slide.botao_texto && (
+                    <div className="mt-8 flex flex-wrap gap-4">
+                      <Link
+                        href={
+                          slide.botao_link || "/"
+                        }
+                        className={`inline-flex min-h-12 items-center justify-center rounded-xl px-7 py-3 font-bold shadow-lg transition duration-200 hover:-translate-y-0.5 focus:outline-none focus:ring-4 ${tema.botao}`}
                       >
-                        <path d="M5 12h14" />
-                        <path d="m13 6 6 6-6 6" />
-                      </svg>
-                    </Link>
-                  </div>
+                        {slide.botao_texto}
+
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          className="ml-2 h-5 w-5"
+                          aria-hidden="true"
+                        >
+                          <path d="M5 12h14" />
+                          <path d="m13 6 6 6-6 6" />
+                        </svg>
+                      </Link>
+                    </div>
+                  )}
                 </div>
               </div>
             </article>
@@ -243,7 +309,7 @@ export default function HeroCarousel() {
         })}
       </div>
 
-      {configuracao.showArrows && slides.length > 1 && (
+      {slides.length > 1 && (
         <>
           <button
             type="button"
@@ -283,20 +349,26 @@ export default function HeroCarousel() {
         </>
       )}
 
-      {configuracao.showIndicators && slides.length > 1 && (
+      {slides.length > 1 && (
         <div className="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full bg-white/75 px-4 py-2 shadow-lg backdrop-blur">
           {slides.map((slide, indice) => (
             <button
               key={slide.id}
               type="button"
-              onClick={() => setSlideAtual(indice)}
-              aria-label={`Mostrar banner ${indice + 1}`}
+              onClick={() =>
+                setSlideAtual(indice)
+              }
+              aria-label={`Mostrar banner ${
+                indice + 1
+              }`}
               aria-current={
-                indice === slideAtual ? "true" : undefined
+                indice === slideAtual
+                  ? "true"
+                  : undefined
               }
               className={`h-2.5 rounded-full transition-all duration-300 ${
                 indice === slideAtual
-                  ? "w-8 bg-pink-500"
+                  ? "w-8 bg-[#DB2777]"
                   : "w-2.5 bg-gray-300 hover:bg-gray-400"
               }`}
             />
