@@ -1,77 +1,106 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+
 import { supabase } from "@/lib/supabase";
 import ProdutoForm from "./components/ProdutoForm";
 import ListaProdutos from "./components/ListaProdutos";
 import type { ProdutoAdministrativo } from "./hooks/useProdutoForm";
 
 export default function AdminProdutosPage() {
-  const [produtos, setProdutos] = useState<
-    ProdutoAdministrativo[]
-  >([]);
+  const [produtos, setProdutos] =
+    useState<ProdutoAdministrativo[]>([]);
 
-  const [produtoEditando, setProdutoEditando] =
-    useState<ProdutoAdministrativo | null>(null);
+  const [
+    produtoEditando,
+    setProdutoEditando,
+  ] =
+    useState<ProdutoAdministrativo | null>(
+      null
+    );
 
-  const [carregando, setCarregando] = useState(true);
-  const [erro, setErro] = useState("");
+  const [carregando, setCarregando] =
+    useState(true);
 
-  const buscarProdutos = useCallback(async () => {
-    setErro("");
+  const [erro, setErro] =
+    useState("");
 
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+  const buscarProdutos =
+    useCallback(async () => {
+      setErro("");
 
-      if (!session) {
-        setErro(
-          "Sessão administrativa não encontrada. Entre novamente."
+      try {
+        const {
+          data: { session },
+        } =
+          await supabase.auth.getSession();
+
+        if (!session) {
+          setErro(
+            "Sessão administrativa não encontrada. Entre novamente."
+          );
+
+          setProdutos([]);
+
+          return;
+        }
+
+        const resposta =
+          await fetch(
+            "/api/admin/produtos",
+            {
+              method: "GET",
+
+              headers: {
+                Authorization:
+                  `Bearer ${session.access_token}`,
+              },
+
+              cache:
+                "no-store",
+            }
+          );
+
+        const resultado =
+          await resposta.json();
+
+        if (
+          !resposta.ok
+        ) {
+          console.error(
+            "Erro ao carregar produtos:",
+            resultado
+          );
+
+          setErro(
+            resultado.erro ||
+              "Não foi possível carregar os produtos."
+          );
+
+          setProdutos([]);
+
+          return;
+        }
+
+        setProdutos(
+          resultado.produtos ||
+            []
         );
-        setProdutos([]);
-        return;
-      }
-
-      const resposta = await fetch("/api/admin/produtos", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        cache: "no-store",
-      });
-
-      const resultado = await resposta.json();
-
-      if (!resposta.ok) {
+      } catch (error) {
         console.error(
-          "Erro ao carregar produtos:",
-          resultado
+          "Erro interno ao carregar produtos:",
+          error
         );
 
         setErro(
-          resultado.erro ||
-            "Não foi possível carregar os produtos."
+          "Ocorreu um erro ao carregar os produtos."
         );
-
-        setProdutos([]);
-        return;
+      } finally {
+        setCarregando(
+          false
+        );
       }
-
-      setProdutos(resultado.produtos || []);
-    } catch (error) {
-      console.error(
-        "Erro interno ao carregar produtos:",
-        error
-      );
-
-      setErro(
-        "Ocorreu um erro ao carregar os produtos."
-      );
-    } finally {
-      setCarregando(false);
-    }
-  }, []);
+    }, []);
 
   useEffect(() => {
     buscarProdutos();
@@ -106,25 +135,31 @@ export default function AdminProdutosPage() {
   function editarProduto(
     produto: ProdutoAdministrativo
   ) {
-    setProdutoEditando(produto);
+    setProdutoEditando(
+      produto
+    );
 
     window.scrollTo({
       top: 0,
-      behavior: "smooth",
+      behavior:
+        "smooth",
     });
   }
 
   function cancelarEdicao() {
-    setProdutoEditando(null);
+    setProdutoEditando(
+      null
+    );
   }
 
   async function excluirProduto(
     id: number,
     nomeProduto: string
   ) {
-    const confirmar = window.confirm(
-      `Deseja realmente excluir "${nomeProduto}"?`
-    );
+    const confirmar =
+      window.confirm(
+        `Deseja realmente excluir "${nomeProduto}"?`
+      );
 
     if (!confirmar) {
       return;
@@ -135,28 +170,37 @@ export default function AdminProdutosPage() {
     try {
       const {
         data: { session },
-      } = await supabase.auth.getSession();
+      } =
+        await supabase.auth.getSession();
 
       if (!session) {
         setErro(
           "Sua sessão expirou. Entre novamente no painel."
         );
+
         return;
       }
 
-      const resposta = await fetch(
-        `/api/admin/produtos?id=${id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        }
-      );
+      const resposta =
+        await fetch(
+          `/api/admin/produtos?id=${id}`,
+          {
+            method:
+              "DELETE",
 
-      const resultado = await resposta.json();
+            headers: {
+              Authorization:
+                `Bearer ${session.access_token}`,
+            },
+          }
+        );
 
-      if (!resposta.ok) {
+      const resultado =
+        await resposta.json();
+
+      if (
+        !resposta.ok
+      ) {
         console.error(
           "Erro ao excluir produto:",
           resultado
@@ -170,8 +214,13 @@ export default function AdminProdutosPage() {
         return;
       }
 
-      if (produtoEditando?.id === id) {
-        setProdutoEditando(null);
+      if (
+        produtoEditando?.id ===
+        id
+      ) {
+        setProdutoEditando(
+          null
+        );
       }
 
       await buscarProdutos();
@@ -188,34 +237,49 @@ export default function AdminProdutosPage() {
   }
 
   return (
-    <main className="min-h-screen bg-pink-50 p-5 md:p-10">
+    <main className="min-h-screen bg-background p-6 md:p-10">
       <div className="mx-auto max-w-7xl">
         <ProdutoForm
-          produtoEditando={produtoEditando}
+          produtoEditando={
+            produtoEditando
+          }
           onConcluido={() => {
-            setProdutoEditando(null);
+            setProdutoEditando(
+              null
+            );
+
             buscarProdutos();
           }}
-          onCancelarEdicao={cancelarEdicao}
+          onCancelarEdicao={
+            cancelarEdicao
+          }
         />
 
         {erro && (
-          <div className="mt-8 rounded-2xl border border-red-300 bg-red-50 p-5 font-bold text-red-700">
+          <div className="mt-8 rounded-2xl border border-danger/30 bg-[color-mix(in_srgb,var(--danger)_8%,white)] p-5 font-bold text-danger">
             ⚠️ {erro}
           </div>
         )}
 
         {carregando ? (
-          <div className="mt-10 rounded-3xl bg-white p-10 text-center shadow">
-            <p className="text-xl font-bold text-pink-500">
+          <div className="mt-10 rounded-3xl border border-border bg-card p-10 text-center shadow">
+            <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-border border-t-primary" />
+
+            <p className="mt-4 text-xl font-bold text-primary">
               Carregando produtos...
             </p>
           </div>
         ) : (
           <ListaProdutos
-            produtos={produtos}
-            onEditar={editarProduto}
-            onExcluir={excluirProduto}
+            produtos={
+              produtos
+            }
+            onEditar={
+              editarProduto
+            }
+            onExcluir={
+              excluirProduto
+            }
           />
         )}
       </div>

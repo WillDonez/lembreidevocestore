@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+
 import { supabase } from "@/lib/supabase";
 import { formatarMoeda } from "@/lib/formatadores";
 
@@ -26,172 +27,219 @@ export default function MeuPedido() {
   }
 
   return (
-    <main className="min-h-screen bg-pink-50 p-10">
-      <div className="max-w-2xl mx-auto bg-white p-10 rounded-3xl shadow-xl">
-        <h1 className="text-4xl font-bold text-pink-500 mb-6">
-          Acompanhar Pedido
-        </h1>
-
-        <p className="text-gray-600 mb-6">
-          Digite o número do pedido ou WhatsApp usado na compra.
-        </p>
-
-        <input
-          type="text"
-          placeholder="Ex: 20 ou 33984292167"
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          className="w-full border p-4 rounded-xl mb-4"
-        />
-
-        <button
-          onClick={buscarPedido}
-          className="bg-pink-500 text-white px-6 py-4 rounded-2xl font-bold w-full"
-        >
-          Buscar Pedido
-        </button>
-      </div>
-
-      <div className="max-w-3xl mx-auto mt-10 space-y-6">
-        {pedidos.map((pedido) => (
-          <div key={pedido.id} className="bg-white p-6 rounded-2xl shadow">
-            <h2 className="text-3xl font-bold">
-  Pedido LVS-{String(pedido.id).padStart(6, "0")}
-</h2>
-
-            <p className="text-gray-500 mt-2">
-              Cliente: {pedido.nome_cliente || pedido.cliente}
-            </p>
-
-            <p className="text-gray-500">
-  Total: {formatarMoeda(pedido.total)}
-</p>
-
-            <p className="text-gray-500">
-              Data: {new Date(pedido.created_at).toLocaleString("pt-BR")}
-            </p>
-
-            <div className="mt-8">
-
-  <h3 className="text-2xl font-bold mb-4">
-    Produtos do Pedido
-  </h3>
-
-  <div className="space-y-4">
-
-    {pedido.produtos?.map((produto: any, index: number) => (
-
-      <div
-        key={index}
-        className="flex items-center gap-4 bg-pink-50 p-4 rounded-2xl"
-      >
-
-        {produto.imagem && (
-          <img
-            src={produto.imagem}
-            alt={produto.nome}
-            className="w-24 h-24 object-cover rounded-xl border"
-          />
-        )}
-
-        <div className="flex-1">
-
-          <h4 className="text-xl font-bold">
-            {produto.nome}
-          </h4>
-
-          <p className="text-gray-500">
-            Quantidade: 1
+    <main className="min-h-screen bg-background p-6 md:p-10">
+      <div className="mx-auto max-w-3xl">
+        <section className="rounded-3xl border border-border bg-card p-6 shadow-xl md:p-8">
+          <p className="text-sm font-black uppercase tracking-[0.18em] text-secondary">
+            Rastreamento
           </p>
 
-          <p className="text-pink-500 font-bold text-lg">
-  {formatarMoeda(produto.preco)}
-</p>
+          <h1 className="mt-2 text-4xl font-black text-primary md:text-5xl">
+            📦 Acompanhar Pedido
+          </h1>
 
-          {pedido.download_liberado && produto.arquivo_digital && (
-  <a
-    href={produto.arquivo_digital}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="inline-block mt-4 bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-xl font-bold transition"
-  >
-    ⬇ Baixar Arquivo
-  </a>
-)}
+          <p className="mt-3 text-text-light">
+            Digite o número do pedido ou WhatsApp usado na compra.
+          </p>
 
-        </div>
+          <div className="mt-6">
+            <input
+              type="text"
+              placeholder="Ex: 20 ou 33984292167"
+              value={busca}
+              onChange={(e) =>
+                setBusca(e.target.value)
+              }
+              className="w-full rounded-xl border border-border bg-card p-4 text-text outline-none transition placeholder:text-text-light focus:border-primary focus:ring-2 focus:ring-[color-mix(in_srgb,var(--primary)_15%,transparent)]"
+            />
 
-      </div>
+            <button
+              type="button"
+              onClick={buscarPedido}
+              className="mt-4 w-full rounded-2xl bg-primary px-6 py-4 font-bold text-white transition hover:opacity-90"
+            >
+              Buscar Pedido
+            </button>
+          </div>
+        </section>
 
-    ))}
+        <div className="mt-10 space-y-6">
+          {pedidos.map((pedido) => (
+            <section
+              key={pedido.id}
+              className="rounded-3xl border border-border bg-card p-6 shadow-lg"
+            >
+              <h2 className="text-3xl font-bold text-text">
+                Pedido LVS-
+                {String(pedido.id).padStart(6, "0")}
+              </h2>
 
-  </div>
-
-</div>
-
-            <div className="mt-8">
-              <p className="font-bold text-xl mb-6">
-                Acompanhamento:
+              <p className="mt-2 text-text-light">
+                Cliente:{" "}
+                {pedido.nome_cliente ||
+                  pedido.cliente}
               </p>
 
-              <div className="flex items-center justify-between">
-                {[
-                  {
-                    nome: "Recebido",
-                    icone: "📦",
-                    ativo: true,
-                  },
-                  {
-                    nome: "Aprovado",
-                    icone: "💳",
-                    ativo: ["aprovado", "enviado"].includes(pedido.status),
-                  },
-                  {
-                    nome: "Produção",
-                    icone: "🎨",
-                    ativo: ["aprovado", "enviado"].includes(pedido.status),
-                  },
-                  {
-                    nome: "Enviado",
-                    icone: "🚚",
-                    ativo: pedido.status === "enviado",
-                  },
-                ].map((etapa, index, array) => (
-                  <div
-                    key={etapa.nome}
-                    className="flex items-center flex-1"
-                  >
-                    <div className="flex flex-col items-center">
-                      <div
-                        className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold ${
-                          etapa.ativo
-                            ? "bg-green-500 text-white"
-                            : "bg-gray-200 text-gray-500"
-                        }`}
-                      >
-                        {etapa.icone}
+              <p className="mt-1 text-text-light">
+                Total:{" "}
+                <strong className="text-primary">
+                  {formatarMoeda(pedido.total)}
+                </strong>
+              </p>
+
+              <p className="mt-1 text-text-light">
+                Data:{" "}
+                {new Date(
+                  pedido.created_at,
+                ).toLocaleString("pt-BR")}
+              </p>
+
+              <div className="mt-8 space-y-3">
+                {pedido.produtos?.map(
+                  (
+                    produto: any,
+                    index: number,
+                  ) => (
+                    <div
+                      key={index}
+                      className="flex flex-col gap-4 rounded-2xl border border-border bg-background p-4 sm:flex-row sm:items-center"
+                    >
+                      {produto.imagem && (
+                        <img
+                          src={produto.imagem}
+                          alt={produto.nome}
+                          className="h-24 w-24 rounded-xl border border-border object-cover"
+                        />
+                      )}
+
+                      <div className="flex-1">
+                        <h4 className="text-xl font-bold text-text">
+                          {produto.nome}
+                        </h4>
+
+                        <p className="mt-1 text-text-light">
+                          Quantidade:{" "}
+                          {produto.quantidade || 1}
+                        </p>
+
+                        <p className="mt-1 text-lg font-bold text-primary">
+                          {formatarMoeda(
+                            produto.preco,
+                          )}
+                        </p>
+
+                        {pedido.download_liberado &&
+                          produto.arquivo_digital && (
+                            <a
+                              href={
+                                produto.arquivo_digital
+                              }
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-4 inline-block rounded-xl bg-success px-5 py-3 font-bold text-white transition hover:opacity-90"
+                            >
+                              ⬇ Baixar Arquivo
+                            </a>
+                          )}
                       </div>
-
-                      <p className="mt-2 text-sm font-bold text-center">
-                        {etapa.nome}
-                      </p>
                     </div>
-
-                    {index < array.length - 1 && (
-                      <div
-                        className={`h-1 flex-1 mx-2 ${
-                          etapa.ativo
-                            ? "bg-green-500"
-                            : "bg-gray-200"
-                        }`}
-                      />
-                    )}
-                  </div>
-                ))}
+                  ),
+                )}
               </div>
-            </div>
-          </div>
-        ))}
+
+              <div className="mt-8">
+                <p className="mb-6 text-xl font-bold text-text">
+                  Acompanhamento:
+                </p>
+
+                <div className="flex items-start justify-between">
+                  {[
+                    {
+                      nome: "Recebido",
+                      icone: "📦",
+                      ativo: true,
+                    },
+                    {
+                      nome: "Aprovado",
+                      icone: "💳",
+                      ativo: [
+                        "aprovado",
+                        "pago",
+                        "em_producao",
+                        "pronto",
+                        "enviado",
+                        "finalizado",
+                      ].includes(
+                        pedido.status,
+                      ),
+                    },
+                    {
+                      nome: "Produção",
+                      icone: "🎨",
+                      ativo: [
+                        "em_producao",
+                        "pronto",
+                        "enviado",
+                        "finalizado",
+                      ].includes(
+                        pedido.status,
+                      ),
+                    },
+                    {
+                      nome: "Enviado",
+                      icone: "🚚",
+                      ativo: [
+                        "enviado",
+                        "finalizado",
+                      ].includes(
+                        pedido.status,
+                      ),
+                    },
+                  ].map(
+                    (
+                      etapa,
+                      index,
+                      array,
+                    ) => (
+                      <div
+                        key={etapa.nome}
+                        className="flex flex-1 items-center"
+                      >
+                        <div className="flex flex-col items-center">
+                          <div
+                            className={`flex h-14 w-14 items-center justify-center rounded-full text-2xl font-bold ${
+                              etapa.ativo
+                                ? "bg-success text-white"
+                                : "bg-background text-text-light"
+                            }`}
+                          >
+                            {etapa.icone}
+                          </div>
+
+                          <p className="mt-2 text-center text-sm font-bold text-text">
+                            {etapa.nome}
+                          </p>
+                        </div>
+
+                        {index <
+                          array.length -
+                            1 && (
+                          <div
+                            className={`mx-2 h-1 flex-1 ${
+                              etapa.ativo
+                                ? "bg-success"
+                                : "bg-border"
+                            }`}
+                          />
+                        )}
+                      </div>
+                    ),
+                  )}
+                </div>
+              </div>
+            </section>
+          ))}
+        </div>
       </div>
     </main>
   );

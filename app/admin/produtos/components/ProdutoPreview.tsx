@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 import { formatarMoeda } from "@/lib/formatadores";
 import { obterFormato } from "@/lib/config/produtos";
 import { DadosLogisticaForm } from "./LogisticaForm";
@@ -26,7 +27,10 @@ export default function ProdutoPreview({
   destaque,
   logistica,
 }: ProdutoPreviewProps) {
-  const [imagemPreview, setImagemPreview] = useState("");
+  const [
+    imagemPreview,
+    setImagemPreview,
+  ] = useState("");
 
   useEffect(() => {
     if (!imagem) {
@@ -34,16 +38,25 @@ export default function ProdutoPreview({
       return;
     }
 
-    const urlTemporaria = URL.createObjectURL(imagem);
-    setImagemPreview(urlTemporaria);
+    const urlTemporaria =
+      URL.createObjectURL(imagem);
+
+    setImagemPreview(
+      urlTemporaria,
+    );
 
     return () => {
-      URL.revokeObjectURL(urlTemporaria);
+      URL.revokeObjectURL(
+        urlTemporaria,
+      );
     };
   }, [imagem]);
 
-  const produtoFisico = tipoProduto === "fisico";
-  const precoNumero = Number(preco || 0);
+  const produtoFisico =
+    tipoProduto === "fisico";
+
+  const precoNumero =
+    Number(preco || 0);
 
   function nomeTipoProduto() {
     if (produtoFisico) {
@@ -51,9 +64,13 @@ export default function ProdutoPreview({
     }
 
     const configuracaoFormato =
-      obterFormato(formatoArquivo);
+      obterFormato(
+        formatoArquivo,
+      );
 
-    if (configuracaoFormato) {
+    if (
+      configuracaoFormato
+    ) {
       return `${configuracaoFormato.icone} ${configuracaoFormato.label}`;
     }
 
@@ -61,28 +78,33 @@ export default function ProdutoPreview({
   }
 
   return (
-    <aside className="sticky top-28 rounded-3xl bg-white p-6 shadow-xl">
-      <div className="mb-5">
-        <p className="text-sm font-bold uppercase tracking-wide text-pink-500">
+    <aside className="xl:sticky xl:top-8 xl:self-start">
+      <div className="mb-4">
+        <p className="text-sm font-black uppercase tracking-[0.18em] text-secondary">
           Pré-visualização
         </p>
 
-        <h2 className="mt-1 text-2xl font-bold text-gray-800">
+        <h2 className="mt-1 text-2xl font-bold text-text">
           Como aparecerá na loja
         </h2>
       </div>
 
-      <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow">
-        <div className="relative flex aspect-square items-center justify-center bg-pink-50">
+      <div className="overflow-hidden rounded-3xl border border-border bg-card shadow">
+        <div className="relative flex aspect-square items-center justify-center bg-background">
           {imagemPreview ? (
             <img
               src={imagemPreview}
-              alt={nome || "Prévia do produto"}
+              alt={
+                nome ||
+                "Prévia do produto"
+              }
               className="h-full w-full object-cover"
             />
           ) : (
-            <div className="text-center text-gray-400">
-              <p className="text-6xl">🖼️</p>
+            <div className="text-center text-text-light">
+              <p className="text-6xl">
+                🖼️
+              </p>
 
               <p className="mt-3 font-bold">
                 Selecione uma imagem
@@ -91,26 +113,30 @@ export default function ProdutoPreview({
           )}
 
           {destaque && (
-            <span className="absolute left-4 top-4 rounded-full bg-yellow-400 px-4 py-2 text-sm font-bold text-yellow-900 shadow">
+            <span className="absolute left-4 top-4 rounded-full bg-secondary px-4 py-2 text-sm font-bold text-white shadow">
               ⭐ Destaque
             </span>
           )}
         </div>
 
         <div className="p-5">
-          <p className="text-sm font-bold text-pink-500">
-            {categoria || "Sem categoria"}
+          <p className="text-sm font-bold text-primary">
+            {categoria ||
+              "Sem categoria"}
           </p>
 
-          <h3 className="mt-2 min-h-14 text-2xl font-bold text-gray-800">
-            {nome.trim() || "Nome do produto"}
+          <h3 className="mt-2 min-h-14 text-2xl font-bold text-text">
+            {nome.trim() ||
+              "Nome do produto"}
           </h3>
 
-          <p className="mt-3 text-3xl font-bold text-pink-500">
+          <p className="mt-3 text-3xl font-bold text-primary">
             {formatarMoeda(
-              Number.isFinite(precoNumero)
+              Number.isFinite(
+                precoNumero,
+              )
                 ? precoNumero
-                : 0
+                : 0,
             )}
           </p>
 
@@ -118,8 +144,8 @@ export default function ProdutoPreview({
             <span
               className={`inline-block rounded-full px-3 py-2 text-sm font-bold ${
                 produtoFisico
-                  ? "bg-blue-100 text-blue-700"
-                  : "bg-green-100 text-green-700"
+                  ? "bg-[color-mix(in_srgb,var(--primary)_10%,white)] text-primary"
+                  : "bg-[color-mix(in_srgb,var(--success)_10%,white)] text-success"
               }`}
             >
               {nomeTipoProduto()}
@@ -127,11 +153,13 @@ export default function ProdutoPreview({
           </div>
 
           {produtoFisico ? (
-            <div className="mt-5 space-y-2 rounded-2xl bg-gray-50 p-4 text-sm text-gray-600">
+            <div className="mt-5 space-y-2 rounded-2xl border border-border bg-background p-4 text-sm text-text-light">
               <p>
                 Estoque:{" "}
-                <strong>
-                  {logistica.estoqueFisico || "0"} unidade(s)
+                <strong className="text-text">
+                  {logistica.estoqueFisico ||
+                    "0"}{" "}
+                  unidade(s)
                 </strong>
               </p>
 
@@ -140,8 +168,8 @@ export default function ProdutoPreview({
                 <strong
                   className={
                     logistica.freteAtivo
-                      ? "text-green-600"
-                      : "text-red-500"
+                      ? "text-success"
+                      : "text-danger"
                   }
                 >
                   {logistica.freteAtivo
@@ -153,12 +181,14 @@ export default function ProdutoPreview({
               {logistica.peso && (
                 <p>
                   Peso embalado:{" "}
-                  <strong>{logistica.peso} kg</strong>
+                  <strong className="text-text">
+                    {logistica.peso} kg
+                  </strong>
                 </p>
               )}
             </div>
           ) : (
-            <div className="mt-5 rounded-2xl bg-green-50 p-4 text-sm text-green-700">
+            <div className="mt-5 rounded-2xl border border-success/30 bg-[color-mix(in_srgb,var(--success)_8%,white)] p-4 text-sm text-success">
               <p>
                 Entrega:{" "}
                 <strong>
@@ -169,7 +199,9 @@ export default function ProdutoPreview({
               <p className="mt-2">
                 Formato:{" "}
                 <strong>
-                  {obterFormato(formatoArquivo)?.label ||
+                  {obterFormato(
+                    formatoArquivo,
+                  )?.label ||
                     "Digital"}
                 </strong>
               </p>
@@ -179,14 +211,14 @@ export default function ProdutoPreview({
           <button
             type="button"
             disabled
-            className="mt-5 w-full cursor-not-allowed rounded-2xl bg-pink-500 px-5 py-4 font-bold text-white opacity-80"
+            className="mt-5 w-full cursor-not-allowed rounded-2xl bg-accent px-5 py-4 font-bold text-white opacity-80"
           >
             Adicionar ao carrinho
           </button>
         </div>
       </div>
 
-      <p className="mt-4 text-center text-xs text-gray-400">
+      <p className="mt-4 text-center text-xs text-text-light">
         Esta visualização é apenas uma simulação do produto.
       </p>
     </aside>

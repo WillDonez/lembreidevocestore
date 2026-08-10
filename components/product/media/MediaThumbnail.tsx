@@ -39,27 +39,26 @@ export default function MediaThumbnail({
       onClick={onSelecionar}
       aria-label={`Selecionar mídia ${indice + 1} de ${nomeProduto}`}
       aria-pressed={selecionada}
-      className={`group relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl border-2 bg-white p-1 transition duration-300 ${
+      className={`group relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl border-2 bg-card p-1 transition duration-300 ${
         selecionada
-          ? "border-pink-500 shadow-lg shadow-pink-100"
-          : "border-gray-100 hover:-translate-y-0.5 hover:border-pink-200 hover:shadow-md"
+          ? "border-primary shadow-lg shadow-[color-mix(in_srgb,var(--primary)_15%,transparent)]"
+          : "border-border hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
       }`}
     >
       {imagemMiniatura ? (
         <img
           src={imagemMiniatura}
-          alt=""
-          draggable={false}
-          className="h-full w-full select-none rounded-xl object-cover transition duration-300 group-hover:scale-105"
+          alt={`${nomeProduto} - mídia ${indice + 1}`}
+          className="h-full w-full rounded-xl object-cover"
         />
       ) : (
         <div
           className={`flex h-full w-full items-center justify-center rounded-xl ${
             ehVideo
-              ? "bg-gradient-to-br from-gray-950 via-gray-900 to-pink-950 text-white"
+              ? "bg-gradient-to-br from-gray-950 via-gray-900 to-[color-mix(in_srgb,var(--primary)_35%,black)] text-white"
               : ehMidia360
                 ? "bg-gradient-to-br from-gray-900 to-gray-700 text-white"
-                : "bg-gray-100 text-gray-500"
+                : "bg-background text-text-light"
           }`}
         >
           {ehVideo ? (
@@ -75,12 +74,12 @@ export default function MediaThumbnail({
       {ehVideo && (
         <>
           <div className="absolute inset-1 flex items-center justify-center rounded-xl bg-gradient-to-t from-black/80 via-black/25 to-black/10">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-pink-500 shadow-lg transition duration-300 group-hover:scale-110">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-primary shadow-lg transition duration-300 group-hover:scale-110">
               <Play className="ml-0.5 h-4.5 w-4.5 fill-current" />
             </div>
           </div>
 
-          <div className="absolute inset-x-2 bottom-2 flex items-center justify-center gap-1 rounded-full bg-pink-500/95 px-2 py-1 text-[9px] font-black uppercase tracking-wide text-white shadow-md backdrop-blur">
+          <div className="absolute inset-x-2 bottom-2 flex items-center justify-center gap-1 rounded-full bg-primary/95 px-2 py-1 text-[9px] font-black uppercase tracking-wide text-white shadow-md backdrop-blur">
             <Sparkles className="h-3 w-3" />
             Veja demonstração
           </div>
@@ -102,7 +101,7 @@ export default function MediaThumbnail({
       )}
 
       {selecionada && (
-        <span className="pointer-events-none absolute inset-0 rounded-2xl ring-2 ring-pink-500 ring-offset-1" />
+        <span className="pointer-events-none absolute inset-0 rounded-2xl ring-2 ring-primary ring-offset-1" />
       )}
     </button>
   );

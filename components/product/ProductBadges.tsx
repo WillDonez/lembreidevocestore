@@ -20,7 +20,7 @@ export default function ProductBadges({
     <>
       <div className="absolute left-3 top-3 z-20 flex flex-col items-start gap-2">
         {destaque && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-2.5 py-1 text-[11px] font-black text-white shadow-md">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-yellow-400 px-2.5 py-1 text-[11px] font-black text-yellow-900 shadow-md">
             <Star className="h-3.5 w-3.5 fill-current" />
             Destaque
           </span>
@@ -35,7 +35,7 @@ export default function ProductBadges({
 
       {produtoDigital && (
         <div className="absolute right-3 top-3 z-20">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-pink-500 px-2.5 py-1 text-[11px] font-black text-white shadow-md">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-2.5 py-1 text-[11px] font-black text-white shadow-md">
             <Download className="h-3.5 w-3.5" />
             Digital
           </span>

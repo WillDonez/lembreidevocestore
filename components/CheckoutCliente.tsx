@@ -193,13 +193,13 @@ export default function CheckoutCliente({
   }
 
   useEffect(() => {
-  const cepSalvo =
-    sessionStorage.getItem("cepFrete");
+    const cepSalvo =
+      sessionStorage.getItem("cepFrete");
 
-  if (!cepSalvo) return;
+    if (!cepSalvo) return;
 
-  setCep(formatarCep(cepSalvo));
-}, []);
+    setCep(formatarCep(cepSalvo));
+  }, []);
 
   useEffect(() => {
     const cepLimpo = cep.replace(/\D/g, "");
@@ -312,9 +312,12 @@ export default function CheckoutCliente({
     }
   }
 
+  const inputClass =
+    "w-full rounded-xl border border-border bg-card p-3 text-text outline-none transition placeholder:text-text-light focus:border-primary focus:ring-2 focus:ring-[color-mix(in_srgb,var(--primary)_15%,transparent)]";
+
   return (
-    <div className="space-y-4 rounded-3xl bg-white p-4">
-      <h2 className="text-2xl font-bold text-pink-500">
+    <div className="space-y-4 rounded-3xl bg-card p-4">
+      <h2 className="text-2xl font-bold text-primary">
         👤 Dados do Cliente
       </h2>
 
@@ -327,7 +330,7 @@ export default function CheckoutCliente({
             setNomeCliente(e.target.value)
           }
           autoComplete="name"
-          className="w-full rounded-xl border p-3"
+          className={inputClass}
         />
 
         <input
@@ -344,7 +347,7 @@ export default function CheckoutCliente({
             setClienteEncontrado(false);
           }}
           autoComplete="email"
-          className="w-full rounded-xl border p-3"
+          className={inputClass}
         />
       </div>
 
@@ -364,7 +367,7 @@ export default function CheckoutCliente({
             localizarCliente(e.currentTarget.value)
           }
           inputMode="numeric"
-          className="w-full rounded-xl border p-3"
+          className={inputClass}
         />
 
         <input
@@ -378,18 +381,20 @@ export default function CheckoutCliente({
           }
           autoComplete="tel"
           inputMode="tel"
-          className="w-full rounded-xl border p-3"
+          className={inputClass}
         />
       </div>
 
       {clienteEncontrado && (
-        <p className="font-bold text-green-600">
-          ✅ Cliente localizado automaticamente.
-        </p>
+        <div className="rounded-xl border border-success/30 bg-[color-mix(in_srgb,var(--success)_8%,white)] p-3">
+          <p className="font-bold text-success">
+            ✅ Cliente localizado automaticamente.
+          </p>
+        </div>
       )}
 
-      <div className="border-t pt-4">
-        <h3 className="mb-3 text-xl font-bold text-pink-500">
+      <div className="border-t border-border pt-4">
+        <h3 className="mb-3 text-xl font-bold text-primary">
           📍 Endereço
         </h3>
 
@@ -406,7 +411,7 @@ export default function CheckoutCliente({
             autoComplete="postal-code"
             inputMode="numeric"
             maxLength={9}
-            className="w-full rounded-xl border p-3"
+            className={inputClass}
           />
 
           <input
@@ -417,25 +422,29 @@ export default function CheckoutCliente({
               setNumero(e.target.value)
             }
             autoComplete="address-line2"
-            className="w-full rounded-xl border p-3"
+            className={inputClass}
           />
         </div>
 
         {statusCep === "carregando" && (
-          <p className="mt-2 font-bold text-blue-600">
-            🔎 Buscando endereço...
-          </p>
+          <div className="mt-2 rounded-xl border border-primary/30 bg-[color-mix(in_srgb,var(--primary)_8%,white)] p-3">
+            <p className="font-bold text-primary">
+              🔎 Buscando endereço...
+            </p>
+          </div>
         )}
 
         {statusCep === "encontrado" && (
-          <p className="mt-2 font-bold text-green-600">
-            ✅ Endereço localizado automaticamente.
-          </p>
+          <div className="mt-2 rounded-xl border border-success/30 bg-[color-mix(in_srgb,var(--success)_8%,white)] p-3">
+            <p className="font-bold text-success">
+              ✅ Endereço localizado automaticamente.
+            </p>
+          </div>
         )}
 
         {statusCep === "erro" && (
-          <div className="mt-2">
-            <p className="font-bold text-red-600">
+          <div className="mt-2 rounded-xl border border-danger/30 bg-[color-mix(in_srgb,var(--danger)_8%,white)] p-3">
+            <p className="font-bold text-danger">
               ⚠️ Não foi possível localizar esse CEP.
             </p>
 
@@ -444,7 +453,7 @@ export default function CheckoutCliente({
               onClick={() =>
                 consultarCep(cep, true)
               }
-              className="mt-2 text-sm font-bold text-blue-600 underline"
+              className="mt-2 text-sm font-bold text-primary underline transition hover:opacity-80"
             >
               Tentar consultar novamente
             </button>
@@ -460,7 +469,7 @@ export default function CheckoutCliente({
               setEndereco(e.target.value)
             }
             autoComplete="address-line1"
-            className="w-full rounded-xl border p-3"
+            className={inputClass}
           />
 
           <input
@@ -470,7 +479,7 @@ export default function CheckoutCliente({
             onChange={(e) =>
               setComplemento(e.target.value)
             }
-            className="w-full rounded-xl border p-3"
+            className={inputClass}
           />
         </div>
 
@@ -482,7 +491,7 @@ export default function CheckoutCliente({
             onChange={(e) =>
               setBairro(e.target.value)
             }
-            className="w-full rounded-xl border p-3"
+            className={inputClass}
           />
 
           <input
@@ -493,7 +502,7 @@ export default function CheckoutCliente({
               setCidade(e.target.value)
             }
             autoComplete="address-level2"
-            className="w-full rounded-xl border p-3"
+            className={inputClass}
           />
 
           <input
@@ -510,7 +519,7 @@ export default function CheckoutCliente({
             }
             autoComplete="address-level1"
             maxLength={2}
-            className="w-full rounded-xl border p-3 uppercase"
+            className={`${inputClass} uppercase`}
           />
         </div>
       </div>

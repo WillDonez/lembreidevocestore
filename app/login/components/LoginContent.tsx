@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+
 import { supabase } from "@/lib/supabase";
 import CompraEncontrada from "./CompraEncontrada";
 import ContaCriada from "./ContaCriada";
@@ -62,7 +63,8 @@ export default function LoginContent() {
   const [visualizarSenha, setVisualizarSenha] = useState(false);
   const [carregando, setCarregando] = useState(false);
   const [mensagem, setMensagem] = useState("");
-  const [tipoMensagem, setTipoMensagem] = useState<"erro" | "sucesso">("erro");
+  const [tipoMensagem, setTipoMensagem] =
+    useState<"erro" | "sucesso">("erro");
 
   const [contaCriada, setContaCriada] = useState(false);
   const [sessaoCriada, setSessaoCriada] = useState(false);
@@ -92,166 +94,166 @@ export default function LoginContent() {
   const senhasIguais = senha === confirmarSenha;
 
   useEffect(() => {
-  let componenteAtivo = true;
+    let componenteAtivo = true;
 
-  async function prepararPagina() {
-    const cadastroUrl = searchParams.get("cadastro");
-    const modoUrl = searchParams.get("modo");
-    const emailUrl = searchParams.get("email");
-    const nomeUrl = searchParams.get("nome");
-    const pedidoUrl = searchParams.get("pedido");
+    async function prepararPagina() {
+      const cadastroUrl = searchParams.get("cadastro");
+      const modoUrl = searchParams.get("modo");
+      const emailUrl = searchParams.get("email");
+      const nomeUrl = searchParams.get("nome");
+      const pedidoUrl = searchParams.get("pedido");
 
-    let dadosSalvos: UltimoPedido | null = null;
+      let dadosSalvos: UltimoPedido | null = null;
 
-    try {
-      const ultimoPedido =
-        window.sessionStorage.getItem("ultimoPedido");
+      try {
+        const ultimoPedido =
+          window.sessionStorage.getItem("ultimoPedido");
 
-      if (ultimoPedido) {
-        dadosSalvos = JSON.parse(
-          ultimoPedido
-        ) as UltimoPedido;
-      }
-    } catch (error) {
-      console.warn(
-        "Não foi possível ler ultimoPedido:",
-        error
-      );
-    }
-
-    const emailInicial = normalizarEmail(
-      emailUrl || dadosSalvos?.email || ""
-    );
-
-    const nomeInicial = String(
-      nomeUrl || dadosSalvos?.nome || ""
-    ).trim();
-
-    const pedidoInicial = String(
-      pedidoUrl ||
-        dadosSalvos?.pedidoId ||
-        dadosSalvos?.id ||
-        ""
-    ).trim();
-
-    if (cadastroUrl === "1" || modoUrl === "cadastro") {
-      setModo("cadastro");
-    } else if (modoUrl === "recuperar") {
-      setModo("recuperar");
-    } else {
-      setModo("login");
-    }
-
-    setPedidoEncontrado(false);
-    setPedidoId("");
-
-    /*
-      Quando não existe pedido, o formulário funciona
-      como cadastro comum.
-    */
-    if (!pedidoInicial) {
-      if (emailInicial) {
-        setEmail(emailInicial);
-      }
-
-      if (nomeInicial) {
-        setNome(nomeInicial);
-      }
-
-      return;
-    }
-
-    /*
-      Para validar uma compra, precisamos do número
-      do pedido e do e-mail utilizado no checkout.
-    */
-    if (!emailInicial) {
-      setMensagem(
-        "Não foi possível validar a compra porque o e-mail do pedido não foi informado."
-      );
-      setTipoMensagem("erro");
-      return;
-    }
-
-    setValidandoPedido(true);
-    setMensagem("");
-
-    try {
-      const response = await fetch(
-        "/api/pedidos/localizar",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            pedidoId: pedidoInicial,
-            email: emailInicial,
-          }),
+        if (ultimoPedido) {
+          dadosSalvos = JSON.parse(
+            ultimoPedido
+          ) as UltimoPedido;
         }
-      );
-
-      const resultado = await response
-        .json()
-        .catch(() => ({}));
-
-      if (!componenteAtivo) {
-        return;
-      }
-
-      if (!response.ok || !resultado.encontrado) {
-        setPedidoEncontrado(false);
-        setPedidoId("");
-
-        setEmail(emailInicial);
-
-        setMensagem(
-          resultado.error ||
-            "Não foi possível localizar esta compra."
+      } catch (error) {
+        console.warn(
+          "Não foi possível ler ultimoPedido:",
+          error
         );
-
-        setTipoMensagem("erro");
-        return;
       }
 
-      /*
-        Nome, e-mail e número agora vêm do Supabase,
-        e não são mais aceitos diretamente pela URL.
-      */
-      setNome(resultado.pedido.nome || "");
-      setEmail(resultado.pedido.email || "");
-      setPedidoId(String(resultado.pedido.id));
-      setPedidoEncontrado(true);
-      setMensagem("");
-    } catch (error) {
-      console.error(
-        "Erro ao validar pedido:",
-        error
+      const emailInicial = normalizarEmail(
+        emailUrl || dadosSalvos?.email || ""
       );
 
-      if (!componenteAtivo) {
-        return;
+      const nomeInicial = String(
+        nomeUrl || dadosSalvos?.nome || ""
+      ).trim();
+
+      const pedidoInicial = String(
+        pedidoUrl ||
+          dadosSalvos?.pedidoId ||
+          dadosSalvos?.id ||
+          ""
+      ).trim();
+
+      if (cadastroUrl === "1" || modoUrl === "cadastro") {
+        setModo("cadastro");
+      } else if (modoUrl === "recuperar") {
+        setModo("recuperar");
+      } else {
+        setModo("login");
       }
 
       setPedidoEncontrado(false);
       setPedidoId("");
-      setMensagem(
-        "Não foi possível validar a compra agora. Tente novamente."
-      );
-      setTipoMensagem("erro");
-    } finally {
-      if (componenteAtivo) {
-        setValidandoPedido(false);
+
+      /*
+        Quando não existe pedido, o formulário funciona
+        como cadastro comum.
+      */
+      if (!pedidoInicial) {
+        if (emailInicial) {
+          setEmail(emailInicial);
+        }
+
+        if (nomeInicial) {
+          setNome(nomeInicial);
+        }
+
+        return;
+      }
+
+      /*
+        Para validar uma compra, precisamos do número
+        do pedido e do e-mail utilizado no checkout.
+      */
+      if (!emailInicial) {
+        setMensagem(
+          "Não foi possível validar a compra porque o e-mail do pedido não foi informado."
+        );
+        setTipoMensagem("erro");
+        return;
+      }
+
+      setValidandoPedido(true);
+      setMensagem("");
+
+      try {
+        const response = await fetch(
+          "/api/pedidos/localizar",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              pedidoId: pedidoInicial,
+              email: emailInicial,
+            }),
+          }
+        );
+
+        const resultado = await response
+          .json()
+          .catch(() => ({}));
+
+        if (!componenteAtivo) {
+          return;
+        }
+
+        if (!response.ok || !resultado.encontrado) {
+          setPedidoEncontrado(false);
+          setPedidoId("");
+
+          setEmail(emailInicial);
+
+          setMensagem(
+            resultado.error ||
+              "Não foi possível localizar esta compra."
+          );
+
+          setTipoMensagem("erro");
+          return;
+        }
+
+        /*
+          Nome, e-mail e número agora vêm do Supabase,
+          e não são mais aceitos diretamente pela URL.
+        */
+        setNome(resultado.pedido.nome || "");
+        setEmail(resultado.pedido.email || "");
+        setPedidoId(String(resultado.pedido.id));
+        setPedidoEncontrado(true);
+        setMensagem("");
+      } catch (error) {
+        console.error(
+          "Erro ao validar pedido:",
+          error
+        );
+
+        if (!componenteAtivo) {
+          return;
+        }
+
+        setPedidoEncontrado(false);
+        setPedidoId("");
+        setMensagem(
+          "Não foi possível validar a compra agora. Tente novamente."
+        );
+        setTipoMensagem("erro");
+      } finally {
+        if (componenteAtivo) {
+          setValidandoPedido(false);
+        }
       }
     }
-  }
 
-  prepararPagina();
+    prepararPagina();
 
-  return () => {
-    componenteAtivo = false;
-  };
-}, [searchParams]);
+    return () => {
+      componenteAtivo = false;
+    };
+  }, [searchParams]);
 
   function limparAvisos() {
     setMensagem("");
@@ -280,10 +282,11 @@ export default function LoginContent() {
     setCarregando(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: emailNormalizado,
-        password: senha,
-      });
+      const { data, error } =
+        await supabase.auth.signInWithPassword({
+          email: emailNormalizado,
+          password: senha,
+        });
 
       if (error) {
         console.error("Erro no login:", error);
@@ -291,14 +294,18 @@ export default function LoginContent() {
         return;
       }
 
-      const { data: cliente, error: erroCliente } = await supabase
-        .from("clientes")
-        .select("role")
-        .eq("auth_user_id", data.user.id)
-        .single();
+      const { data: cliente, error: erroCliente } =
+        await supabase
+          .from("clientes")
+          .select("role")
+          .eq("auth_user_id", data.user.id)
+          .single();
 
       if (erroCliente) {
-        console.error("Erro ao consultar perfil do usuário:", erroCliente);
+        console.error(
+          "Erro ao consultar perfil do usuário:",
+          erroCliente
+        );
       }
 
       const destinoFinal =
@@ -309,21 +316,33 @@ export default function LoginContent() {
       router.replace(destinoFinal);
       router.refresh();
     } catch (error) {
-      console.error("Falha inesperada no login:", error);
-      setMensagem("Não foi possível entrar agora. Tente novamente.");
+      console.error(
+        "Falha inesperada no login:",
+        error
+      );
+      setMensagem(
+        "Não foi possível entrar agora. Tente novamente."
+      );
     } finally {
       setCarregando(false);
     }
   }
 
-  async function criarConta(event?: FormEvent<HTMLFormElement>) {
+  async function criarConta(
+    event?: FormEvent<HTMLFormElement>
+  ) {
     event?.preventDefault();
     limparAvisos();
 
     const nomeNormalizado = nome.trim();
     const emailNormalizado = normalizarEmail(email);
 
-    if (!nomeNormalizado || !emailNormalizado || !senha || !confirmarSenha) {
+    if (
+      !nomeNormalizado ||
+      !emailNormalizado ||
+      !senha ||
+      !confirmarSenha
+    ) {
       setMensagem("Preencha todos os campos.");
       return;
     }
@@ -361,26 +380,37 @@ export default function LoginContent() {
       }
 
       if (!data.user) {
-        setMensagem("A conta não pôde ser concluída. Tente novamente.");
+        setMensagem(
+          "A conta não pôde ser concluída. Tente novamente."
+        );
         return;
       }
 
-      const response = await fetch("/api/clientes/vincular", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          nome: nomeNormalizado,
-          email: emailNormalizado,
-          authUserId: data.user.id,
-        }),
-      });
+      const response = await fetch(
+        "/api/clientes/vincular",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            nome: nomeNormalizado,
+            email: emailNormalizado,
+            authUserId: data.user.id,
+          }),
+        }
+      );
 
-      const resultado = await response.json().catch(() => ({}));
+      const resultado = await response
+        .json()
+        .catch(() => ({}));
 
       if (!response.ok) {
-        console.error("Erro ao vincular cliente:", resultado);
+        console.error(
+          "Erro ao vincular cliente:",
+          resultado
+        );
+
         setMensagem(
           resultado.error ||
             "A conta foi criada, mas não foi possível vincular o cadastro."
@@ -399,14 +429,21 @@ export default function LoginContent() {
       setConfirmarSenha("");
       setVisualizarSenha(false);
     } catch (error) {
-      console.error("Falha inesperada ao criar conta:", error);
-      setMensagem("Não foi possível criar a conta agora. Tente novamente.");
+      console.error(
+        "Falha inesperada ao criar conta:",
+        error
+      );
+      setMensagem(
+        "Não foi possível criar a conta agora. Tente novamente."
+      );
     } finally {
       setCarregando(false);
     }
   }
 
-  async function recuperarSenha(event?: FormEvent<HTMLFormElement>) {
+  async function recuperarSenha(
+    event?: FormEvent<HTMLFormElement>
+  ) {
     event?.preventDefault();
     limparAvisos();
 
@@ -420,24 +457,37 @@ export default function LoginContent() {
     setCarregando(true);
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(
-        emailNormalizado,
-        {
-          redirectTo: `${window.location.origin}/redefinir-senha`,
-        }
-      );
+      const { error } =
+        await supabase.auth.resetPasswordForEmail(
+          emailNormalizado,
+          {
+            redirectTo: `${window.location.origin}/redefinir-senha`,
+          }
+        );
 
       if (error) {
-        console.error("Erro ao recuperar senha:", error);
-        setMensagem("Não foi possível enviar o e-mail de recuperação.");
+        console.error(
+          "Erro ao recuperar senha:",
+          error
+        );
+        setMensagem(
+          "Não foi possível enviar o e-mail de recuperação."
+        );
         return;
       }
 
       setTipoMensagem("sucesso");
-      setMensagem("Enviamos um link de recuperação para o seu e-mail.");
+      setMensagem(
+        "Enviamos um link de recuperação para o seu e-mail."
+      );
     } catch (error) {
-      console.error("Falha inesperada ao recuperar senha:", error);
-      setMensagem("Não foi possível enviar o e-mail de recuperação.");
+      console.error(
+        "Falha inesperada ao recuperar senha:",
+        error
+      );
+      setMensagem(
+        "Não foi possível enviar o e-mail de recuperação."
+      );
     } finally {
       setCarregando(false);
     }
@@ -463,9 +513,18 @@ export default function LoginContent() {
     );
   }
 
+  const inputClass =
+    "w-full rounded-xl border border-border bg-card p-4 text-text outline-none transition placeholder:text-text-light focus:border-primary focus:ring-4 focus:ring-[color-mix(in_srgb,var(--primary)_15%,transparent)]";
+
   return (
-    <main className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-pink-50 px-4 py-8 sm:py-12">
-      <section className="mx-auto max-w-lg overflow-hidden rounded-3xl border border-white bg-white shadow-2xl shadow-pink-100/70">
+    <main
+      className="min-h-screen px-4 py-8 sm:py-12"
+      style={{
+        background:
+          "linear-gradient(to bottom, color-mix(in srgb, var(--primary) 7%, white), var(--background), color-mix(in srgb, var(--primary) 7%, white))",
+      }}
+    >
+      <section className="mx-auto max-w-lg overflow-hidden rounded-3xl border border-border bg-card shadow-2xl">
         <div className="px-6 pb-8 pt-7 sm:px-9">
           <div className="text-center">
             <img
@@ -474,17 +533,19 @@ export default function LoginContent() {
               className="mx-auto h-24 w-auto"
             />
 
-            <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-pink-500">
+            <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-primary">
               {modo === "login" && "Bem-vindo!"}
               {modo === "cadastro" && "Criar Conta"}
               {modo === "recuperar" && "Recuperar Senha"}
             </h1>
 
-            <p className="mx-auto mt-3 max-w-sm leading-relaxed text-gray-500">
+            <p className="mx-auto mt-3 max-w-sm leading-relaxed text-text-light">
               {modo === "login" &&
                 "Entre para acompanhar seus pedidos, dados e downloads."}
+
               {modo === "cadastro" &&
                 "Crie sua conta para acompanhar suas compras com facilidade."}
+
               {modo === "recuperar" &&
                 "Informe seu e-mail para receber o link de recuperação."}
             </p>
@@ -495,14 +556,14 @@ export default function LoginContent() {
           )}
 
           {modo !== "recuperar" && (
-            <div className="mt-7 grid grid-cols-2 rounded-2xl bg-pink-50 p-1">
+            <div className="mt-7 grid grid-cols-2 rounded-2xl bg-background p-1">
               <button
                 type="button"
                 onClick={() => trocarModo("login")}
                 className={`rounded-xl px-4 py-3 text-sm font-bold transition ${
                   modo === "login"
-                    ? "bg-white text-pink-600 shadow-sm"
-                    : "text-gray-500 hover:text-pink-600"
+                    ? "bg-card text-primary shadow-sm"
+                    : "text-text-light hover:text-primary"
                 }`}
               >
                 Entrar
@@ -513,8 +574,8 @@ export default function LoginContent() {
                 onClick={() => trocarModo("cadastro")}
                 className={`rounded-xl px-4 py-3 text-sm font-bold transition ${
                   modo === "cadastro"
-                    ? "bg-white text-pink-600 shadow-sm"
-                    : "text-gray-500 hover:text-pink-600"
+                    ? "bg-card text-primary shadow-sm"
+                    : "text-text-light hover:text-primary"
                 }`}
               >
                 Criar Conta
@@ -534,53 +595,77 @@ export default function LoginContent() {
           >
             {modo === "cadastro" && (
               <div>
-                <label htmlFor="nome" className="mb-2 block text-sm font-bold text-gray-700">
+                <label
+                  htmlFor="nome"
+                  className="mb-2 block text-sm font-bold text-text"
+                >
                   Nome completo
                 </label>
+
                 <input
                   id="nome"
                   type="text"
                   value={nome}
-                  onChange={(event) => setNome(event.target.value)}
+                  onChange={(event) =>
+                    setNome(event.target.value)
+                  }
                   autoComplete="name"
                   placeholder="Digite seu nome"
-                  className="w-full rounded-xl border border-gray-200 bg-white p-4 outline-none transition focus:border-pink-400 focus:ring-4 focus:ring-pink-100"
+                  className={inputClass}
                 />
               </div>
             )}
 
             <div>
-              <label htmlFor="email" className="mb-2 block text-sm font-bold text-gray-700">
+              <label
+                htmlFor="email"
+                className="mb-2 block text-sm font-bold text-text"
+              >
                 E-mail
               </label>
+
               <input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(event) =>
-                  setEmail(event.target.value.trimStart().toLowerCase())
+                  setEmail(
+                    event.target.value
+                      .trimStart()
+                      .toLowerCase()
+                  )
                 }
                 autoComplete="email"
                 placeholder="voce@email.com"
-                className="w-full rounded-xl border border-gray-200 bg-white p-4 outline-none transition focus:border-pink-400 focus:ring-4 focus:ring-pink-100"
+                className={inputClass}
               />
             </div>
 
             {modo !== "recuperar" && (
               <div>
-                <label htmlFor="senha" className="mb-2 block text-sm font-bold text-gray-700">
+                <label
+                  htmlFor="senha"
+                  className="mb-2 block text-sm font-bold text-text"
+                >
                   Senha
                 </label>
+
                 <input
                   id="senha"
-                  type={visualizarSenha ? "text" : "password"}
+                  type={
+                    visualizarSenha ? "text" : "password"
+                  }
                   value={senha}
-                  onChange={(event) => setSenha(event.target.value)}
+                  onChange={(event) =>
+                    setSenha(event.target.value)
+                  }
                   autoComplete={
-                    modo === "login" ? "current-password" : "new-password"
+                    modo === "login"
+                      ? "current-password"
+                      : "new-password"
                   }
                   placeholder="Digite sua senha"
-                  className="w-full rounded-xl border border-gray-200 bg-white p-4 outline-none transition focus:border-pink-400 focus:ring-4 focus:ring-pink-100"
+                  className={inputClass}
                 />
 
                 {modo === "cadastro" && senha.length > 0 && (
@@ -599,30 +684,37 @@ export default function LoginContent() {
               <div>
                 <label
                   htmlFor="confirmarSenha"
-                  className="mb-2 block text-sm font-bold text-gray-700"
+                  className="mb-2 block text-sm font-bold text-text"
                 >
                   Confirmar senha
                 </label>
+
                 <input
                   id="confirmarSenha"
-                  type={visualizarSenha ? "text" : "password"}
+                  type={
+                    visualizarSenha ? "text" : "password"
+                  }
                   value={confirmarSenha}
-                  onChange={(event) => setConfirmarSenha(event.target.value)}
+                  onChange={(event) =>
+                    setConfirmarSenha(event.target.value)
+                  }
                   autoComplete="new-password"
                   placeholder="Digite a senha novamente"
-                  className={`w-full rounded-xl border bg-white p-4 outline-none transition focus:ring-4 ${
+                  className={`w-full rounded-xl border bg-card p-4 text-text outline-none transition placeholder:text-text-light focus:ring-4 ${
                     confirmacaoPreenchida
                       ? senhasIguais
-                        ? "border-green-500 focus:ring-green-100"
-                        : "border-red-500 focus:ring-red-100"
-                      : "border-gray-200 focus:border-pink-400 focus:ring-pink-100"
+                        ? "border-success focus:ring-[color-mix(in_srgb,var(--success)_15%,transparent)]"
+                        : "border-danger focus:ring-[color-mix(in_srgb,var(--danger)_15%,transparent)]"
+                      : "border-border focus:border-primary focus:ring-[color-mix(in_srgb,var(--primary)_15%,transparent)]"
                   }`}
                 />
 
                 {confirmacaoPreenchida && (
                   <p
                     className={`mt-2 text-sm font-bold ${
-                      senhasIguais ? "text-green-600" : "text-red-600"
+                      senhasIguais
+                        ? "text-success"
+                        : "text-danger"
                     }`}
                   >
                     {senhasIguais
@@ -634,13 +726,18 @@ export default function LoginContent() {
             )}
 
             {modo !== "recuperar" && (
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-600">
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-text-light">
                 <input
                   type="checkbox"
                   checked={visualizarSenha}
-                  onChange={(event) => setVisualizarSenha(event.target.checked)}
-                  className="h-4 w-4 accent-pink-500"
+                  onChange={(event) =>
+                    setVisualizarSenha(
+                      event.target.checked
+                    )
+                  }
+                  className="h-4 w-4 accent-[var(--primary)]"
                 />
+
                 Visualizar senha
               </label>
             )}
@@ -650,8 +747,8 @@ export default function LoginContent() {
                 role="alert"
                 className={`rounded-xl border p-4 text-center text-sm font-bold ${
                   tipoMensagem === "sucesso"
-                    ? "border-green-200 bg-green-50 text-green-700"
-                    : "border-pink-200 bg-pink-50 text-pink-600"
+                    ? "border-success/30 bg-[color-mix(in_srgb,var(--success)_8%,white)] text-success"
+                    : "border-danger/30 bg-[color-mix(in_srgb,var(--danger)_8%,white)] text-danger"
                 }`}
               >
                 {mensagem}
@@ -661,21 +758,21 @@ export default function LoginContent() {
             <button
               type="submit"
               disabled={carregando || validandoPedido}
-              className="w-full rounded-2xl bg-pink-500 px-5 py-4 text-lg font-bold text-white transition hover:bg-pink-600 focus:outline-none focus:ring-4 focus:ring-pink-200 disabled:cursor-not-allowed disabled:bg-gray-300"
+              className="w-full rounded-2xl bg-primary px-5 py-4 text-lg font-bold text-white transition hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-[color-mix(in_srgb,var(--primary)_20%,transparent)] disabled:cursor-not-allowed disabled:bg-gray-300"
             >
               {validandoPedido
-  ? "Validando compra..."
-  : modo === "login"
-    ? carregando
-      ? "Entrando..."
-      : "Entrar"
-    : modo === "cadastro"
-      ? carregando
-        ? "Criando conta..."
-        : "Criar Conta"
-      : carregando
-        ? "Enviando..."
-        : "Enviar link de recuperação"}
+                ? "Validando compra..."
+                : modo === "login"
+                  ? carregando
+                    ? "Entrando..."
+                    : "Entrar"
+                  : modo === "cadastro"
+                    ? carregando
+                      ? "Criando conta..."
+                      : "Criar Conta"
+                    : carregando
+                      ? "Enviando..."
+                      : "Enviar link de recuperação"}
             </button>
           </form>
 
@@ -684,7 +781,7 @@ export default function LoginContent() {
               <button
                 type="button"
                 onClick={() => trocarModo("recuperar")}
-                className="text-sm font-medium text-gray-500 transition hover:text-pink-500"
+                className="text-sm font-medium text-text-light transition hover:text-primary"
               >
                 Esqueci minha senha
               </button>
@@ -694,7 +791,7 @@ export default function LoginContent() {
               <button
                 type="button"
                 onClick={() => trocarModo("login")}
-                className="font-bold text-pink-500 hover:underline"
+                className="font-bold text-primary transition hover:opacity-80 hover:underline"
               >
                 Voltar para o login
               </button>

@@ -17,19 +17,20 @@ export default function QuantitySelector({
   desabilitarAumento = false,
   quantidadeMaxima,
 }: QuantitySelectorProps) {
-  const tituloBotaoAumentar = desabilitarAumento
-    ? quantidadeMaxima
-      ? `Quantidade máxima: ${quantidadeMaxima}`
-      : "Quantidade máxima atingida"
-    : `Aumentar quantidade de ${nomeProduto}`;
+  const tituloBotaoAumentar =
+    desabilitarAumento
+      ? quantidadeMaxima
+        ? `Quantidade máxima: ${quantidadeMaxima}`
+        : "Quantidade máxima atingida"
+      : `Aumentar quantidade de ${nomeProduto}`;
 
   return (
-    <div className="flex w-fit items-center overflow-hidden rounded-xl border border-gray-300 bg-white">
+    <div className="inline-flex overflow-hidden rounded-xl border border-gray-300 bg-white">
       <button
         type="button"
         onClick={aoDiminuir}
         aria-label={`Diminuir quantidade de ${nomeProduto}`}
-        className="h-10 w-10 text-lg font-bold text-gray-600 transition hover:bg-pink-50 hover:text-pink-500"
+        className="h-10 w-10 text-lg font-bold text-gray-600 transition hover:bg-primary-soft hover:text-primary"
       >
         −
       </button>
@@ -47,7 +48,7 @@ export default function QuantitySelector({
         disabled={desabilitarAumento}
         aria-label={`Aumentar quantidade de ${nomeProduto}`}
         title={tituloBotaoAumentar}
-        className="h-10 w-10 text-lg font-bold text-gray-600 transition hover:bg-pink-50 hover:text-pink-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-300 disabled:hover:bg-gray-100"
+        className="h-10 w-10 text-lg font-bold text-gray-600 transition hover:bg-primary-soft hover:text-primary disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-300 disabled:hover:bg-gray-100"
       >
         +
       </button>

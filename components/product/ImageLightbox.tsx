@@ -1,6 +1,10 @@
 "use client";
 
-import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  X,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
 type ImageLightboxProps = {
   aberto: boolean;
@@ -23,15 +27,17 @@ export default function ImageLightbox({
 
   return (
     <div
-      className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-sm flex items-center justify-center"
       onClick={onFechar}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
     >
       <button
+        type="button"
         onClick={(e) => {
           e.stopPropagation();
           onFechar();
         }}
-        className="absolute top-6 right-6 text-white hover:text-pink-400 transition"
+        aria-label="Fechar visualização"
+        className="absolute right-6 top-6 text-white transition hover:text-primary"
       >
         <X size={34} />
       </button>
@@ -39,21 +45,25 @@ export default function ImageLightbox({
       {imagens.length > 1 && (
         <>
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               onAnterior();
             }}
-            className="absolute left-6 text-white hover:text-pink-400 transition"
+            aria-label="Imagem anterior"
+            className="absolute left-6 text-white transition hover:text-primary"
           >
             <ChevronLeft size={42} />
           </button>
 
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               onProxima();
             }}
-            className="absolute right-6 text-white hover:text-pink-400 transition"
+            aria-label="Próxima imagem"
+            className="absolute right-6 text-white transition hover:text-primary"
           >
             <ChevronRight size={42} />
           </button>
@@ -62,12 +72,12 @@ export default function ImageLightbox({
 
       <img
         src={imagens[indice]}
-        alt=""
+        alt={`Imagem ${indice + 1} de ${imagens.length}`}
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[92vh] max-w-[92vw] object-contain rounded-2xl shadow-2xl"
+        className="max-h-[92vh] max-w-[92vw] rounded-2xl object-contain shadow-2xl"
       />
 
-      <div className="absolute bottom-6 text-white font-bold">
+      <div className="absolute bottom-6 font-bold text-white">
         {indice + 1} de {imagens.length}
       </div>
     </div>

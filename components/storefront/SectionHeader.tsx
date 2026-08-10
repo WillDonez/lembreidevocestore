@@ -21,7 +21,8 @@ export default function SectionHeader({
   linkHref,
   alinhamento = "esquerda",
 }: SectionHeaderProps) {
-  const centralizado = alinhamento === "centro";
+  const centralizado =
+    alinhamento === "centro";
 
   return (
     <header
@@ -31,11 +32,11 @@ export default function SectionHeader({
           : "sm:flex-row sm:items-end sm:justify-between"
       }`}
     >
-      <div className={centralizado ? "max-w-2xl" : "max-w-2xl"}>
+      <div className="max-w-2xl">
         {etiqueta && (
-          <span className="mb-3 inline-flex rounded-full bg-pink-100 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-pink-600">
+          <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-secondary">
             {etiqueta}
-          </span>
+          </p>
         )}
 
         <div
@@ -46,18 +47,21 @@ export default function SectionHeader({
           }`}
         >
           {Icone && (
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-pink-100 text-pink-600">
-              <Icone className="h-6 w-6" strokeWidth={1.8} />
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--primary)_10%,white)] text-primary">
+              <Icone
+                className="h-6 w-6"
+                strokeWidth={1.8}
+              />
             </div>
           )}
 
-          <h2 className="text-2xl font-black tracking-tight text-gray-900 sm:text-3xl">
+          <h2 className="text-2xl font-black tracking-tight text-text sm:text-3xl">
             {titulo}
           </h2>
         </div>
 
         {descricao && (
-          <p className="mt-3 text-base leading-relaxed text-gray-500 sm:text-lg">
+          <p className="mt-3 text-base leading-relaxed text-text-light sm:text-lg">
             {descricao}
           </p>
         )}
@@ -66,7 +70,7 @@ export default function SectionHeader({
       {linkHref && (
         <Link
           href={linkHref}
-          className="group inline-flex shrink-0 items-center gap-2 font-bold text-pink-600 transition hover:text-pink-700"
+          className="group inline-flex shrink-0 items-center gap-2 font-bold text-primary transition hover:text-primary-light"
         >
           {linkTexto}
 

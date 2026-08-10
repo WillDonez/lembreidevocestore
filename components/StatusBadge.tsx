@@ -2,20 +2,42 @@ type Props = {
   status: string;
 };
 
-export default function StatusBadge({ status }: Props) {
-  const statusNormalizado = status.toLowerCase();
+export default function StatusBadge({
+  status,
+}: Props) {
+  const statusNormalizado =
+    status.toLowerCase();
 
-  const estilos: Record<string, string> = {
-    pendente: "bg-yellow-100 text-yellow-700",
-    aprovado: "bg-green-100 text-green-700",
-    producao: "bg-orange-100 text-orange-700",
-    produção: "bg-orange-100 text-orange-700",
-    enviado: "bg-blue-100 text-blue-700",
-    finalizado: "bg-purple-100 text-purple-700",
-    cancelado: "bg-red-100 text-red-700",
+  const estilos: Record<
+    string,
+    string
+  > = {
+    pendente:
+      "bg-[color-mix(in_srgb,var(--warning)_12%,white)] text-warning",
+
+    aprovado:
+      "bg-[color-mix(in_srgb,var(--success)_12%,white)] text-success",
+
+    producao:
+      "bg-[color-mix(in_srgb,var(--warning)_12%,white)] text-warning",
+
+    produção:
+      "bg-[color-mix(in_srgb,var(--warning)_12%,white)] text-warning",
+
+    enviado:
+      "bg-[color-mix(in_srgb,var(--primary)_12%,white)] text-primary",
+
+    finalizado:
+      "bg-[color-mix(in_srgb,var(--secondary)_14%,white)] text-secondary",
+
+    cancelado:
+      "bg-[color-mix(in_srgb,var(--danger)_12%,white)] text-danger",
   };
 
-  const icones: Record<string, string> = {
+  const icones: Record<
+    string,
+    string
+  > = {
     pendente: "🟡",
     aprovado: "🟢",
     producao: "🟠",
@@ -25,14 +47,20 @@ export default function StatusBadge({ status }: Props) {
     cancelado: "🔴",
   };
 
+  const estiloPadrao =
+    "bg-background text-text-light";
+
   return (
     <span
-      className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold ${
-        estilos[statusNormalizado] ||
-        "bg-gray-100 text-gray-700"
+      className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 font-bold ${
+        estilos[
+          statusNormalizado
+        ] || estiloPadrao
       }`}
     >
-      {icones[statusNormalizado] || "⚪"}
+      {icones[
+        statusNormalizado
+      ] || "⚪"}
 
       {status}
     </span>

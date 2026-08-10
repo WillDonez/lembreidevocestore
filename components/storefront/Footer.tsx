@@ -1,4 +1,5 @@
 import Link from "next/link";
+
 import {
   Camera,
   Heart,
@@ -15,14 +16,22 @@ const whatsappUrl =
   "https://wa.me/5500000000000?text=Olá!%20Gostaria%20de%20ajuda%20para%20escolher%20um%20produto.";
 
 export default function Footer() {
-  const anoAtual = new Date().getFullYear();
+  const anoAtual =
+    new Date().getFullYear();
 
   return (
     <footer className="mt-16">
-      <section className="bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-500 px-6 py-12 text-white sm:px-10">
+      {/* CTA DE ATENDIMENTO */}
+      <section
+        className="px-6 py-12 text-white sm:px-10"
+        style={{
+          background:
+            "linear-gradient(135deg, var(--primary), var(--primary-light))",
+        }}
+      >
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-8 text-center lg:flex-row lg:text-left">
           <div>
-            <p className="text-sm font-black uppercase tracking-[0.18em] text-pink-100">
+            <p className="text-sm font-black uppercase tracking-[0.18em] text-secondary">
               Atendimento próximo
             </p>
 
@@ -30,7 +39,7 @@ export default function Footer() {
               Ainda procurando o presente ideal?
             </h2>
 
-            <p className="mt-3 max-w-2xl text-base leading-relaxed text-pink-50 sm:text-lg">
+            <p className="mt-3 max-w-2xl text-base leading-relaxed text-white/80 sm:text-lg">
               Nossa equipe está pronta para ajudar você a encontrar
               uma opção especial para cada ocasião.
             </p>
@@ -41,7 +50,7 @@ export default function Footer() {
               href={whatsappUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 text-sm font-black text-pink-600 shadow-xl shadow-pink-900/20 transition hover:-translate-y-0.5 hover:bg-pink-50"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-card px-6 py-4 text-sm font-black text-primary shadow-xl transition hover:-translate-y-0.5 hover:brightness-95"
             >
               <MessageCircle className="h-5 w-5" />
               Falar no WhatsApp
@@ -57,12 +66,14 @@ export default function Footer() {
         </div>
       </section>
 
+      {/* RODAPÉ PRINCIPAL */}
       <section className="bg-slate-950 px-6 pb-8 pt-14 text-slate-300 sm:px-10">
         <div className="mx-auto max-w-7xl">
           <div className="grid gap-12 md:grid-cols-2 xl:grid-cols-4">
+            {/* MARCA */}
             <div>
               <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-pink-500 text-white">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-white">
                   <Heart className="h-6 w-6 fill-current" />
                 </div>
 
@@ -71,7 +82,7 @@ export default function Footer() {
                     Lembrei de Você
                   </p>
 
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-pink-400">
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary">
                     Store
                   </p>
                 </div>
@@ -87,7 +98,7 @@ export default function Footer() {
                 <a
                   href="#"
                   aria-label="Instagram"
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-slate-300 transition hover:bg-pink-500 hover:text-white"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-slate-300 transition hover:bg-primary hover:text-white"
                 >
                   <Camera className="h-5 w-5" />
                 </a>
@@ -95,7 +106,7 @@ export default function Footer() {
                 <a
                   href="#"
                   aria-label="Facebook"
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-slate-300 transition hover:bg-pink-500 hover:text-white"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-slate-300 transition hover:bg-primary hover:text-white"
                 >
                   <Users className="h-5 w-5" />
                 </a>
@@ -105,47 +116,58 @@ export default function Footer() {
                   target="_blank"
                   rel="noreferrer"
                   aria-label="WhatsApp"
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-slate-300 transition hover:bg-pink-500 hover:text-white"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-slate-300 transition hover:bg-primary hover:text-white"
                 >
                   <MessageCircle className="h-5 w-5" />
                 </a>
               </div>
             </div>
 
+            {/* INSTITUCIONAL */}
             <div>
               <h3 className="text-sm font-black uppercase tracking-[0.16em] text-white">
                 Institucional
               </h3>
 
               <nav className="mt-5 flex flex-col gap-3 text-sm">
-                <Link href="/quem-somos" className="transition hover:text-pink-400">
+                <Link
+                  href="/quem-somos"
+                  className="transition hover:text-secondary"
+                >
                   Quem somos
                 </Link>
 
-                <Link href="/como-comprar" className="transition hover:text-pink-400">
+                <Link
+                  href="/como-comprar"
+                  className="transition hover:text-secondary"
+                >
                   Como comprar
                 </Link>
 
                 <Link
                   href="/politica-de-privacidade"
-                  className="transition hover:text-pink-400"
+                  className="transition hover:text-secondary"
                 >
                   Política de privacidade
                 </Link>
 
                 <Link
                   href="/trocas-e-devolucoes"
-                  className="transition hover:text-pink-400"
+                  className="transition hover:text-secondary"
                 >
                   Trocas e devoluções
                 </Link>
 
-                <Link href="/termos-de-uso" className="transition hover:text-pink-400">
+                <Link
+                  href="/termos-de-uso"
+                  className="transition hover:text-secondary"
+                >
                   Termos de uso
                 </Link>
               </nav>
             </div>
 
+            {/* ATENDIMENTO */}
             <div>
               <h3 className="text-sm font-black uppercase tracking-[0.16em] text-white">
                 Atendimento
@@ -156,9 +178,9 @@ export default function Footer() {
                   href={whatsappUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-start gap-3 transition hover:text-pink-400"
+                  className="flex items-start gap-3 transition hover:text-secondary"
                 >
-                  <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-pink-400" />
+                  <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-secondary" />
 
                   <span>
                     Atendimento direto
@@ -170,9 +192,9 @@ export default function Footer() {
 
                 <a
                   href="mailto:contato@lembreidevocestore.com.br"
-                  className="flex items-start gap-3 transition hover:text-pink-400"
+                  className="flex items-start gap-3 transition hover:text-secondary"
                 >
-                  <Mail className="mt-0.5 h-4 w-4 shrink-0 text-pink-400" />
+                  <Mail className="mt-0.5 h-4 w-4 shrink-0 text-secondary" />
 
                   <span className="break-all">
                     contato@lembreidevocestore.com.br
@@ -180,27 +202,30 @@ export default function Footer() {
                 </a>
 
                 <div className="flex items-start gap-3">
-                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-pink-400" />
+                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-secondary" />
 
-                  <span>Atendimento online para todo o Brasil</span>
+                  <span>
+                    Atendimento online para todo o Brasil
+                  </span>
                 </div>
 
                 <Link
                   href="/minha-conta"
-                  className="transition hover:text-pink-400"
+                  className="transition hover:text-secondary"
                 >
                   Minha conta
                 </Link>
 
                 <Link
                   href="/meu-pedido"
-                  className="transition hover:text-pink-400"
+                  className="transition hover:text-secondary"
                 >
                   Meus pedidos
                 </Link>
               </div>
             </div>
 
+            {/* COMPRA SEGURA */}
             <div>
               <h3 className="text-sm font-black uppercase tracking-[0.16em] text-white">
                 Compra segura
@@ -208,7 +233,7 @@ export default function Footer() {
 
               <div className="mt-5 space-y-4">
                 <div className="flex items-start gap-3 rounded-2xl bg-white/5 p-4">
-                  <ShieldCheck className="h-5 w-5 shrink-0 text-pink-400" />
+                  <ShieldCheck className="h-5 w-5 shrink-0 text-secondary" />
 
                   <div>
                     <p className="text-sm font-bold text-white">
@@ -222,7 +247,7 @@ export default function Footer() {
                 </div>
 
                 <div className="flex items-start gap-3 rounded-2xl bg-white/5 p-4">
-                  <PackageCheck className="h-5 w-5 shrink-0 text-pink-400" />
+                  <PackageCheck className="h-5 w-5 shrink-0 text-secondary" />
 
                   <div>
                     <p className="text-sm font-bold text-white">
@@ -236,7 +261,7 @@ export default function Footer() {
                 </div>
 
                 <div className="flex items-start gap-3 rounded-2xl bg-white/5 p-4">
-                  <LockKeyhole className="h-5 w-5 shrink-0 text-pink-400" />
+                  <LockKeyhole className="h-5 w-5 shrink-0 text-secondary" />
 
                   <div>
                     <p className="text-sm font-bold text-white">
@@ -252,14 +277,16 @@ export default function Footer() {
             </div>
           </div>
 
+          {/* RODAPÉ INFERIOR */}
           <div className="mt-12 flex flex-col gap-4 border-t border-white/10 pt-7 text-center text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:text-left">
             <p>
-              © {anoAtual} Lembrei de Você Store. Todos os direitos reservados.
+              © {anoAtual} Lembrei de Você Store. Todos os
+              direitos reservados.
             </p>
 
             <p className="inline-flex items-center justify-center gap-1.5">
               Feito com
-              <Heart className="h-3.5 w-3.5 fill-pink-500 text-pink-500" />
+              <Heart className="h-3.5 w-3.5 fill-accent text-accent" />
               no Brasil
             </p>
           </div>

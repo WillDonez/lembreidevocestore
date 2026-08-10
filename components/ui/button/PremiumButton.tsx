@@ -1,6 +1,9 @@
 "use client";
 
-import { forwardRef } from "react";
+import {
+  forwardRef,
+  type ButtonHTMLAttributes,
+} from "react";
 
 type Variant =
   | "primary"
@@ -15,21 +18,21 @@ type Size =
   | "lg";
 
 type PremiumButtonProps =
-  React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  ButtonHTMLAttributes<HTMLButtonElement> & {
     variant?: Variant;
     size?: Size;
     loading?: boolean;
   };
 
-const variants = {
+const variants: Record<Variant, string> = {
   primary:
-    "bg-pink-500 text-white hover:bg-pink-600 border-pink-500",
+    "bg-primary text-white hover:bg-primary-hover border-primary",
 
   secondary:
     "bg-gray-900 text-white hover:bg-black border-gray-900",
 
   outline:
-    "bg-white text-pink-500 border-pink-300 hover:bg-pink-50",
+    "bg-white text-primary border-primary/40 hover:bg-primary-soft",
 
   success:
     "bg-green-600 text-white border-green-600 hover:bg-green-700",
@@ -38,7 +41,7 @@ const variants = {
     "bg-red-600 text-white border-red-600 hover:bg-red-700",
 };
 
-const sizes = {
+const sizes: Record<Size, string> = {
   sm: "h-9 px-4 text-sm",
 
   md: "h-11 px-5 text-sm",
@@ -91,15 +94,8 @@ const PremiumButton =
         >
           {loading && (
             <span
-              className="
-                h-4
-                w-4
-                animate-spin
-                rounded-full
-                border-2
-                border-current
-                border-t-transparent
-              "
+              aria-hidden="true"
+              className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
             />
           )}
 

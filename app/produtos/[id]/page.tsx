@@ -100,7 +100,10 @@ export default function ProdutoDetalhe() {
         .eq("id", id)
         .single();
 
-      if (produtoError || !produtoData) {
+      if (
+        produtoError ||
+        !produtoData
+      ) {
         console.error(
           "Erro ao buscar produto:",
           produtoError,
@@ -120,7 +123,10 @@ export default function ProdutoDetalhe() {
         supabase
           .from("produto_imagens")
           .select("id, url, ordem")
-          .eq("produto_id", produtoData.id)
+          .eq(
+            "produto_id",
+            produtoData.id,
+          )
           .order("ordem", {
             ascending: true,
           }),
@@ -133,7 +139,10 @@ export default function ProdutoDetalhe() {
                 "categoria",
                 produtoData.categoria,
               )
-              .neq("id", produtoData.id)
+              .neq(
+                "id",
+                produtoData.id,
+              )
               .limit(4)
           : Promise.resolve({
               data: [],
@@ -141,7 +150,9 @@ export default function ProdutoDetalhe() {
             }),
       ]);
 
-      if (resultadoGaleria.error) {
+      if (
+        resultadoGaleria.error
+      ) {
         console.error(
           "Erro ao buscar galeria do produto:",
           resultadoGaleria.error,
@@ -155,16 +166,27 @@ export default function ProdutoDetalhe() {
       } else {
         setImagensGaleria(
           (
-            resultadoGaleria.data ?? []
-          ).map((imagem) => ({
-            id: Number(imagem.id),
-            url: String(imagem.url),
-            ordem: Number(imagem.ordem),
-          })),
+            resultadoGaleria.data ??
+            []
+          ).map(
+            (imagem) => ({
+              id: Number(
+                imagem.id,
+              ),
+              url: String(
+                imagem.url,
+              ),
+              ordem: Number(
+                imagem.ordem,
+              ),
+            }),
+          ),
         );
       }
 
-      if (resultadoRelacionados.error) {
+      if (
+        resultadoRelacionados.error
+      ) {
         console.error(
           "Erro ao buscar produtos relacionados:",
           resultadoRelacionados.error,
@@ -173,7 +195,8 @@ export default function ProdutoDetalhe() {
         setRelacionados([]);
       } else {
         setRelacionados(
-          resultadoRelacionados.data ?? [],
+          resultadoRelacionados.data ??
+            [],
         );
       }
     } catch (error) {
@@ -190,10 +213,15 @@ export default function ProdutoDetalhe() {
   }
 
   const produtoDigital =
-    Boolean(produto?.arquivo_digital) ||
-    produto?.tipo_produto === "digital" ||
-    produto?.tipo_produto === "pdf" ||
-    produto?.tipo_produto === "kit";
+    Boolean(
+      produto?.arquivo_digital,
+    ) ||
+    produto?.tipo_produto ===
+      "digital" ||
+    produto?.tipo_produto ===
+      "pdf" ||
+    produto?.tipo_produto ===
+      "kit";
 
   const preco = Number(
     produto?.preco || 0,
@@ -212,9 +240,11 @@ export default function ProdutoDetalhe() {
     possuiDesconto
       ? Math.round(
           (
-            (precoAnterior - preco) /
+            (precoAnterior -
+              preco) /
             precoAnterior
-          ) * 100,
+          ) *
+            100,
         )
       : 0;
 
@@ -231,30 +261,37 @@ export default function ProdutoDetalhe() {
     }
 
     limparCarrinho();
-    adicionarCarrinho(produto);
+    adicionarCarrinho(
+      produto,
+    );
 
     /*
       Produtos físicos precisam passar pelo carrinho
       para calcular e selecionar o frete.
     */
     if (!produtoDigital) {
-      router.push("/carrinho");
+      router.push(
+        "/carrinho",
+      );
+
       return;
     }
 
     /*
       Produtos digitais não precisam de frete.
     */
-    router.push("/checkout");
+    router.push(
+      "/checkout",
+    );
   }
 
   if (carregando) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-pink-50">
+      <main className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center">
-          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-pink-200 border-t-pink-500" />
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-border border-t-primary" />
 
-          <p className="mt-5 text-lg font-bold text-pink-500">
+          <p className="mt-5 text-lg font-bold text-primary">
             Carregando produto...
           </p>
         </div>
@@ -262,24 +299,29 @@ export default function ProdutoDetalhe() {
     );
   }
 
-  if (erro || !produto) {
+  if (
+    erro ||
+    !produto
+  ) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-pink-50 px-6">
-        <div className="max-w-lg rounded-3xl bg-white p-10 text-center shadow-xl">
-          <h1 className="text-2xl font-black text-gray-900">
-            Produto não encontrado
+      <main className="flex min-h-screen items-center justify-center bg-background px-6">
+        <div className="max-w-lg rounded-3xl border border-border bg-card p-10 text-center shadow-xl">
+          <h1 className="text-2xl font-black text-text">
+            Produto não
+            encontrado
           </h1>
 
-          <p className="mt-3 text-gray-500">
+          <p className="mt-3 text-text-light">
             {erro ||
               "O produto informado não está disponível."}
           </p>
 
           <Link
             href="/"
-            className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-pink-500 px-6 py-3 font-black text-white transition hover:bg-pink-600"
+            className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-primary px-6 py-3 font-black text-white transition hover:opacity-90"
           >
             <ArrowLeft className="h-5 w-5" />
+
             Voltar para a loja
           </Link>
         </div>
@@ -288,13 +330,15 @@ export default function ProdutoDetalhe() {
   }
 
   return (
-    <main className="min-h-screen bg-pink-50">
+    <main className="min-h-screen bg-background text-text">
       <Header
         quantidadeCarrinho={
           carrinho.length
         }
         abrirCarrinho={() => {
-          router.push("/carrinho");
+          router.push(
+            "/carrinho",
+          );
         }}
       />
 
@@ -302,14 +346,15 @@ export default function ProdutoDetalhe() {
         <div className="mx-auto max-w-7xl">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-sm font-bold text-gray-600 transition hover:text-pink-500"
+            className="inline-flex items-center gap-2 text-sm font-bold text-text-light transition hover:text-primary"
           >
             <ArrowLeft className="h-4 w-4" />
+
             Voltar para a loja
           </Link>
 
           <div className="mt-6 grid gap-8 lg:grid-cols-2 lg:items-start">
-            <div className="relative overflow-hidden rounded-[2rem] border border-pink-100 bg-white p-4 shadow-xl shadow-pink-100/50 sm:p-6">
+            <div className="relative overflow-hidden rounded-[2rem] border border-border bg-card p-4 shadow-xl sm:p-6">
               <ProductBadges
                 destaque={
                   produto.destaque
@@ -343,20 +388,24 @@ export default function ProdutoDetalhe() {
               />
             </div>
 
-            <div className="rounded-[2rem] border border-pink-100 bg-white p-6 shadow-xl shadow-pink-100/50 sm:p-8 lg:p-10">
+            <div className="rounded-[2rem] border border-border bg-card p-6 shadow-xl sm:p-8 lg:p-10">
               {produto.categoria && (
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-pink-500">
-                  {produto.categoria}
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">
+                  {
+                    produto.categoria
+                  }
                 </p>
               )}
 
-              <h1 className="mt-3 text-3xl font-black leading-tight text-gray-900 sm:text-4xl lg:text-5xl">
+              <h1 className="mt-3 text-3xl font-black leading-tight text-text sm:text-4xl lg:text-5xl">
                 {produto.nome}
               </h1>
 
               {produto.descricao && (
-                <p className="mt-5 text-base leading-8 text-gray-600 sm:text-lg">
-                  {produto.descricao}
+                <p className="mt-5 text-base leading-8 text-text-light sm:text-lg">
+                  {
+                    produto.descricao
+                  }
                 </p>
               )}
 
@@ -380,49 +429,47 @@ export default function ProdutoDetalhe() {
               />
 
               <div className="mt-7 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
+                <div className="rounded-2xl border border-border bg-background p-4">
                   {produtoDigital ? (
-                    <Download className="h-5 w-5 text-emerald-600" />
+                    <Download className="h-5 w-5 text-success" />
                   ) : (
-                    <Truck className="h-5 w-5 text-blue-600" />
+                    <Truck className="h-5 w-5 text-primary" />
                   )}
 
-                  <p className="mt-3 text-sm font-black text-gray-900">
+                  <p className="mt-3 text-sm font-black text-text">
                     {produtoDigital
                       ? "Entrega digital"
                       : "Envio rastreado"}
                   </p>
 
-                  <p className="mt-1 text-xs leading-5 text-gray-500">
+                  <p className="mt-1 text-xs leading-5 text-text-light">
                     {produtoDigital
                       ? "Acesso liberado após o pagamento."
                       : "Acompanhe o envio do seu pedido."}
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-                  <ShieldCheck className="h-5 w-5 text-pink-500" />
+                <div className="rounded-2xl border border-border bg-background p-4">
+                  <ShieldCheck className="h-5 w-5 text-primary" />
 
-                  <p className="mt-3 text-sm font-black text-gray-900">
+                  <p className="mt-3 text-sm font-black text-text">
                     Compra segura
                   </p>
 
-                  <p className="mt-1 text-xs leading-5 text-gray-500">
-                    Pagamento processado em
-                    ambiente protegido.
+                  <p className="mt-1 text-xs leading-5 text-text-light">
+                    Pagamento processado em ambiente protegido.
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-                  <PackageCheck className="h-5 w-5 text-amber-500" />
+                <div className="rounded-2xl border border-border bg-background p-4">
+                  <PackageCheck className="h-5 w-5 text-secondary" />
 
-                  <p className="mt-3 text-sm font-black text-gray-900">
+                  <p className="mt-3 text-sm font-black text-text">
                     Feito com carinho
                   </p>
 
-                  <p className="mt-1 text-xs leading-5 text-gray-500">
-                    Produtos preparados para
-                    momentos especiais.
+                  <p className="mt-1 text-xs leading-5 text-text-light">
+                    Produtos preparados para momentos especiais.
                   </p>
                 </div>
               </div>
@@ -435,18 +482,23 @@ export default function ProdutoDetalhe() {
                       produto,
                     )
                   }
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-pink-500 px-6 py-4 text-base font-black text-white shadow-lg shadow-pink-200/70 transition hover:-translate-y-0.5 hover:bg-pink-600 hover:shadow-xl active:scale-[0.99]"
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-accent px-6 py-4 text-base font-black text-white shadow-lg transition hover:-translate-y-0.5 hover:opacity-90 hover:shadow-xl active:scale-[0.99]"
                 >
                   <ShoppingCart className="h-5 w-5" />
-                  Adicionar ao carrinho
+
+                  Adicionar ao
+                  carrinho
                 </button>
 
                 <button
                   type="button"
-                  onClick={comprarAgora}
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-pink-500 px-6 py-4 text-base font-black text-pink-500 transition hover:bg-pink-50 active:scale-[0.99]"
+                  onClick={
+                    comprarAgora
+                  }
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-primary px-6 py-4 text-base font-black text-primary transition hover:bg-[color-mix(in_srgb,var(--primary)_8%,white)] active:scale-[0.99]"
                 >
                   <Sparkles className="h-5 w-5" />
+
                   Comprar agora
                 </button>
               </div>
@@ -455,8 +507,9 @@ export default function ProdutoDetalhe() {
         </div>
       </section>
 
-      {relacionados.length > 0 && (
-        <section className="bg-white px-6 py-14 sm:px-10 sm:py-16">
+      {relacionados.length >
+        0 && (
+        <section className="bg-card px-6 py-14 sm:px-10 sm:py-16">
           <div className="mx-auto max-w-7xl">
             <SectionHeader
               etiqueta="Você também pode gostar"
@@ -469,8 +522,12 @@ export default function ProdutoDetalhe() {
               {relacionados.map(
                 (item) => (
                   <ProdutoCard
-                    key={item.id}
-                    produto={item}
+                    key={
+                      item.id
+                    }
+                    produto={
+                      item
+                    }
                     adicionarCarrinho={
                       adicionarCarrinho
                     }

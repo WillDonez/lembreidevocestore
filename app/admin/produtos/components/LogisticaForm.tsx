@@ -22,7 +22,7 @@ export default function LogisticaForm({
 }: LogisticaFormProps) {
   function atualizarCampo(
     campo: keyof DadosLogisticaForm,
-    valor: string | boolean
+    valor: string | boolean,
   ) {
     onChange({
       ...dados,
@@ -30,25 +30,28 @@ export default function LogisticaForm({
     });
   }
 
+  const inputClass =
+    "w-full rounded-xl border border-border bg-card p-4 text-text outline-none transition placeholder:text-text-light focus:border-primary focus:ring-2 focus:ring-[color-mix(in_srgb,var(--primary)_15%,transparent)]";
+
   return (
-    <section className="rounded-3xl border border-pink-100 bg-pink-50 p-6">
+    <section className="rounded-3xl border border-border bg-card p-6 shadow-sm">
       <div className="mb-6">
-        <p className="text-sm font-bold uppercase tracking-wide text-pink-500">
+        <p className="text-sm font-black uppercase tracking-[0.18em] text-secondary">
           Envio e estoque
         </p>
 
-        <h2 className="mt-1 text-2xl font-bold text-gray-800">
+        <h2 className="mt-1 text-2xl font-bold text-text">
           📦 Logística do produto
         </h2>
 
-        <p className="mt-2 text-sm text-gray-500">
+        <p className="mt-2 text-sm text-text-light">
           Informe o peso e as dimensões do produto já embalado.
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         <div>
-          <label className="mb-2 block font-bold text-gray-700">
+          <label className="mb-2 block font-bold text-text">
             Peso total (kg)
           </label>
 
@@ -58,13 +61,15 @@ export default function LogisticaForm({
             step="0.001"
             placeholder="Ex.: 0.500"
             value={dados.peso}
-            onChange={(e) => atualizarCampo("peso", e.target.value)}
-            className="w-full rounded-xl border bg-white p-4"
+            onChange={(e) =>
+              atualizarCampo("peso", e.target.value)
+            }
+            className={inputClass}
           />
         </div>
 
         <div>
-          <label className="mb-2 block font-bold text-gray-700">
+          <label className="mb-2 block font-bold text-text">
             Estoque físico
           </label>
 
@@ -75,14 +80,17 @@ export default function LogisticaForm({
             placeholder="Ex.: 10"
             value={dados.estoqueFisico}
             onChange={(e) =>
-              atualizarCampo("estoqueFisico", e.target.value)
+              atualizarCampo(
+                "estoqueFisico",
+                e.target.value,
+              )
             }
-            className="w-full rounded-xl border bg-white p-4"
+            className={inputClass}
           />
         </div>
 
         <div>
-          <label className="mb-2 block font-bold text-gray-700">
+          <label className="mb-2 block font-bold text-text">
             Largura (cm)
           </label>
 
@@ -92,13 +100,18 @@ export default function LogisticaForm({
             step="1"
             placeholder="Ex.: 12"
             value={dados.largura}
-            onChange={(e) => atualizarCampo("largura", e.target.value)}
-            className="w-full rounded-xl border bg-white p-4"
+            onChange={(e) =>
+              atualizarCampo(
+                "largura",
+                e.target.value,
+              )
+            }
+            className={inputClass}
           />
         </div>
 
         <div>
-          <label className="mb-2 block font-bold text-gray-700">
+          <label className="mb-2 block font-bold text-text">
             Altura (cm)
           </label>
 
@@ -108,13 +121,18 @@ export default function LogisticaForm({
             step="1"
             placeholder="Ex.: 11"
             value={dados.altura}
-            onChange={(e) => atualizarCampo("altura", e.target.value)}
-            className="w-full rounded-xl border bg-white p-4"
+            onChange={(e) =>
+              atualizarCampo(
+                "altura",
+                e.target.value,
+              )
+            }
+            className={inputClass}
           />
         </div>
 
         <div>
-          <label className="mb-2 block font-bold text-gray-700">
+          <label className="mb-2 block font-bold text-text">
             Comprimento (cm)
           </label>
 
@@ -125,14 +143,17 @@ export default function LogisticaForm({
             placeholder="Ex.: 12"
             value={dados.comprimento}
             onChange={(e) =>
-              atualizarCampo("comprimento", e.target.value)
+              atualizarCampo(
+                "comprimento",
+                e.target.value,
+              )
             }
-            className="w-full rounded-xl border bg-white p-4"
+            className={inputClass}
           />
         </div>
 
         <div>
-          <label className="mb-2 block font-bold text-gray-700">
+          <label className="mb-2 block font-bold text-text">
             Valor declarado (R$)
           </label>
 
@@ -143,15 +164,18 @@ export default function LogisticaForm({
             placeholder="Ex.: 39.90"
             value={dados.valorDeclarado}
             onChange={(e) =>
-              atualizarCampo("valorDeclarado", e.target.value)
+              atualizarCampo(
+                "valorDeclarado",
+                e.target.value,
+              )
             }
-            className="w-full rounded-xl border bg-white p-4"
+            className={inputClass}
           />
         </div>
       </div>
 
       <div className="mt-5">
-        <label className="mb-2 block font-bold text-gray-700">
+        <label className="mb-2 block font-bold text-text">
           Embalagem
         </label>
 
@@ -159,19 +183,27 @@ export default function LogisticaForm({
           type="text"
           placeholder="Ex.: Caixa individual para caneca"
           value={dados.embalagem}
-          onChange={(e) => atualizarCampo("embalagem", e.target.value)}
-          className="w-full rounded-xl border bg-white p-4"
+          onChange={(e) =>
+            atualizarCampo(
+              "embalagem",
+              e.target.value,
+            )
+          }
+          className={inputClass}
         />
       </div>
 
-      <label className="mt-6 flex cursor-pointer items-center gap-3 rounded-2xl bg-white p-4 font-bold text-gray-700">
+      <label className="mt-6 flex cursor-pointer items-center gap-3 rounded-2xl border border-border bg-background p-4 font-bold text-text transition hover:border-primary">
         <input
           type="checkbox"
           checked={dados.freteAtivo}
           onChange={(e) =>
-            atualizarCampo("freteAtivo", e.target.checked)
+            atualizarCampo(
+              "freteAtivo",
+              e.target.checked,
+            )
           }
-          className="h-5 w-5"
+          className="h-5 w-5 accent-[var(--primary)]"
         />
 
         🚚 Permitir cálculo de frete para este produto

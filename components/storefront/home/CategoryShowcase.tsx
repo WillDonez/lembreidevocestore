@@ -14,18 +14,31 @@ import SectionHeader from "@/components/storefront/SectionHeader";
 type CategoryShowcaseProps = {
   categorias: string[];
   categoriaSelecionada: string;
-  aoSelecionarCategoria: (categoria: string) => void;
-  quantidadePorCategoria?: Record<string, number>;
+  aoSelecionarCategoria: (
+    categoria: string,
+  ) => void;
+  quantidadePorCategoria?: Record<
+    string,
+    number
+  >;
 };
 
-function obterIconeCategoria(categoria: string) {
-  const nome = categoria.toLowerCase();
+function obterIconeCategoria(
+  categoria: string,
+) {
+  const nome =
+    categoria.toLowerCase();
 
-  if (nome.includes("bolo") || nome.includes("topo")) {
+  if (
+    nome.includes("bolo") ||
+    nome.includes("topo")
+  ) {
     return CakeSlice;
   }
 
-  if (nome.includes("caneca")) {
+  if (
+    nome.includes("caneca")
+  ) {
     return Coffee;
   }
 
@@ -45,7 +58,9 @@ function obterIconeCategoria(categoria: string) {
     return Gift;
   }
 
-  if (nome === "todos") {
+  if (
+    nome === "todos"
+  ) {
     return Grid2X2;
   }
 
@@ -58,89 +73,117 @@ export default function CategoryShowcase({
   aoSelecionarCategoria,
   quantidadePorCategoria = {},
 }: CategoryShowcaseProps) {
-  if (categorias.length === 0) {
+  if (
+    categorias.length === 0
+  ) {
     return null;
   }
 
-  const totalProdutos = Object.values(
-    quantidadePorCategoria,
-  ).reduce((total, atual) => total + atual, 0);
+  const totalProdutos =
+    Object.values(
+      quantidadePorCategoria,
+    ).reduce(
+      (
+        total,
+        atual,
+      ) =>
+        total + atual,
+      0,
+    );
 
   return (
-    <section className="bg-gradient-to-b from-white to-pink-50/50 py-12 sm:py-14">
-      <div className="mx-auto max-w-7xl px-6 sm:px-10 lg:px-12">
+    <section className="bg-background px-6 py-12 sm:px-10 sm:py-14">
+      <div className="mx-auto max-w-7xl">
         <SectionHeader
-          etiqueta="Explore a loja"
-          titulo="Navegue por categoria"
-          descricao="Encontre rapidamente o tipo de produto ideal para cada momento especial."
+          etiqueta="Explore por categoria"
+          titulo="Encontre do seu jeito"
+          descricao="Escolha uma categoria para descobrir produtos físicos e digitais preparados para diferentes ocasiões."
           alinhamento="centro"
         />
 
         <div className="-mx-6 overflow-x-auto px-6 pb-3 sm:mx-0 sm:px-0">
           <div className="flex min-w-max gap-3 sm:grid sm:min-w-0 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {categorias.map((categoria) => {
-              const Icone = obterIconeCategoria(categoria);
-              const selecionada =
-                categoriaSelecionada === categoria;
+            {categorias.map(
+              (categoria) => {
+                const Icone =
+                  obterIconeCategoria(
+                    categoria,
+                  );
 
-              const quantidade =
-                categoria === "Todos"
-                  ? totalProdutos
-                  : quantidadePorCategoria[categoria] ?? 0;
+                const selecionada =
+                  categoriaSelecionada ===
+                  categoria;
 
-              return (
-                <button
-                  key={categoria}
-                  type="button"
-                  onClick={() =>
-                    aoSelecionarCategoria(categoria)
-                  }
-                  aria-pressed={selecionada}
-                  className={`group relative w-44 shrink-0 overflow-hidden rounded-2xl border px-4 py-4 text-left transition-all duration-200 sm:w-auto ${
-                    selecionada
-                      ? "border-pink-500 bg-pink-500 text-white shadow-lg shadow-pink-200/60"
-                      : "border-pink-100 bg-white text-gray-900 shadow-sm hover:-translate-y-1 hover:border-pink-300 hover:shadow-lg"
-                  }`}
-                >
-                  <div
-                    className={`flex h-11 w-11 items-center justify-center rounded-xl transition ${
+                const quantidade =
+                  categoria === "Todos"
+                    ? totalProdutos
+                    : quantidadePorCategoria[
+                        categoria
+                      ] ?? 0;
+
+                return (
+                  <button
+                    key={categoria}
+                    type="button"
+                    onClick={() =>
+                      aoSelecionarCategoria(
+                        categoria,
+                      )
+                    }
+                    aria-pressed={
                       selecionada
-                        ? "bg-white/20 text-white"
-                        : "bg-pink-100 text-pink-600 group-hover:bg-pink-500 group-hover:text-white"
+                    }
+                    className={`group relative w-44 shrink-0 overflow-hidden rounded-2xl border px-4 py-4 text-left transition-all duration-200 sm:w-auto ${
+                      selecionada
+                        ? "border-primary bg-primary text-white shadow-lg"
+                        : "border-border bg-card text-text shadow-sm hover:-translate-y-1 hover:border-primary hover:shadow-lg"
                     }`}
                   >
-                    <Icone
-                      className="h-5 w-5"
-                      strokeWidth={1.9}
+                    <div
+                      className={`flex h-11 w-11 items-center justify-center rounded-xl transition ${
+                        selecionada
+                          ? "bg-white/20 text-white"
+                          : "bg-[color-mix(in_srgb,var(--primary)_10%,white)] text-primary group-hover:bg-primary group-hover:text-white"
+                      }`}
+                    >
+                      <Icone
+                        className="h-5 w-5"
+                        strokeWidth={
+                          1.9
+                        }
+                      />
+                    </div>
+
+                    <h3 className="mt-4 text-base font-black leading-tight">
+                      {
+                        categoria
+                      }
+                    </h3>
+
+                    <p
+                      className={`mt-1.5 text-sm ${
+                        selecionada
+                          ? "text-white/80"
+                          : "text-text-light"
+                      }`}
+                    >
+                      {quantidade ===
+                      1
+                        ? "1 produto"
+                        : `${quantidade} produtos`}
+                    </p>
+
+                    <div
+                      className={`mt-4 h-1 w-8 rounded-full transition-all duration-200 group-hover:w-12 ${
+                        selecionada
+                          ? "bg-secondary"
+                          : "bg-secondary"
+                      }`}
                     />
-                  </div>
-
-                  <h3 className="mt-4 text-base font-black leading-tight">
-                    {categoria}
-                  </h3>
-
-                  <p
-                    className={`mt-1.5 text-sm ${
-                      selecionada
-                        ? "text-pink-50"
-                        : "text-gray-500"
-                    }`}
-                  >
-                    {quantidade === 1
-                      ? "1 produto"
-                      : `${quantidade} produtos`}
-                  </p>
-
-                  <div
-                    className={`mt-4 h-1 w-8 rounded-full transition-all duration-200 group-hover:w-12 ${
-                      selecionada
-                        ? "bg-white"
-                        : "bg-pink-400"
-                    }`}
-                  />
-                </button>
-              );
-            })}
+                  </button>
+                );
+              },
+            )}
           </div>
         </div>
       </div>

@@ -13,12 +13,9 @@ export default function FavoriteButton({
     <button
       type="button"
       aria-label={`Adicionar ${nomeProduto} aos favoritos`}
-      className="flex h-9 w-9 items-center justify-center rounded-full border border-white/80 bg-white/90 text-gray-500 shadow-md backdrop-blur transition hover:scale-105 hover:text-pink-500"
+      className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card/90 text-text-light shadow-md backdrop-blur transition hover:scale-105 hover:text-primary"
     >
-      <Heart
-        className="h-[18px] w-[18px]"
-        strokeWidth={1.8}
-      />
+      <Heart className="h-4 w-4" />
     </button>
   );
 }

@@ -56,16 +56,25 @@ export default function MediaHints({
     }
 
     return lista;
-  }, [possuiVideo, possuiFullscreen]);
+  }, [
+    possuiVideo,
+    possuiFullscreen,
+  ]);
 
-  const [indiceDica, setIndiceDica] =
-    useState(0);
+  const [
+    indiceDica,
+    setIndiceDica,
+  ] = useState(0);
 
-  const [visivel, setVisivel] =
-    useState(true);
+  const [
+    visivel,
+    setVisivel,
+  ] = useState(true);
 
-  const [animando, setAnimando] =
-    useState(false);
+  const [
+    animando,
+    setAnimando,
+  ] = useState(false);
 
   useEffect(() => {
     setIndiceDica(0);
@@ -74,37 +83,45 @@ export default function MediaHints({
   }, [dicas.length]);
 
   useEffect(() => {
-    if (!visivel || dicas.length === 0) {
+    if (
+      !visivel ||
+      dicas.length === 0
+    ) {
       return;
     }
 
-    const temporizador = window.setTimeout(() => {
-      const ultimaDica =
-        indiceDica === dicas.length - 1;
+    const temporizador =
+      window.setTimeout(() => {
+        const ultimaDica =
+          indiceDica ===
+          dicas.length - 1;
 
-      if (ultimaDica) {
+        if (ultimaDica) {
+          setAnimando(true);
+
+          window.setTimeout(() => {
+            setVisivel(false);
+          }, 300);
+
+          return;
+        }
+
         setAnimando(true);
 
         window.setTimeout(() => {
-          setVisivel(false);
+          setIndiceDica(
+            (indiceAtual) =>
+              indiceAtual + 1,
+          );
+
+          setAnimando(false);
         }, 300);
-
-        return;
-      }
-
-      setAnimando(true);
-
-      window.setTimeout(() => {
-        setIndiceDica(
-          (indiceAtual) => indiceAtual + 1,
-        );
-
-        setAnimando(false);
-      }, 300);
-    }, TEMPO_POR_DICA);
+      }, TEMPO_POR_DICA);
 
     return () => {
-      window.clearTimeout(temporizador);
+      window.clearTimeout(
+        temporizador,
+      );
     };
   }, [
     dicas.length,
@@ -112,27 +129,37 @@ export default function MediaHints({
     visivel,
   ]);
 
-  if (!visivel || dicas.length === 0) {
+  if (
+    !visivel ||
+    dicas.length === 0
+  ) {
     return null;
   }
 
-  const dicaAtual = dicas[indiceDica];
+  const dicaAtual =
+    dicas[indiceDica];
 
   function renderizarIcone() {
-    if (dicaAtual.icone === "video") {
+    if (
+      dicaAtual.icone ===
+      "video"
+    ) {
       return (
-        <Play className="h-4 w-4 fill-current text-pink-300" />
+        <Play className="h-4 w-4 fill-current text-primary-light" />
       );
     }
 
-    if (dicaAtual.icone === "fullscreen") {
+    if (
+      dicaAtual.icone ===
+      "fullscreen"
+    ) {
       return (
-        <Expand className="h-4 w-4 text-pink-300" />
+        <Expand className="h-4 w-4 text-primary-light" />
       );
     }
 
     return (
-      <Search className="h-4 w-4 text-pink-300" />
+      <Search className="h-4 w-4 text-primary-light" />
     );
   }
 
@@ -145,7 +172,7 @@ export default function MediaHints({
   }
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-5 z-30 flex justify-center px-4">
+    <div className="pointer-events-none absolute inset-x-0 bottom-4 z-30 flex justify-center px-4">
       <div
         className={`pointer-events-auto flex max-w-full items-center gap-3 rounded-full border border-white/70 bg-gray-950/80 px-4 py-2.5 text-white shadow-xl backdrop-blur-md transition-all duration-300 ${
           animando
@@ -153,10 +180,8 @@ export default function MediaHints({
             : "translate-y-0 opacity-100"
         }`}
       >
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="shrink-0">
-            {renderizarIcone()}
-          </span>
+        <div className="flex shrink-0 items-center gap-2">
+          {renderizarIcone()}
 
           <span className="truncate text-[11px] font-bold sm:text-xs">
             {dicaAtual.texto}
@@ -165,22 +190,32 @@ export default function MediaHints({
 
         {dicas.length > 1 && (
           <div className="flex shrink-0 items-center gap-1">
-            {dicas.map((dica, indice) => (
-              <span
-                key={dica.id}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  indice === indiceDica
-                    ? "w-4 bg-pink-300"
-                    : "w-1.5 bg-white/35"
-                }`}
-              />
-            ))}
+            {dicas.map(
+              (
+                dica,
+                indice,
+              ) => (
+                <span
+                  key={
+                    dica.id
+                  }
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    indice ===
+                    indiceDica
+                      ? "w-4 bg-primary-light"
+                      : "w-1.5 bg-white/35"
+                  }`}
+                />
+              ),
+            )}
           </div>
         )}
 
         <button
           type="button"
-          onClick={fecharDicas}
+          onClick={
+            fecharDicas
+          }
           aria-label="Fechar orientações da galeria"
           className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white"
         >

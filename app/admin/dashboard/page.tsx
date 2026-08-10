@@ -110,7 +110,9 @@ const periodos: {
   },
 ];
 
-function formatarStatus(status: string) {
+function formatarStatus(
+  status: string,
+) {
   const statusNormalizado =
     String(status || "")
       .trim()
@@ -122,144 +124,177 @@ function formatarStatus(status: string) {
       return {
         texto: "Aprovado",
         classe:
-          "bg-green-100 text-green-700",
+          "bg-[color-mix(in_srgb,var(--success)_12%,white)] text-success",
       };
 
     case "em_producao":
       return {
         texto: "Em produção",
         classe:
-          "bg-orange-100 text-orange-700",
+          "bg-[color-mix(in_srgb,var(--warning)_12%,white)] text-warning",
       };
 
     case "pronto":
       return {
         texto: "Pronto",
         classe:
-          "bg-blue-100 text-blue-700",
+          "bg-[color-mix(in_srgb,var(--primary)_12%,white)] text-primary",
       };
 
     case "enviado":
       return {
         texto: "Enviado",
         classe:
-          "bg-purple-100 text-purple-700",
+          "bg-[color-mix(in_srgb,var(--primary-light)_12%,white)] text-primary-light",
       };
 
     case "finalizado":
       return {
         texto: "Finalizado",
         classe:
-          "bg-emerald-100 text-emerald-700",
+          "bg-[color-mix(in_srgb,var(--secondary)_14%,white)] text-secondary",
       };
 
     case "cancelado":
       return {
         texto: "Cancelado",
         classe:
-          "bg-red-100 text-red-700",
+          "bg-[color-mix(in_srgb,var(--danger)_12%,white)] text-danger",
       };
 
     default:
       return {
         texto: "Pendente",
         classe:
-          "bg-yellow-100 text-yellow-700",
+          "bg-[color-mix(in_srgb,var(--warning)_12%,white)] text-warning",
       };
   }
 }
 
 export default function DashboardAdmin() {
-  const [periodo, setPeriodo] =
-    useState<Periodo>("mes");
+  const [
+    periodo,
+    setPeriodo,
+  ] = useState<Periodo>(
+    "mes",
+  );
 
-  const [dados, setDados] =
+  const [
+    dados,
+    setDados,
+  ] =
     useState<DashboardResposta | null>(
       null,
     );
 
-  const [carregando, setCarregando] =
+  const [
+    carregando,
+    setCarregando,
+  ] =
     useState(true);
 
-  const [erro, setErro] =
+  const [
+    erro,
+    setErro,
+  ] =
     useState("");
 
   const buscarDados =
-    useCallback(async () => {
-      try {
-        setCarregando(true);
-        setErro("");
-
-        const {
-          data: { session },
-        } =
-          await supabase.auth.getSession();
-
-        if (!session) {
-          setErro(
-            "Sua sessão expirou. Entre novamente no painel.",
+    useCallback(
+      async () => {
+        try {
+          setCarregando(
+            true,
           );
 
-          return;
-        }
+          setErro("");
 
-        const resposta = await fetch(
-          `/api/admin/dashboard?periodo=${periodo}`,
-          {
-            method: "GET",
-
-            headers: {
-              Authorization:
-                `Bearer ${session.access_token}`,
+          const {
+            data: {
+              session,
             },
+          } =
+            await supabase.auth.getSession();
 
-            cache: "no-store",
-          },
-        );
+          if (!session) {
+            setErro(
+              "Sua sessão expirou. Entre novamente no painel.",
+            );
 
-        const resultado =
-          await resposta.json();
+            return;
+          }
 
-        if (!resposta.ok) {
-          throw new Error(
-            resultado.erro ||
-              "Não foi possível carregar o dashboard.",
+          const resposta =
+            await fetch(
+              `/api/admin/dashboard?periodo=${periodo}`,
+              {
+                method:
+                  "GET",
+
+                headers: {
+                  Authorization:
+                    `Bearer ${session.access_token}`,
+                },
+
+                cache:
+                  "no-store",
+              },
+            );
+
+          const resultado =
+            await resposta.json();
+
+          if (
+            !resposta.ok
+          ) {
+            throw new Error(
+              resultado.erro ||
+                "Não foi possível carregar o dashboard.",
+            );
+          }
+
+          setDados(
+            resultado as DashboardResposta,
+          );
+        } catch (error) {
+          console.error(
+            "Erro ao carregar dashboard:",
+            error,
+          );
+
+          setErro(
+            error instanceof
+              Error
+              ? error.message
+              : "Não foi possível carregar o dashboard.",
+          );
+        } finally {
+          setCarregando(
+            false,
           );
         }
-
-        setDados(
-          resultado as DashboardResposta,
-        );
-      } catch (error) {
-        console.error(
-          "Erro ao carregar dashboard:",
-          error,
-        );
-
-        setErro(
-          error instanceof Error
-            ? error.message
-            : "Não foi possível carregar o dashboard.",
-        );
-      } finally {
-        setCarregando(false);
-      }
-    }, [periodo]);
+      },
+      [periodo],
+    );
 
   useEffect(() => {
     buscarDados();
   }, [buscarDados]);
 
-  if (carregando && !dados) {
+  if (
+    carregando &&
+    !dados
+  ) {
     return (
-      <main className="min-h-screen bg-pink-50 p-5 md:p-10">
+      <main className="min-h-screen bg-background p-5 md:p-10">
         <div className="mx-auto max-w-7xl">
-          <div className="flex min-h-[420px] items-center justify-center rounded-3xl bg-white shadow">
+          <div className="flex min-h-[420px] items-center justify-center rounded-3xl border border-border bg-card shadow">
             <div className="text-center">
-              <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-pink-100 border-t-pink-500" />
+              <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-border border-t-primary" />
 
-              <p className="mt-4 font-bold text-gray-600">
-                Carregando relatórios...
+              <p className="mt-4 font-bold text-text-light">
+                Carregando
+                relatórios...
               </p>
             </div>
           </div>
@@ -268,25 +303,32 @@ export default function DashboardAdmin() {
     );
   }
 
-  if (erro && !dados) {
+  if (
+    erro &&
+    !dados
+  ) {
     return (
-      <main className="min-h-screen bg-pink-50 p-5 md:p-10">
+      <main className="min-h-screen bg-background p-5 md:p-10">
         <div className="mx-auto max-w-7xl">
-          <div className="rounded-3xl bg-white p-8 text-center shadow">
-            <XCircle className="mx-auto h-12 w-12 text-red-500" />
+          <div className="rounded-3xl border border-border bg-card p-8 text-center shadow">
+            <XCircle className="mx-auto h-12 w-12 text-danger" />
 
-            <h1 className="mt-4 text-2xl font-black text-gray-800">
-              Não foi possível carregar o dashboard
+            <h1 className="mt-4 text-2xl font-black text-text">
+              Não foi possível
+              carregar o
+              dashboard
             </h1>
 
-            <p className="mt-2 text-gray-500">
+            <p className="mt-2 text-text-light">
               {erro}
             </p>
 
             <button
               type="button"
-              onClick={buscarDados}
-              className="mt-6 rounded-xl bg-pink-500 px-5 py-3 font-bold text-white transition hover:bg-pink-600"
+              onClick={
+                buscarDados
+              }
+              className="mt-6 rounded-xl bg-primary px-5 py-3 font-bold text-white transition hover:opacity-90"
             >
               Tentar novamente
             </button>
@@ -312,7 +354,8 @@ export default function DashboardAdmin() {
   const maiorFaturamento =
     Math.max(
       ...evolucao.map(
-        (item) => item.faturamento,
+        (item) =>
+          item.faturamento,
       ),
       1,
     );
@@ -332,49 +375,63 @@ export default function DashboardAdmin() {
 
   const percentualDigitais =
     totalTipos > 0
-      ? 100 - percentualFisicos
+      ? 100 -
+        percentualFisicos
       : 0;
 
   return (
-    <main className="min-h-screen bg-pink-50 p-4 md:p-8 lg:p-10">
+    <main className="min-h-screen bg-background p-4 md:p-8 lg:p-10">
       <div className="mx-auto max-w-7xl">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="font-bold uppercase tracking-[0.16em] text-pink-500">
-              Lembrei de Você Store
+            <p className="font-bold uppercase tracking-[0.16em] text-secondary">
+              Lembrei de Você
+              Store
             </p>
 
-            <h1 className="mt-1 text-3xl font-black text-gray-900 md:text-5xl">
+            <h1 className="mt-1 text-3xl font-black text-text md:text-5xl">
               Dashboard
             </h1>
 
-            <p className="mt-2 max-w-2xl text-gray-500">
-              Acompanhe vendas, pedidos e desempenho da loja.
+            <p className="mt-2 max-w-2xl text-text-light">
+              Acompanhe vendas,
+              pedidos e
+              desempenho da
+              loja.
             </p>
           </div>
 
-          <div className="flex max-w-full gap-2 overflow-x-auto rounded-2xl bg-white p-2 shadow-sm">
-            {periodos.map((item) => (
-              <button
-                key={item.valor}
-                type="button"
-                onClick={() =>
-                  setPeriodo(item.valor)
-                }
-                className={`shrink-0 rounded-xl px-4 py-2.5 text-sm font-black transition ${
-                  periodo === item.valor
-                    ? "bg-pink-500 text-white shadow"
-                    : "text-gray-500 hover:bg-pink-50 hover:text-pink-600"
-                }`}
-              >
-                {item.titulo}
-              </button>
-            ))}
+          <div className="flex max-w-full gap-2 overflow-x-auto rounded-2xl border border-border bg-card p-2 shadow-sm">
+            {periodos.map(
+              (item) => (
+                <button
+                  key={
+                    item.valor
+                  }
+                  type="button"
+                  onClick={() =>
+                    setPeriodo(
+                      item.valor,
+                    )
+                  }
+                  className={`shrink-0 rounded-xl px-4 py-2.5 text-sm font-black transition ${
+                    periodo ===
+                    item.valor
+                      ? "bg-primary text-white shadow"
+                      : "text-text-light hover:bg-[color-mix(in_srgb,var(--primary)_8%,white)] hover:text-primary"
+                  }`}
+                >
+                  {
+                    item.titulo
+                  }
+                </button>
+              ),
+            )}
           </div>
         </div>
 
         {erro && (
-          <div className="mt-5 rounded-2xl border border-yellow-200 bg-yellow-50 p-4 text-sm font-bold text-yellow-700">
+          <div className="mt-5 rounded-2xl border border-warning/30 bg-[color-mix(in_srgb,var(--warning)_8%,white)] p-4 text-sm font-bold text-warning">
             {erro}
           </div>
         )}
@@ -433,7 +490,7 @@ export default function DashboardAdmin() {
             valor={
               indicadores.pedidosPendentes
             }
-            classe="text-yellow-600"
+            classe="text-warning"
           />
 
           <CardResumo
@@ -441,7 +498,7 @@ export default function DashboardAdmin() {
             valor={
               indicadores.pedidosCancelados
             }
-            classe="text-red-500"
+            classe="text-danger"
           />
 
           <CardResumo
@@ -449,43 +506,54 @@ export default function DashboardAdmin() {
             valor={
               indicadores.itensVendidos
             }
-            classe="text-pink-500"
+            classe="text-primary"
           />
 
           <CardResumo
             titulo="Clientes"
-            valor={gerais.clientes}
-            classe="text-blue-600"
+            valor={
+              gerais.clientes
+            }
+            classe="text-secondary"
           />
         </div>
 
         <div className="mt-7 grid grid-cols-1 gap-6 xl:grid-cols-[1.55fr_0.85fr]">
-          <section className="rounded-3xl bg-white p-5 shadow-sm md:p-7">
+          <section className="rounded-3xl border border-border bg-card p-5 shadow-sm md:p-7">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="text-xl font-black text-gray-800">
+                <h2 className="text-xl font-black text-text">
                   Evolução das vendas
                 </h2>
 
-                <p className="mt-1 text-sm text-gray-500">
-                  Faturamento dos pedidos pagos no período.
+                <p className="mt-1 text-sm text-text-light">
+                  Faturamento dos
+                  pedidos pagos no
+                  período.
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 text-sm font-bold text-gray-500">
-                <CalendarDays className="h-4 w-4 text-pink-500" />
-                {periodos.find(
-                  (item) =>
-                    item.valor === periodo,
-                )?.titulo}
+              <div className="flex items-center gap-2 text-sm font-bold text-text-light">
+                <CalendarDays className="h-4 w-4 text-primary" />
+
+                {
+                  periodos.find(
+                    (
+                      item,
+                    ) =>
+                      item.valor ===
+                      periodo,
+                  )?.titulo
+                }
               </div>
             </div>
 
-            <div className="mt-8 flex h-64 items-end gap-2 overflow-x-auto border-b border-gray-100 pb-1">
+            <div className="mt-8 flex h-64 items-end gap-2 overflow-x-auto border-b border-border pb-1">
               {evolucao.map(
                 (item) => {
                   const altura =
-                    item.faturamento > 0
+                    item.faturamento >
+                    0
                       ? Math.max(
                           8,
                           (item.faturamento /
@@ -496,7 +564,9 @@ export default function DashboardAdmin() {
 
                   return (
                     <div
-                      key={item.chave}
+                      key={
+                        item.chave
+                      }
                       className="group flex min-w-[32px] flex-1 flex-col items-center justify-end"
                     >
                       <div className="relative flex h-52 w-full items-end justify-center">
@@ -504,21 +574,23 @@ export default function DashboardAdmin() {
                           title={`${item.label}: ${formatarMoeda(
                             item.faturamento,
                           )} • ${item.pedidos} pedido(s)`}
-                          className="w-full max-w-10 rounded-t-xl bg-pink-400 transition hover:bg-pink-500"
+                          className="w-full max-w-10 rounded-t-xl bg-primary transition hover:brightness-110"
                           style={{
                             height: `${altura}%`,
                           }}
                         />
 
-                        <div className="pointer-events-none absolute bottom-full mb-2 hidden whitespace-nowrap rounded-lg bg-gray-950 px-2 py-1 text-[10px] font-bold text-white shadow group-hover:block">
+                        <div className="pointer-events-none absolute bottom-full mb-2 hidden whitespace-nowrap rounded-lg bg-slate-950 px-2 py-1 text-[10px] font-bold text-white shadow group-hover:block">
                           {formatarMoeda(
                             item.faturamento,
                           )}
                         </div>
                       </div>
 
-                      <span className="mt-2 text-[10px] font-bold text-gray-400">
-                        {item.label}
+                      <span className="mt-2 text-[10px] font-bold text-text-light">
+                        {
+                          item.label
+                        }
                       </span>
                     </div>
                   );
@@ -527,89 +599,107 @@ export default function DashboardAdmin() {
             </div>
           </section>
 
-          <section className="rounded-3xl bg-white p-5 shadow-sm md:p-7">
-            <h2 className="text-xl font-black text-gray-800">
+          <section className="rounded-3xl border border-border bg-card p-5 shadow-sm md:p-7">
+            <h2 className="text-xl font-black text-text">
               Vendas por tipo
             </h2>
 
-            <p className="mt-1 text-sm text-gray-500">
-              Quantidade de itens vendidos.
+            <p className="mt-1 text-sm text-text-light">
+              Quantidade de itens
+              vendidos.
             </p>
 
             <div className="mt-8 space-y-7">
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-gray-700">
-                    Produtos físicos
+                  <span className="font-bold text-text">
+                    Produtos
+                    físicos
                   </span>
 
-                  <strong className="text-pink-500">
-                    {vendasPorTipo.fisicos}
+                  <strong className="text-primary">
+                    {
+                      vendasPorTipo.fisicos
+                    }
                   </strong>
                 </div>
 
-                <div className="mt-2 h-3 overflow-hidden rounded-full bg-gray-100">
+                <div className="mt-2 h-3 overflow-hidden rounded-full bg-background">
                   <div
-                    className="h-full rounded-full bg-pink-500 transition-all"
+                    className="h-full rounded-full bg-primary transition-all"
                     style={{
                       width: `${percentualFisicos}%`,
                     }}
                   />
                 </div>
 
-                <p className="mt-1 text-right text-xs font-bold text-gray-400">
-                  {percentualFisicos}%
+                <p className="mt-1 text-right text-xs font-bold text-text-light">
+                  {
+                    percentualFisicos
+                  }
+                  %
                 </p>
               </div>
 
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-gray-700">
-                    Produtos digitais
+                  <span className="font-bold text-text">
+                    Produtos
+                    digitais
                   </span>
 
-                  <strong className="text-purple-500">
-                    {vendasPorTipo.digitais}
+                  <strong className="text-accent">
+                    {
+                      vendasPorTipo.digitais
+                    }
                   </strong>
                 </div>
 
-                <div className="mt-2 h-3 overflow-hidden rounded-full bg-gray-100">
+                <div className="mt-2 h-3 overflow-hidden rounded-full bg-background">
                   <div
-                    className="h-full rounded-full bg-purple-500 transition-all"
+                    className="h-full rounded-full bg-accent transition-all"
                     style={{
                       width: `${percentualDigitais}%`,
                     }}
                   />
                 </div>
 
-                <p className="mt-1 text-right text-xs font-bold text-gray-400">
-                  {percentualDigitais}%
+                <p className="mt-1 text-right text-xs font-bold text-text-light">
+                  {
+                    percentualDigitais
+                  }
+                  %
                 </p>
               </div>
             </div>
 
-            <div className="mt-8 grid grid-cols-2 gap-3 border-t pt-6">
-              <div className="rounded-2xl bg-pink-50 p-4">
-                <Package className="h-5 w-5 text-pink-500" />
+            <div className="mt-8 grid grid-cols-2 gap-3 border-t border-border pt-6">
+              <div className="rounded-2xl bg-[color-mix(in_srgb,var(--primary)_8%,white)] p-4">
+                <Package className="h-5 w-5 text-primary" />
 
-                <p className="mt-2 text-xs font-bold text-gray-500">
-                  Produtos cadastrados
+                <p className="mt-2 text-xs font-bold text-text-light">
+                  Produtos
+                  cadastrados
                 </p>
 
-                <strong className="mt-1 block text-2xl text-gray-800">
-                  {gerais.produtos}
+                <strong className="mt-1 block text-2xl text-text">
+                  {
+                    gerais.produtos
+                  }
                 </strong>
               </div>
 
-              <div className="rounded-2xl bg-purple-50 p-4">
-                <Users className="h-5 w-5 text-purple-500" />
+              <div className="rounded-2xl bg-[color-mix(in_srgb,var(--secondary)_10%,white)] p-4">
+                <Users className="h-5 w-5 text-secondary" />
 
-                <p className="mt-2 text-xs font-bold text-gray-500">
+                <p className="mt-2 text-xs font-bold text-text-light">
                   Categorias
                 </p>
 
-                <strong className="mt-1 block text-2xl text-gray-800">
-                  {gerais.categorias}
+                <strong className="mt-1 block text-2xl text-text">
+                  {
+                    gerais.categorias
+                  }
                 </strong>
               </div>
             </div>
@@ -617,45 +707,59 @@ export default function DashboardAdmin() {
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
-          <section className="rounded-3xl bg-white p-5 shadow-sm md:p-7">
+          <section className="rounded-3xl border border-border bg-card p-5 shadow-sm md:p-7">
             <div>
-              <h2 className="text-xl font-black text-gray-800">
-                Produtos mais vendidos
+              <h2 className="text-xl font-black text-text">
+                Produtos mais
+                vendidos
               </h2>
 
-              <p className="mt-1 text-sm text-gray-500">
-                Ranking por quantidade no período.
+              <p className="mt-1 text-sm text-text-light">
+                Ranking por
+                quantidade no
+                período.
               </p>
             </div>
 
             {produtosMaisVendidos.length ===
             0 ? (
-              <div className="mt-6 rounded-2xl bg-gray-50 p-8 text-center text-gray-400">
-                Ainda não existem vendas nesse período.
+              <div className="mt-6 rounded-2xl bg-background p-8 text-center text-text-light">
+                Ainda não existem
+                vendas nesse
+                período.
               </div>
             ) : (
               <div className="mt-6 space-y-3">
                 {produtosMaisVendidos.map(
-                  (produto, index) => (
+                  (
+                    produto,
+                    index,
+                  ) => (
                     <div
                       key={`${produto.nome}-${index}`}
-                      className="flex items-center gap-4 rounded-2xl border border-gray-100 p-4"
+                      className="flex items-center gap-4 rounded-2xl border border-border p-4"
                     >
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pink-50 font-black text-pink-500">
-                        {index + 1}
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--primary)_10%,white)] font-black text-primary">
+                        {index +
+                          1}
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <p className="truncate font-black text-gray-800">
-                          {produto.nome}
+                        <p className="truncate font-black text-text">
+                          {
+                            produto.nome
+                          }
                         </p>
 
-                        <p className="mt-1 text-sm text-gray-500">
-                          {produto.quantidade} unidade(s)
+                        <p className="mt-1 text-sm text-text-light">
+                          {
+                            produto.quantidade
+                          }{" "}
+                          unidade(s)
                         </p>
                       </div>
 
-                      <strong className="text-sm text-pink-500">
+                      <strong className="text-sm text-primary">
                         {formatarMoeda(
                           produto.faturamento,
                         )}
@@ -667,20 +771,24 @@ export default function DashboardAdmin() {
             )}
           </section>
 
-          <section className="rounded-3xl bg-white p-5 shadow-sm md:p-7">
+          <section className="rounded-3xl border border-border bg-card p-5 shadow-sm md:p-7">
             <div>
-              <h2 className="text-xl font-black text-gray-800">
+              <h2 className="text-xl font-black text-text">
                 Últimos pedidos
               </h2>
 
-              <p className="mt-1 text-sm text-gray-500">
-                Pedidos registrados no período selecionado.
+              <p className="mt-1 text-sm text-text-light">
+                Pedidos registrados
+                no período
+                selecionado.
               </p>
             </div>
 
-            {ultimosPedidos.length === 0 ? (
-              <div className="mt-6 rounded-2xl bg-gray-50 p-8 text-center text-gray-400">
-                Nenhum pedido encontrado.
+            {ultimosPedidos.length ===
+            0 ? (
+              <div className="mt-6 rounded-2xl bg-background p-8 text-center text-text-light">
+                Nenhum pedido
+                encontrado.
               </div>
             ) : (
               <div className="mt-6 space-y-3">
@@ -693,13 +801,16 @@ export default function DashboardAdmin() {
 
                     return (
                       <div
-                        key={pedido.id}
-                        className="rounded-2xl border border-gray-100 p-4"
+                        key={
+                          pedido.id
+                        }
+                        className="rounded-2xl border border-border p-4"
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div className="min-w-0">
-                            <p className="font-black text-gray-800">
-                              Pedido LVS-
+                            <p className="font-black text-text">
+                              Pedido
+                              LVS-
                               {String(
                                 pedido.id,
                               ).padStart(
@@ -708,20 +819,24 @@ export default function DashboardAdmin() {
                               )}
                             </p>
 
-                            <p className="mt-1 truncate text-sm text-gray-500">
-                              {pedido.cliente}
+                            <p className="mt-1 truncate text-sm text-text-light">
+                              {
+                                pedido.cliente
+                              }
                             </p>
                           </div>
 
                           <span
                             className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-black ${status.classe}`}
                           >
-                            {status.texto}
+                            {
+                              status.texto
+                            }
                           </span>
                         </div>
 
                         <div className="mt-4 flex items-end justify-between gap-4">
-                          <div className="flex items-center gap-1.5 text-xs font-bold text-gray-400">
+                          <div className="flex items-center gap-1.5 text-xs font-bold text-text-light">
                             <Clock3 className="h-3.5 w-3.5" />
 
                             {pedido.created_at
@@ -733,7 +848,7 @@ export default function DashboardAdmin() {
                               : "Data não informada"}
                           </div>
 
-                          <strong className="text-lg text-pink-500">
+                          <strong className="text-lg text-primary">
                             {formatarMoeda(
                               pedido.total,
                             )}
@@ -751,22 +866,30 @@ export default function DashboardAdmin() {
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <CardGeral
             titulo="Produtos"
-            valor={gerais.produtos}
+            valor={
+              gerais.produtos
+            }
           />
 
           <CardGeral
             titulo="Categorias"
-            valor={gerais.categorias}
+            valor={
+              gerais.categorias
+            }
           />
 
           <CardGeral
             titulo="Clientes"
-            valor={gerais.clientes}
+            valor={
+              gerais.clientes
+            }
           />
 
           <CardGeral
             titulo="Pedidos totais"
-            valor={gerais.pedidos}
+            valor={
+              gerais.pedidos
+            }
           />
         </div>
       </div>
@@ -786,24 +909,24 @@ function CardIndicador({
   icone: React.ReactNode;
 }) {
   return (
-    <div className="rounded-3xl bg-white p-5 shadow-sm md:p-6">
+    <div className="rounded-3xl border border-border bg-card p-5 shadow-sm md:p-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="font-bold text-gray-500">
+          <p className="font-bold text-text-light">
             {titulo}
           </p>
 
-          <strong className="mt-2 block text-2xl font-black text-gray-900 md:text-3xl">
+          <strong className="mt-2 block text-2xl font-black text-text md:text-3xl">
             {valor}
           </strong>
         </div>
 
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-pink-50 text-pink-500">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--primary)_8%,white)] text-primary">
           {icone}
         </div>
       </div>
 
-      <p className="mt-3 text-xs font-medium text-gray-400">
+      <p className="mt-3 text-xs font-medium text-text-light">
         {descricao}
       </p>
     </div>
@@ -820,8 +943,8 @@ function CardResumo({
   classe: string;
 }) {
   return (
-    <div className="rounded-2xl bg-white p-4 shadow-sm">
-      <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
+    <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+      <p className="text-xs font-bold uppercase tracking-wide text-text-light">
         {titulo}
       </p>
 
@@ -842,12 +965,12 @@ function CardGeral({
   valor: number;
 }) {
   return (
-    <div className="rounded-2xl border border-pink-100 bg-white p-4 text-center">
-      <p className="text-xs font-bold text-gray-400">
+    <div className="rounded-2xl border border-border bg-card p-4 text-center">
+      <p className="text-xs font-bold text-text-light">
         {titulo}
       </p>
 
-      <strong className="mt-1 block text-2xl font-black text-gray-800">
+      <strong className="mt-1 block text-2xl font-black text-text">
         {valor}
       </strong>
     </div>

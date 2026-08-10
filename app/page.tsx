@@ -163,7 +163,7 @@ export default function Home() {
   );
 
   return (
-    <main className="min-h-screen bg-pink-50">
+    <main className="min-h-screen bg-background text-text">
       <Header
         quantidadeCarrinho={carrinho.length}
         abrirCarrinho={() => {
@@ -175,7 +175,7 @@ export default function Home() {
 
       <BenefitsBar />
 
-      <section className="bg-white px-6 py-12 sm:px-10 sm:py-14">
+      <section className="bg-card px-6 py-12 sm:px-10 sm:py-14">
         <div className="mx-auto max-w-7xl text-center">
           <SectionHeader
             etiqueta="Encontre seu presente"
@@ -184,14 +184,14 @@ export default function Home() {
             alinhamento="centro"
           />
 
-          <div className="mx-auto mt-8 flex w-full max-w-3xl overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-md shadow-gray-100">
+          <div className="mx-auto mt-8 flex w-full max-w-3xl overflow-hidden rounded-2xl border border-border bg-card shadow-md">
             <select
               value={tipoSelecionado}
               onChange={(evento) => {
                 setTipoSelecionado(evento.target.value);
                 setCategoriaSelecionada("Todos");
               }}
-              className="cursor-pointer border-r border-gray-200 bg-gray-50 px-4 py-4 text-sm font-bold text-gray-700 outline-none transition hover:bg-pink-50 sm:px-5 sm:text-base"
+              className="cursor-pointer border-r border-border bg-background px-4 py-4 text-sm font-bold text-text outline-none transition hover:bg-[color-mix(in_srgb,var(--primary)_8%,white)] sm:px-5 sm:text-base"
               aria-label="Tipo de produto"
             >
               <option value="todos">
@@ -214,13 +214,13 @@ export default function Home() {
               onChange={(evento) =>
                 setBusca(evento.target.value)
               }
-              className="min-w-0 flex-1 px-4 py-4 text-sm text-gray-700 outline-none placeholder:text-gray-400 sm:px-5 sm:text-base"
+              className="min-w-0 flex-1 bg-card px-4 py-4 text-sm text-text outline-none placeholder:text-text-light sm:px-5 sm:text-base"
             />
 
             <button
               type="button"
               aria-label="Pesquisar produtos"
-              className="flex items-center justify-center border-l border-gray-200 bg-gray-50 px-4 text-gray-700 transition hover:bg-pink-50 hover:text-pink-500 sm:px-5"
+              className="flex items-center justify-center border-l border-border bg-background px-4 text-text transition hover:bg-[color-mix(in_srgb,var(--primary)_8%,white)] hover:text-primary sm:px-5"
             >
               <svg
                 viewBox="0 0 24 24"
@@ -241,16 +241,12 @@ export default function Home() {
       <CategoryShowcase
         categorias={nomesCategorias}
         categoriaSelecionada={categoriaSelecionada}
-        aoSelecionarCategoria={
-          setCategoriaSelecionada
-        }
-        quantidadePorCategoria={
-          quantidadePorCategoria
-        }
+        aoSelecionarCategoria={setCategoriaSelecionada}
+        quantidadePorCategoria={quantidadePorCategoria}
       />
 
       {produtosDestaque.length > 0 && (
-        <section className="bg-white px-6 py-14 sm:px-10 sm:py-16">
+        <section className="bg-card px-6 py-14 sm:px-10 sm:py-16">
           <div className="mx-auto max-w-7xl">
             <SectionHeader
               etiqueta="Seleção especial"
@@ -264,9 +260,7 @@ export default function Home() {
                 <ProdutoCard
                   key={produto.id}
                   produto={produto}
-                  adicionarCarrinho={
-                    adicionarCarrinho
-                  }
+                  adicionarCarrinho={adicionarCarrinho}
                 />
               ))}
             </div>
@@ -275,7 +269,13 @@ export default function Home() {
       )}
 
       {novidades.length > 0 && (
-        <section className="bg-gradient-to-b from-pink-50 to-white px-6 py-14 sm:px-10 sm:py-16">
+        <section
+          className="px-6 py-14 sm:px-10 sm:py-16"
+          style={{
+            background:
+              "linear-gradient(to bottom, color-mix(in srgb, var(--primary) 6%, white), var(--background))",
+          }}
+        >
           <div className="mx-auto max-w-7xl">
             <SectionHeader
               etiqueta="Acabaram de chegar"
@@ -289,9 +289,7 @@ export default function Home() {
                 <ProdutoCard
                   key={produto.id}
                   produto={produto}
-                  adicionarCarrinho={
-                    adicionarCarrinho
-                  }
+                  adicionarCarrinho={adicionarCarrinho}
                 />
               ))}
             </div>
@@ -305,7 +303,6 @@ export default function Home() {
       />
 
       <Footer />
-      
     </main>
   );
 }

@@ -36,10 +36,13 @@ export default function ProductMediaGallery({
   const midiasOrdenadas = useMemo(
     () =>
       [...midias]
-        .filter((midia) => Boolean(midia.url))
+        .filter((midia) =>
+          Boolean(midia.url),
+        )
         .sort(
           (midiaA, midiaB) =>
-            midiaA.ordem - midiaB.ordem,
+            midiaA.ordem -
+            midiaB.ordem,
         ),
     [midias],
   );
@@ -63,7 +66,8 @@ export default function ProductMediaGallery({
   ]);
 
   const midiaAtiva =
-    midiasOrdenadas[indiceAtivo] ?? null;
+    midiasOrdenadas[indiceAtivo] ??
+    null;
 
   const possuiVariasMidias =
     midiasOrdenadas.length > 1;
@@ -73,7 +77,8 @@ export default function ProductMediaGallery({
 
   const possuiVideo =
     midiasOrdenadas.some(
-      (midia) => midia.tipo === "video",
+      (midia) =>
+        midia.tipo === "video",
     );
 
   function selecionarMidia(
@@ -88,10 +93,12 @@ export default function ProductMediaGallery({
         return;
       }
 
-      setIndiceAtivo((indiceAtual) =>
-        indiceAtual === 0
-          ? midiasOrdenadas.length - 1
-          : indiceAtual - 1,
+      setIndiceAtivo(
+        (indiceAtual) =>
+          indiceAtual === 0
+            ? midiasOrdenadas.length -
+              1
+            : indiceAtual - 1,
       );
     }, [
       possuiVariasMidias,
@@ -104,11 +111,13 @@ export default function ProductMediaGallery({
         return;
       }
 
-      setIndiceAtivo((indiceAtual) =>
-        indiceAtual ===
-        midiasOrdenadas.length - 1
-          ? 0
-          : indiceAtual + 1,
+      setIndiceAtivo(
+        (indiceAtual) =>
+          indiceAtual ===
+          midiasOrdenadas.length -
+            1
+            ? 0
+            : indiceAtual + 1,
       );
     }, [
       possuiVariasMidias,
@@ -131,10 +140,10 @@ export default function ProductMediaGallery({
 
   return (
     <>
-      <div>
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <section className="rounded-3xl border border-border bg-card p-5 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <div className="flex items-center gap-2 text-pink-500">
+            <div className="flex items-center gap-2 text-primary">
               <Sparkles className="h-4 w-4" />
 
               <p className="text-xs font-black uppercase tracking-[0.18em]">
@@ -142,7 +151,7 @@ export default function ProductMediaGallery({
               </p>
             </div>
 
-            <p className="mt-1 text-sm font-medium text-gray-500">
+            <p className="mt-1 text-sm font-medium text-text-light">
               Fotos, zoom, demonstração e tela cheia para
               você explorar melhor o produto.
             </p>
@@ -162,7 +171,7 @@ export default function ProductMediaGallery({
           )}
         </div>
 
-        <div className="relative overflow-hidden rounded-[1.5rem]">
+        <div className="relative mt-5 overflow-hidden rounded-[1.5rem]">
           <MediaViewer
             midia={midiaAtiva}
             nomeProduto={nomeProduto}
@@ -170,7 +179,9 @@ export default function ProductMediaGallery({
 
           <MediaHints
             possuiVideo={possuiVideo}
-            possuiFullscreen={possuiMidias}
+            possuiFullscreen={
+              possuiMidias
+            }
           />
 
           {possuiMidias && (
@@ -179,7 +190,7 @@ export default function ProductMediaGallery({
               onClick={abrirFullscreen}
               aria-label="Explorar o produto em tela cheia"
               title="Explorar detalhes"
-              className="absolute right-3 top-3 z-30 flex h-10 w-10 items-center justify-center rounded-full border border-white/80 bg-white/90 text-gray-700 shadow-lg backdrop-blur transition hover:scale-105 hover:text-pink-500"
+              className="absolute right-3 top-3 z-30 flex h-10 w-10 items-center justify-center rounded-full border border-white/80 bg-white/90 text-gray-700 shadow-lg backdrop-blur transition hover:scale-105 hover:text-primary"
             >
               <Expand className="h-4 w-4" />
             </button>
@@ -189,25 +200,31 @@ export default function ProductMediaGallery({
             <>
               <button
                 type="button"
-                onClick={mostrarMidiaAnterior}
+                onClick={
+                  mostrarMidiaAnterior
+                }
                 aria-label="Mostrar mídia anterior"
-                className="absolute left-3 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-white/90 text-gray-700 shadow-lg backdrop-blur transition hover:scale-105 hover:text-pink-500"
+                className="absolute left-3 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-white/90 text-gray-700 shadow-lg backdrop-blur transition hover:scale-105 hover:text-primary"
               >
                 <ChevronLeft className="h-6 w-6" />
               </button>
 
               <button
                 type="button"
-                onClick={mostrarProximaMidia}
+                onClick={
+                  mostrarProximaMidia
+                }
                 aria-label="Mostrar próxima mídia"
-                className="absolute right-3 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-white/90 text-gray-700 shadow-lg backdrop-blur transition hover:scale-105 hover:text-pink-500"
+                className="absolute right-3 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-white/90 text-gray-700 shadow-lg backdrop-blur transition hover:scale-105 hover:text-primary"
               >
                 <ChevronRight className="h-6 w-6" />
               </button>
 
               <div className="absolute bottom-3 right-3 z-20 rounded-full bg-gray-950/70 px-3 py-1.5 text-xs font-bold text-white backdrop-blur">
                 {indiceAtivo + 1} de{" "}
-                {midiasOrdenadas.length}
+                {
+                  midiasOrdenadas.length
+                }
               </div>
             </>
           )}
@@ -216,17 +233,27 @@ export default function ProductMediaGallery({
         {possuiVariasMidias && (
           <div className="mt-4 flex gap-3 overflow-x-auto pb-2">
             {midiasOrdenadas.map(
-              (midia, indice) => (
+              (
+                midia,
+                indice,
+              ) => (
                 <MediaThumbnail
                   key={`${midia.tipo}-${midia.id}-${indice}`}
                   midia={midia}
                   selecionada={
-                    indice === indiceAtivo
+                    indice ===
+                    indiceAtivo
                   }
-                  indice={indice}
-                  nomeProduto={nomeProduto}
+                  indice={
+                    indice
+                  }
+                  nomeProduto={
+                    nomeProduto
+                  }
                   onSelecionar={() =>
-                    selecionarMidia(indice)
+                    selecionarMidia(
+                      indice,
+                    )
                   }
                 />
               ),
@@ -234,21 +261,37 @@ export default function ProductMediaGallery({
           </div>
         )}
 
-        <p className="mt-3 text-center text-xs font-medium text-gray-400">
+        <p className="mt-3 text-center text-xs font-medium text-text-light">
           Selecione uma miniatura, veja a demonstração ou
           explore o produto em tela cheia.
         </p>
-      </div>
+      </section>
 
       <FullscreenMediaViewer
-        aberto={fullscreenAberto}
-        nomeProduto={nomeProduto}
-        midias={midiasOrdenadas}
-        indiceAtivo={indiceAtivo}
-        onFechar={fecharFullscreen}
-        onSelecionar={selecionarMidia}
-        onAnterior={mostrarMidiaAnterior}
-        onProxima={mostrarProximaMidia}
+        aberto={
+          fullscreenAberto
+        }
+        nomeProduto={
+          nomeProduto
+        }
+        midias={
+          midiasOrdenadas
+        }
+        indiceAtivo={
+          indiceAtivo
+        }
+        onFechar={
+          fecharFullscreen
+        }
+        onSelecionar={
+          selecionarMidia
+        }
+        onAnterior={
+          mostrarMidiaAnterior
+        }
+        onProxima={
+          mostrarProximaMidia
+        }
       />
     </>
   );

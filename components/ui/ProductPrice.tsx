@@ -2,24 +2,20 @@ import { formatarMoeda } from "@/lib/formatadores";
 
 type ProductPriceProps = {
   value: number;
-
   size?:
     | "sm"
     | "md"
     | "lg"
     | "xl";
-
   color?:
     | "default"
     | "primary"
     | "success"
     | "danger";
-
   align?:
     | "left"
     | "center"
     | "right";
-
   className?: string;
 };
 
@@ -39,7 +35,7 @@ export default function ProductPrice({
 
   const colors = {
     default: "text-gray-800",
-    primary: "text-pink-500",
+    primary: "text-primary",
     success: "text-green-600",
     danger: "text-red-500",
   };

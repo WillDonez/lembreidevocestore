@@ -39,7 +39,7 @@ function obterFormatoProduto(produto: any) {
 
 function obterIdentificacaoProduto(produto: any) {
   const tipoProduto = normalizarTipoProduto(
-    produto.tipo_produto
+    produto.tipo_produto,
   );
 
   if (tipoProduto === "fisico") {
@@ -64,36 +64,36 @@ export default function ListaProdutos({
 }: ListaProdutosProps) {
   if (produtos.length === 0) {
     return (
-      <section className="mx-auto mt-10 max-w-5xl">
-        <div className="rounded-3xl border-2 border-dashed border-pink-200 bg-white p-10 text-center">
-          <p className="text-5xl">📦</p>
-
-          <h2 className="mt-4 text-2xl font-bold text-gray-800">
-            Nenhum produto cadastrado
-          </h2>
-
-          <p className="mt-2 text-gray-500">
-            Cadastre o primeiro produto usando o formulário acima.
-          </p>
+      <section className="mt-10 rounded-3xl border border-border bg-card p-10 text-center shadow-sm">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--primary)_8%,white)] text-3xl">
+          📦
         </div>
+
+        <h2 className="mt-4 text-2xl font-bold text-text">
+          Nenhum produto cadastrado
+        </h2>
+
+        <p className="mt-2 text-text-light">
+          Cadastre o primeiro produto usando o formulário acima.
+        </p>
       </section>
     );
   }
 
   return (
-    <section className="mx-auto mt-10 max-w-5xl">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+    <section className="mt-10">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-bold uppercase tracking-wide text-pink-500">
+          <p className="text-sm font-black uppercase tracking-[0.18em] text-secondary">
             Catálogo administrativo
           </p>
 
-          <h2 className="mt-1 text-3xl font-bold text-gray-800">
+          <h2 className="mt-1 text-3xl font-bold text-text">
             Produtos cadastrados
           </h2>
         </div>
 
-        <span className="rounded-full bg-pink-100 px-5 py-2 font-bold text-pink-600">
+        <span className="rounded-full bg-[color-mix(in_srgb,var(--primary)_10%,white)] px-5 py-2 font-bold text-primary">
           {produtos.length} produto(s)
         </span>
       </div>
@@ -101,13 +101,13 @@ export default function ListaProdutos({
       <div className="space-y-4">
         {produtos.map((produto) => {
           const logistica = Array.isArray(
-            produto.produto_logistica
+            produto.produto_logistica,
           )
             ? produto.produto_logistica[0]
             : produto.produto_logistica;
 
           const tipoProduto = normalizarTipoProduto(
-            produto.tipo_produto
+            produto.tipo_produto,
           );
 
           const produtoFisico =
@@ -119,11 +119,11 @@ export default function ListaProdutos({
           return (
             <article
               key={produto.id}
-              className="rounded-3xl bg-white p-6 shadow transition hover:shadow-lg"
+              className="rounded-3xl border border-border bg-card p-6 shadow-sm transition hover:shadow-lg"
             >
               <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
                 <div className="flex min-w-0 items-center gap-5">
-                  <div className="flex h-24 w-24 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-pink-50">
+                  <div className="flex h-24 w-24 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-background">
                     {produto.imagem ? (
                       <img
                         src={produto.imagem}
@@ -138,16 +138,16 @@ export default function ListaProdutos({
                   </div>
 
                   <div className="min-w-0">
-                    <h3 className="truncate text-2xl font-bold text-gray-800">
+                    <h3 className="truncate text-2xl font-bold text-text">
                       {produto.nome}
                     </h3>
 
-                    <p className="mt-1 text-xl font-bold text-pink-500">
+                    <p className="mt-1 text-xl font-bold text-primary">
                       {formatarMoeda(produto.preco)}
                     </p>
 
                     <div className="mt-3 flex flex-wrap gap-2 text-sm font-bold">
-                      <span className="rounded-full bg-gray-100 px-3 py-1 text-gray-600">
+                      <span className="rounded-full bg-background px-3 py-1 text-text-light">
                         {produto.categoria ||
                           "Sem categoria"}
                       </span>
@@ -155,27 +155,26 @@ export default function ListaProdutos({
                       <span
                         className={`rounded-full px-3 py-1 ${
                           produtoFisico
-                            ? "bg-blue-100 text-blue-700"
-                            : "bg-green-100 text-green-700"
+                            ? "bg-[color-mix(in_srgb,var(--primary)_10%,white)] text-primary"
+                            : "bg-[color-mix(in_srgb,var(--success)_10%,white)] text-success"
                         }`}
                       >
                         {identificacaoProduto}
                       </span>
 
                       {produto.destaque && (
-                        <span className="rounded-full bg-yellow-100 px-3 py-1 text-yellow-700">
+                        <span className="rounded-full bg-[color-mix(in_srgb,var(--secondary)_12%,white)] px-3 py-1 text-secondary">
                           ⭐ Destaque
                         </span>
                       )}
                     </div>
 
                     {produtoFisico && (
-                      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-gray-500">
+                      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-text-light">
                         <span>
                           Estoque:{" "}
-                          <strong>
-                            {logistica?.estoque_fisico ??
-                              0}
+                          <strong className="text-text">
+                            {logistica?.estoque_fisico ?? 0}
                           </strong>
                         </span>
 
@@ -184,8 +183,8 @@ export default function ListaProdutos({
                           <strong
                             className={
                               logistica?.frete_ativo
-                                ? "text-green-600"
-                                : "text-red-500"
+                                ? "text-success"
+                                : "text-danger"
                             }
                           >
                             {logistica?.frete_ativo
@@ -197,7 +196,7 @@ export default function ListaProdutos({
                         {logistica?.peso > 0 && (
                           <span>
                             Peso:{" "}
-                            <strong>
+                            <strong className="text-text">
                               {logistica.peso} kg
                             </strong>
                           </span>
@@ -212,7 +211,7 @@ export default function ListaProdutos({
                     href="/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="rounded-xl bg-gray-100 px-4 py-3 font-bold text-gray-600 transition hover:bg-gray-200"
+                    className="rounded-xl border border-border bg-background px-4 py-3 font-bold text-text-light transition hover:border-primary hover:text-primary"
                   >
                     👁 Ver loja
                   </a>
@@ -222,7 +221,7 @@ export default function ListaProdutos({
                     onClick={() =>
                       onEditar(produto)
                     }
-                    className="rounded-xl bg-blue-500 px-4 py-3 font-bold text-white transition hover:bg-blue-600"
+                    className="rounded-xl bg-primary px-4 py-3 font-bold text-white transition hover:opacity-90"
                   >
                     ✏️ Editar
                   </button>
@@ -232,10 +231,10 @@ export default function ListaProdutos({
                     onClick={() =>
                       onExcluir(
                         produto.id,
-                        produto.nome
+                        produto.nome,
                       )
                     }
-                    className="rounded-xl bg-red-500 px-4 py-3 font-bold text-white transition hover:bg-red-600"
+                    className="rounded-xl bg-danger px-4 py-3 font-bold text-white transition hover:opacity-90"
                   >
                     🗑️ Excluir
                   </button>

@@ -44,10 +44,14 @@ function formatarTamanhoArquivo(
     const tamanhoEmKilobytes =
       tamanhoEmBytes / 1024;
 
-    return `${tamanhoEmKilobytes.toFixed(0)} KB`;
+    return `${tamanhoEmKilobytes.toFixed(
+      0,
+    )} KB`;
   }
 
-  return `${tamanhoEmMegabytes.toFixed(1)} MB`;
+  return `${tamanhoEmMegabytes.toFixed(
+    1,
+  )} MB`;
 }
 
 function formatarDuracao(
@@ -71,7 +75,10 @@ function formatarDuracao(
   return `${String(minutos).padStart(
     2,
     "0",
-  )}:${String(segundos).padStart(2, "0")}`;
+  )}:${String(segundos).padStart(
+    2,
+    "0",
+  )}`;
 }
 
 function obterFormatoVideo(
@@ -94,7 +101,7 @@ export default function ProductVideoManager({
   onChange,
 }: ProductVideoManagerProps) {
   const inputRef =
-    useRef<HTMLInputElement>(null);
+    useRef<HTMLInputElement | null>(null);
 
   const [
     duracaoVideo,
@@ -142,7 +149,8 @@ export default function ProductVideoManager({
     setErroVideo("");
   }, [video, videoAtual]);
 
-  const possuiVideo = Boolean(urlPreview);
+  const possuiVideo =
+    Boolean(urlPreview);
 
   const informacoesVideo = [
     obterFormatoVideo(video),
@@ -153,7 +161,8 @@ export default function ProductVideoManager({
 
     formatarDuracao(duracaoVideo),
 
-    larguraVideo > 0 && alturaVideo > 0
+    larguraVideo > 0 &&
+    alturaVideo > 0
       ? `${larguraVideo} × ${alturaVideo}`
       : "Resolução não identificada",
   ];
@@ -199,6 +208,7 @@ export default function ProductVideoManager({
     }
 
     onChange(arquivo);
+
     evento.target.value = "";
   }
 
@@ -232,34 +242,36 @@ export default function ProductVideoManager({
   }
 
   return (
-    <section className="rounded-3xl border border-pink-100 bg-white p-6 shadow-xl sm:p-8">
+    <section className="rounded-3xl border border-border bg-card p-6 shadow-sm">
       <input
         ref={inputRef}
         type="file"
         accept="video/mp4,video/webm"
-        onChange={selecionarVideo}
+        onChange={
+          selecionarVideo
+        }
         className="hidden"
       />
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-pink-100 text-pink-600">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--primary)_10%,white)] text-primary">
               <Film className="h-6 w-6" />
             </div>
 
             <div>
-              <p className="text-sm font-bold uppercase tracking-wide text-pink-500">
+              <p className="text-sm font-bold uppercase tracking-wide text-secondary">
                 Vídeo do produto
               </p>
 
-              <h3 className="mt-1 text-2xl font-black text-gray-800">
+              <h3 className="mt-1 text-2xl font-black text-text">
                 Demonstração em vídeo
               </h3>
             </div>
           </div>
 
-          <p className="mt-4 max-w-2xl text-sm leading-6 text-gray-500">
+          <p className="mt-4 max-w-2xl text-sm leading-6 text-text-light">
             Adicione um vídeo curto para apresentar
             detalhes, acabamento, movimento ou utilização
             do produto.
@@ -269,8 +281,8 @@ export default function ProductVideoManager({
         <div
           className={`rounded-2xl px-4 py-3 text-sm font-bold ${
             possuiVideo
-              ? "bg-emerald-50 text-emerald-700"
-              : "bg-gray-100 text-gray-500"
+              ? "bg-[color-mix(in_srgb,var(--success)_10%,white)] text-success"
+              : "bg-background text-text-light"
           }`}
         >
           {possuiVideo
@@ -280,39 +292,48 @@ export default function ProductVideoManager({
       </div>
 
       {!possuiVideo ? (
-        <div className="mt-8 rounded-3xl border-2 border-dashed border-pink-200 bg-pink-50/50 px-6 py-12 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-pink-500 shadow-sm">
+        <div className="mt-8 rounded-3xl border-2 border-dashed border-border bg-background px-6 py-12 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-card text-primary shadow-sm">
             <Upload className="h-8 w-8" />
           </div>
 
-          <h4 className="mt-5 text-lg font-black text-gray-800">
+          <h4 className="mt-5 text-lg font-black text-text">
             Nenhum vídeo selecionado
           </h4>
 
-          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-gray-500">
+          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-text-light">
             Formatos aceitos: MP4 e WEBM. Tamanho máximo:
             50 MB.
           </p>
 
           <button
             type="button"
-            onClick={abrirSeletor}
-            className="mt-6 inline-flex items-center justify-center gap-2 rounded-2xl bg-pink-500 px-6 py-3 text-sm font-black text-white shadow-md shadow-pink-200/60 transition hover:-translate-y-0.5 hover:bg-pink-600"
+            onClick={
+              abrirSeletor
+            }
+            className="mt-6 inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-3 text-sm font-black text-white shadow-md transition hover:-translate-y-0.5 hover:opacity-90"
           >
             <Play className="h-5 w-5" />
+
             Selecionar vídeo
           </button>
         </div>
       ) : (
         <div className="mt-8">
-          <div className="overflow-hidden rounded-3xl border border-pink-100 bg-black shadow-lg">
+          <div className="overflow-hidden rounded-3xl border border-border bg-black shadow-lg">
             <video
-              key={urlPreview}
-              src={urlPreview}
+              key={
+                urlPreview
+              }
+              src={
+                urlPreview
+              }
               controls
               playsInline
               preload="metadata"
-              onLoadedMetadata={(evento) =>
+              onLoadedMetadata={(
+                evento,
+              ) =>
                 carregarMetadados(
                   evento.currentTarget,
                 )
@@ -324,49 +345,64 @@ export default function ProductVideoManager({
             </video>
           </div>
 
-          <div className="mt-4 rounded-2xl border border-gray-100 bg-gray-50 p-4">
+          <div className="mt-4 rounded-2xl border border-border bg-background p-4">
             <div className="flex flex-wrap gap-2">
               {informacoesVideo.map(
-                (informacao) => (
+                (
+                  informacao,
+                ) => (
                   <span
-                    key={informacao}
-                    className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-bold text-gray-600"
+                    key={
+                      informacao
+                    }
+                    className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-bold text-text-light"
                   >
-                    {informacao}
+                    {
+                      informacao
+                    }
                   </span>
                 ),
               )}
             </div>
 
             {video && (
-              <p className="mt-3 break-all text-sm font-medium text-gray-600">
-                {video.name}
+              <p className="mt-3 break-all text-sm font-medium text-text-light">
+                {
+                  video.name
+                }
               </p>
             )}
 
-            {!video && videoAtual && (
-              <p className="mt-3 text-sm font-medium text-gray-600">
-                O vídeo salvo atualmente será mantido.
-              </p>
-            )}
+            {!video &&
+              videoAtual && (
+                <p className="mt-3 text-sm font-medium text-text-light">
+                  O vídeo salvo atualmente será mantido.
+                </p>
+              )}
           </div>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <button
               type="button"
-              onClick={abrirSeletor}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-pink-500 px-5 py-3 text-sm font-black text-pink-500 transition hover:bg-pink-50"
+              onClick={
+                abrirSeletor
+              }
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-primary px-5 py-3 text-sm font-black text-primary transition hover:bg-[color-mix(in_srgb,var(--primary)_8%,white)]"
             >
               <RefreshCw className="h-5 w-5" />
+
               Trocar vídeo
             </button>
 
             <button
               type="button"
-              onClick={removerVideo}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-red-50 px-5 py-3 text-sm font-black text-red-600 transition hover:bg-red-100"
+              onClick={
+                removerVideo
+              }
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[color-mix(in_srgb,var(--danger)_10%,white)] px-5 py-3 text-sm font-black text-danger transition hover:bg-danger hover:text-white"
             >
               <Trash2 className="h-5 w-5" />
+
               Remover vídeo
             </button>
           </div>
@@ -374,21 +410,23 @@ export default function ProductVideoManager({
       )}
 
       {erroVideo && (
-        <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
+        <div className="mt-5 rounded-2xl border border-danger/30 bg-[color-mix(in_srgb,var(--danger)_8%,white)] px-4 py-3 text-sm font-bold text-danger">
           ⚠️ {erroVideo}
         </div>
       )}
 
-      <div className="mt-6 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-4">
-        <p className="text-sm font-bold text-blue-800">
+      <div className="mt-6 rounded-2xl border border-primary/20 bg-[color-mix(in_srgb,var(--primary)_6%,white)] px-4 py-4">
+        <p className="text-sm font-bold text-primary">
           Pré-visualização local
         </p>
 
-        <p className="mt-1 text-sm leading-6 text-blue-700">
+        <p className="mt-1 text-sm leading-6 text-text-light">
           Nesta etapa o vídeo será apenas exibido no
           formulário. Depois conectaremos o upload ao bucket{" "}
-          <strong>produto-videos</strong> e salvaremos a URL
-          no cadastro do produto.
+          <strong className="text-text">
+            produto-videos
+          </strong>{" "}
+          e salvaremos a URL no cadastro do produto.
         </p>
       </div>
     </section>

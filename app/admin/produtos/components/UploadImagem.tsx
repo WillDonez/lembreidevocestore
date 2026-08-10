@@ -11,17 +11,18 @@ export default function UploadImagem({
   imagem,
   onSelecionar,
 }: Props) {
-
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef =
+    useRef<HTMLInputElement | null>(null);
 
   function abrirSeletor() {
     inputRef.current?.click();
   }
 
   function selecionarArquivo(
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) {
-    const arquivo = e.target.files?.[0];
+    const arquivo =
+      e.target.files?.[0];
 
     if (arquivo) {
       onSelecionar(arquivo);
@@ -30,8 +31,7 @@ export default function UploadImagem({
 
   return (
     <div>
-
-      <label className="font-bold text-gray-700 block mb-3">
+      <label className="mb-3 block font-bold text-text">
         Imagem do Produto
       </label>
 
@@ -45,19 +45,19 @@ export default function UploadImagem({
 
       <div
         onClick={abrirSeletor}
-        className="cursor-pointer border-2 border-dashed border-pink-300 rounded-3xl bg-pink-50 hover:bg-pink-100 transition p-12 text-center"
+        className="cursor-pointer rounded-3xl border-2 border-dashed border-border bg-background p-12 text-center transition hover:border-primary hover:bg-[color-mix(in_srgb,var(--primary)_6%,white)]"
       >
         {!imagem ? (
           <>
-            <div className="text-6xl mb-4">
-                📷
+            <div className="mb-4 text-6xl">
+              📷
             </div>
 
-            <h3 className="font-bold text-xl text-pink-600">
+            <h3 className="text-xl font-bold text-primary">
               Clique para selecionar uma imagem
             </h3>
 
-            <p className="text-gray-500 mt-3">
+            <p className="mt-3 text-text-light">
               PNG, JPG ou WEBP
             </p>
           </>
@@ -65,21 +65,20 @@ export default function UploadImagem({
           <>
             <img
               src={URL.createObjectURL(imagem)}
-              alt=""
-              className="mx-auto w-56 rounded-2xl shadow-lg"
+              alt="Prévia da imagem do produto"
+              className="mx-auto w-56 rounded-2xl border border-border shadow-lg"
             />
 
-            <p className="mt-5 font-bold">
+            <p className="mt-5 font-bold text-text">
               {imagem.name}
             </p>
 
-            <p className="text-pink-500 mt-3">
+            <p className="mt-3 font-bold text-primary">
               Clique para alterar
             </p>
           </>
         )}
       </div>
-
     </div>
   );
 }

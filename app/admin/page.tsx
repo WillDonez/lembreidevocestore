@@ -7,15 +7,17 @@ export default function AdminPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace("/admin/dashboard");
+    router.replace(
+      "/admin/dashboard",
+    );
   }, [router]);
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-pink-50">
-      <div className="rounded-3xl bg-white p-8 text-center shadow">
-        <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-pink-100 border-t-pink-500" />
+    <main className="flex min-h-screen items-center justify-center bg-background">
+      <div className="text-center">
+        <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-border border-t-primary" />
 
-        <p className="mt-4 font-bold text-gray-600">
+        <p className="mt-4 font-bold text-text-light">
           Abrindo dashboard...
         </p>
       </div>

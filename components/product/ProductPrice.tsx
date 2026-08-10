@@ -21,25 +21,25 @@ export default function ProductPrice({
   return (
     <div className="mt-4">
       {possuiDesconto && (
-        <p className="text-xs font-medium text-gray-400 line-through">
+        <p className="text-sm font-medium text-text-light line-through">
           {formatarMoeda(precoAnterior)}
         </p>
       )}
 
       <div className="flex flex-wrap items-end gap-x-2 gap-y-1">
-        <p className="text-2xl font-black tracking-tight text-pink-500">
+        <p className="text-2xl font-black tracking-tight text-primary">
           {formatarMoeda(preco)}
         </p>
 
         {parcelas && !produtoDigital && (
-          <span className="pb-0.5 text-[11px] font-medium text-gray-500">
+          <span className="pb-0.5 text-[11px] font-medium text-text-light">
             em até {parcelas}x
           </span>
         )}
       </div>
 
       {!produtoDigital && (
-        <p className="mt-1 text-[11px] font-medium text-gray-500">
+        <p className="mt-1 text-[11px] font-medium text-text-light">
           Frete calculado no carrinho
         </p>
       )}

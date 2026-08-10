@@ -112,7 +112,7 @@ export default function FullscreenMediaViewer({
     >
       <div className="flex items-center justify-between gap-4 border-b border-white/10 px-4 py-4 sm:px-6">
         <div className="min-w-0">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-pink-400">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary-light">
             Conheça cada detalhe
           </p>
 
@@ -125,7 +125,7 @@ export default function FullscreenMediaViewer({
           type="button"
           onClick={onFechar}
           aria-label="Fechar visualização em tela cheia"
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:scale-105 hover:bg-white/20 hover:text-pink-300"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:scale-105 hover:bg-white/20 hover:text-primary-light"
         >
           <X className="h-6 w-6" />
         </button>
@@ -145,7 +145,7 @@ export default function FullscreenMediaViewer({
               type="button"
               onClick={onAnterior}
               aria-label="Mostrar mídia anterior"
-              className="absolute left-3 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white shadow-xl backdrop-blur transition hover:scale-105 hover:bg-white/20 hover:text-pink-300 sm:left-6 sm:h-12 sm:w-12"
+              className="absolute left-3 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white shadow-xl backdrop-blur transition hover:scale-105 hover:bg-white/20 hover:text-primary-light sm:left-6 sm:h-12 sm:w-12"
             >
               <ChevronLeft className="h-6 w-6 sm:h-7 sm:w-7" />
             </button>
@@ -154,7 +154,7 @@ export default function FullscreenMediaViewer({
               type="button"
               onClick={onProxima}
               aria-label="Mostrar próxima mídia"
-              className="absolute right-3 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white shadow-xl backdrop-blur transition hover:scale-105 hover:bg-white/20 hover:text-pink-300 sm:right-6 sm:h-12 sm:w-12"
+              className="absolute right-3 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white shadow-xl backdrop-blur transition hover:scale-105 hover:bg-white/20 hover:text-primary-light sm:right-6 sm:h-12 sm:w-12"
             >
               <ChevronRight className="h-6 w-6 sm:h-7 sm:w-7" />
             </button>
