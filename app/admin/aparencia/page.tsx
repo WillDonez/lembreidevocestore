@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
+import IdentidadeLojaCard from "@/components/admin/aparencia/IdentidadeLojaCard";
 
 type Tema = {
   id: number;
@@ -569,6 +570,10 @@ export default function AparenciaAdminPage() {
             {mensagem}
           </div>
         )}
+
+        <div className="mt-8">
+          <IdentidadeLojaCard />
+        </div>
 
         <div className="mt-8 grid grid-cols-1 gap-7 xl:grid-cols-[1.15fr_0.85fr]">
           <div className="space-y-6">

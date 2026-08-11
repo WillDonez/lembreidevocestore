@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+
 import {
   usePathname,
   useRouter,
 } from "next/navigation";
+
 import {
   useEffect,
   useState,
@@ -12,22 +14,115 @@ import {
 
 import { supabase } from "@/lib/supabase";
 
+const NOME_LOJA_PADRAO =
+  "Lembrei de Você Store";
+
+const LOGO_LOJA_PADRAO =
+  "/logo.png";
+
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-  const router = useRouter();
+  const pathname =
+    usePathname();
+
+  const router =
+    useRouter();
 
   const [
     carregando,
     setCarregando,
   ] = useState(true);
 
+  const [
+    nomeLoja,
+    setNomeLoja,
+  ] = useState(
+    NOME_LOJA_PADRAO,
+  );
+
+  const [
+    logoUrl,
+    setLogoUrl,
+  ] = useState(
+    LOGO_LOJA_PADRAO,
+  );
+
   useEffect(() => {
-    verificarLogin();
+    void verificarLogin();
   }, []);
+
+  async function carregarIdentidadeLoja() {
+    try {
+      const {
+        data,
+        error,
+      } = await supabase
+        .from(
+          "configuracoes_loja",
+        )
+        .select(
+          `
+            nome_loja,
+            logo_url
+          `,
+        )
+        .eq(
+          "ativo",
+          true,
+        )
+        .order(
+          "id",
+          {
+            ascending: true,
+          },
+        )
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        console.error(
+          "Erro ao carregar identidade da loja no admin:",
+          error,
+        );
+
+        return;
+      }
+
+      const nome =
+        data?.nome_loja?.trim();
+
+      const logo =
+        data?.logo_url?.trim();
+
+      if (nome) {
+        setNomeLoja(
+          nome,
+        );
+      } else {
+        setNomeLoja(
+          NOME_LOJA_PADRAO,
+        );
+      }
+
+      if (logo) {
+        setLogoUrl(
+          logo,
+        );
+      } else {
+        setLogoUrl(
+          LOGO_LOJA_PADRAO,
+        );
+      }
+    } catch (error) {
+      console.error(
+        "Erro interno ao carregar identidade da loja no admin:",
+        error,
+      );
+    }
+  }
 
   async function verificarLogin() {
     const {
@@ -37,6 +132,7 @@ export default function AdminLayout({
 
     if (!session) {
       router.push("/login");
+
       return;
     }
 
@@ -52,17 +148,26 @@ export default function AdminLayout({
       )
       .single();
 
-    if (error || !cliente) {
+    if (
+      error ||
+      !cliente
+    ) {
       router.push("/login");
+
       return;
     }
 
     if (
       cliente.role !== "admin"
     ) {
-      router.push("/minha-conta");
+      router.push(
+        "/minha-conta",
+      );
+
       return;
     }
+
+    await carregarIdentidadeLoja();
 
     setCarregando(false);
   }
@@ -77,7 +182,7 @@ export default function AdminLayout({
     return (
       <main className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center">
-          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-border border-t-primary" />
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-border border-t-primary" />
 
           <p className="mt-4 font-bold text-primary">
             Verificando acesso...
@@ -110,12 +215,14 @@ export default function AdminLayout({
     },
     {
       nome: "Banners",
-      href: "/admin/marketing/banners",
+      href:
+        "/admin/marketing/banners",
       icone: "🖼️",
     },
     {
       nome: "Aparência",
-      href: "/admin/aparencia",
+      href:
+        "/admin/aparencia",
       icone: "🎨",
     },
   ];
@@ -123,7 +230,9 @@ export default function AdminLayout({
   function itemEstaAtivo(
     href: string,
   ) {
-    if (href === "/admin") {
+    if (
+      href === "/admin"
+    ) {
       return (
         pathname === "/admin" ||
         pathname ===
@@ -140,47 +249,57 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <aside className="fixed left-0 top-0 z-40 h-screen w-80 border-r border-border bg-card p-6 shadow-lg">
+    <div className="flex min-h-screen bg-background">
+      <aside className="fixed left-0 top-0 z-50 h-screen w-80 border-r border-border bg-card p-6 shadow-sm">
         <div className="mb-10">
-          <div className="mb-5 flex justify-center">
+          <div className="flex justify-center">
             <img
-              src="/logo.png"
-              alt="Lembrei de Você Store"
-              className="h-24 w-24 object-contain"
+              src={logoUrl}
+              alt={nomeLoja}
+              className="h-24 w-24 rounded-full object-contain"
             />
           </div>
 
-          <h1 className="text-center text-2xl font-bold text-primary">
-            Lembrei de Você Store
+          <h1 className="mt-5 text-center text-2xl font-bold text-primary">
+            {nomeLoja}
           </h1>
         </div>
 
         <nav className="space-y-3">
-          {menu.map((item) => {
-            const ativo =
-              itemEstaAtivo(
-                item.href,
+          {menu.map(
+            (item) => {
+              const ativo =
+                itemEstaAtivo(
+                  item.href,
+                );
+
+              return (
+                <Link
+                  key={
+                    item.href
+                  }
+                  href={
+                    item.href
+                  }
+                  className={`block rounded-2xl px-5 py-4 font-bold transition ${
+                    ativo
+                      ? "bg-primary text-white shadow-md"
+                      : "text-text hover:bg-[color-mix(in_srgb,var(--primary)_8%,white)] hover:text-primary"
+                  }`}
+                >
+                  <span className="mr-2">
+                    {
+                      item.icone
+                    }
+                  </span>
+
+                  {
+                    item.nome
+                  }
+                </Link>
               );
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`block rounded-2xl px-5 py-4 font-bold transition ${
-                  ativo
-                    ? "bg-primary text-white shadow-md"
-                    : "text-text hover:bg-[color-mix(in_srgb,var(--primary)_8%,white)] hover:text-primary"
-                }`}
-              >
-                <span className="mr-2">
-                  {item.icone}
-                </span>
-
-                {item.nome}
-              </Link>
-            );
-          })}
+            },
+          )}
         </nav>
 
         <div className="absolute bottom-6 left-6 right-6 space-y-3">

@@ -13,6 +13,11 @@ import {
   Trash2,
 } from "lucide-react";
 
+import {
+  CONFIGURACOES_IMAGENS,
+  legendaImagem,
+} from "@/lib/config/imagens";
+
 import type { ImagemGaleria } from "../hooks/useProdutoForm";
 
 type ProductGalleryManagerProps = {
@@ -27,7 +32,9 @@ export default function ProductGalleryManager({
   limite = 10,
 }: ProductGalleryManagerProps) {
   const inputRef =
-    useRef<HTMLInputElement | null>(null);
+    useRef<HTMLInputElement | null>(
+      null,
+    );
 
   const quantidadeDisponivel =
     limite - imagens.length;
@@ -35,14 +42,15 @@ export default function ProductGalleryManager({
   const atingiuLimite =
     quantidadeDisponivel <= 0;
 
-  const imagensOrdenadas = useMemo(
-    () =>
-      [...imagens].sort(
-        (a, b) =>
-          a.ordem - b.ordem,
-      ),
-    [imagens],
-  );
+  const imagensOrdenadas =
+    useMemo(
+      () =>
+        [...imagens].sort(
+          (a, b) =>
+            a.ordem - b.ordem,
+        ),
+      [imagens],
+    );
 
   function abrirSeletorDeArquivos() {
     if (atingiuLimite) {
@@ -57,11 +65,13 @@ export default function ProductGalleryManager({
   ) {
     const arquivosSelecionados =
       Array.from(
-        evento.target.files ?? [],
+        evento.target.files ??
+          [],
       );
 
     if (
-      arquivosSelecionados.length === 0
+      arquivosSelecionados.length ===
+      0
     ) {
       return;
     }
@@ -69,8 +79,12 @@ export default function ProductGalleryManager({
     const arquivosValidos =
       arquivosSelecionados.filter(
         (arquivo) =>
-          arquivo.type.startsWith(
-            "image/",
+          [
+            "image/png",
+            "image/jpeg",
+            "image/webp",
+          ].includes(
+            arquivo.type,
           ),
       );
 
@@ -156,7 +170,7 @@ export default function ProductGalleryManager({
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
         multiple
         onChange={
           selecionarImagens
@@ -183,13 +197,23 @@ export default function ProductGalleryManager({
           </div>
 
           <p className="mt-4 max-w-2xl text-sm leading-6 text-text-light">
-            Adicione outros ângulos, detalhes, aplicações,
-            páginas internas ou variações do produto.
+            Adicione outros ângulos,
+            detalhes, aplicações,
+            páginas internas ou
+            variações do produto.
+          </p>
+
+          <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-text-light">
+            {legendaImagem(
+              CONFIGURACOES_IMAGENS
+                .produto,
+            )}
           </p>
         </div>
 
         <div className="rounded-2xl bg-[color-mix(in_srgb,var(--primary)_8%,white)] px-4 py-3 text-sm font-bold text-primary">
-          {imagens.length} de {limite} imagens
+          {imagens.length} de{" "}
+          {limite} imagens
         </div>
       </div>
 
@@ -200,12 +224,16 @@ export default function ProductGalleryManager({
           </div>
 
           <h4 className="mt-5 text-lg font-black text-text">
-            Nenhuma imagem adicional cadastrada
+            Nenhuma imagem adicional
+            cadastrada
           </h4>
 
           <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-text-light">
-            A imagem principal continuará sendo exibida normalmente.
-            Você poderá adicionar até {limite} imagens extras nesta
+            A imagem principal
+            continuará sendo exibida
+            normalmente. Você poderá
+            adicionar até {limite}{" "}
+            imagens extras nesta
             galeria.
           </p>
 
@@ -217,6 +245,7 @@ export default function ProductGalleryManager({
             className="mt-6 inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-3 text-sm font-black text-white shadow-md transition hover:-translate-y-0.5 hover:opacity-90"
           >
             <ImagePlus className="h-5 w-5" />
+
             Adicionar imagens
           </button>
         </div>
@@ -305,27 +334,13 @@ export default function ProductGalleryManager({
 
           {atingiuLimite && (
             <p className="mt-5 rounded-2xl border border-warning/30 bg-[color-mix(in_srgb,var(--warning)_8%,white)] px-4 py-3 text-sm font-bold text-warning">
-              Limite de {limite} imagens atingido.
+              Limite de {limite}{" "}
+              imagens atingido.
             </p>
           )}
         </>
       )}
 
-      <div className="mt-6 rounded-2xl border border-primary/20 bg-[color-mix(in_srgb,var(--primary)_6%,white)] px-4 py-4">
-        <p className="text-sm font-bold text-primary">
-          Pré-visualização local
-        </p>
-
-        <p className="mt-1 text-sm leading-6 text-text-light">
-          As imagens selecionadas aparecem imediatamente,
-          mas ainda não são enviadas ao Supabase. Na próxima
-          etapa, conectaremos o upload ao Storage e à tabela{" "}
-          <strong className="text-text">
-            produto_imagens
-          </strong>
-          .
-        </p>
-      </div>
     </section>
   );
 }

@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+
 import {
   useEffect,
   useRef,
   useState,
 } from "react";
+
 import { useRouter } from "next/navigation";
 
 import { supabase } from "@/lib/supabase";
@@ -14,6 +16,9 @@ interface HeaderProps {
   quantidadeCarrinho: number;
   abrirCarrinho: () => void;
 }
+
+const NOME_LOJA_PADRAO =
+  "Lembrei de Você Store";
 
 export default function Header({
   quantidadeCarrinho,
@@ -41,8 +46,21 @@ export default function Header({
     setNomeUsuario,
   ] = useState("");
 
+  const [
+    nomeLoja,
+    setNomeLoja,
+  ] = useState(
+    NOME_LOJA_PADRAO,
+  );
+
+  const [
+    logoUrl,
+    setLogoUrl,
+  ] = useState("/logo.png");
+
   useEffect(() => {
-    verificarUsuario();
+    void verificarUsuario();
+    void buscarIdentidadeLoja();
 
     const {
       data: {
@@ -112,6 +130,72 @@ export default function Header({
     };
   }, []);
 
+  async function buscarIdentidadeLoja() {
+    try {
+      const {
+        data,
+        error,
+      } = await supabase
+        .from(
+          "configuracoes_loja",
+        )
+        .select(
+          `
+            nome_loja,
+            logo_url
+          `,
+        )
+        .eq(
+          "ativo",
+          true,
+        )
+        .order(
+          "id",
+          {
+            ascending: true,
+          },
+        )
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        console.error(
+          "Erro ao carregar identidade da loja:",
+          error,
+        );
+
+        return;
+      }
+
+      const nome =
+        data?.nome_loja?.trim();
+
+      if (nome) {
+        setNomeLoja(
+          nome,
+        );
+      }
+
+      const logo =
+        data?.logo_url?.trim();
+
+      if (logo) {
+        setLogoUrl(
+          logo,
+        );
+      } else {
+        setLogoUrl(
+          "/logo.png",
+        );
+      }
+    } catch (error) {
+      console.error(
+        "Erro interno ao carregar identidade da loja:",
+        error,
+      );
+    }
+  }
+
   async function verificarUsuario() {
     const {
       data: { session },
@@ -121,6 +205,7 @@ export default function Header({
     if (!session?.user) {
       setUsuarioLogado(false);
       setNomeUsuario("");
+
       return;
     }
 
@@ -149,21 +234,21 @@ export default function Header({
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-card/95 shadow-sm backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+    <header className="relative z-50 border-b border-border bg-card">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-4">
         {/* LOGO */}
         <Link
           href="/"
           className="flex min-w-0 items-center gap-3"
         >
           <img
-            src="/logo.png"
-            alt="Lembrei de Você Store"
-            className="h-14 w-14 shrink-0 object-contain"
+            src={logoUrl}
+            alt={nomeLoja}
+            className="h-12 w-12 shrink-0 rounded-full object-contain"
           />
 
           <span className="hidden truncate text-3xl font-bold text-primary lg:block">
-            Lembrei de Você Store
+            {nomeLoja}
           </span>
         </Link>
 
@@ -326,8 +411,7 @@ export default function Header({
                       }
                       className="block px-5 py-4 text-text transition hover:bg-[color-mix(in_srgb,var(--primary)_8%,white)] hover:text-primary"
                     >
-                      Iniciar
-                      sessão
+                      Iniciar sessão
                     </Link>
 
                     <Link
@@ -349,7 +433,9 @@ export default function Header({
 
           <button
             type="button"
-            onClick={abrirCarrinho}
+            onClick={
+              abrirCarrinho
+            }
             className="flex items-center gap-2 rounded-xl bg-accent px-4 py-3 font-bold text-white transition hover:brightness-95 sm:px-6"
           >
             <span className="hidden sm:inline">

@@ -30,6 +30,9 @@ const TIPOS_PERMITIDOS = [
 const TAMANHO_MAXIMO =
   50 * 1024 * 1024;
 
+const LEGENDA_VIDEO =
+  "Recomendado: 1920 × 1080 px • Proporção 16:9 • MP4 ou WEBM • Máx. 50 MB";
+
 function formatarTamanhoArquivo(
   tamanhoEmBytes: number,
 ) {
@@ -101,7 +104,9 @@ export default function ProductVideoManager({
   onChange,
 }: ProductVideoManagerProps) {
   const inputRef =
-    useRef<HTMLInputElement | null>(null);
+    useRef<HTMLInputElement | null>(
+      null,
+    );
 
   const [
     duracaoVideo,
@@ -137,7 +142,9 @@ export default function ProductVideoManager({
         video &&
         urlPreview.startsWith("blob:")
       ) {
-        URL.revokeObjectURL(urlPreview);
+        URL.revokeObjectURL(
+          urlPreview,
+        );
       }
     };
   }, [video, urlPreview]);
@@ -156,10 +163,14 @@ export default function ProductVideoManager({
     obterFormatoVideo(video),
 
     video
-      ? formatarTamanhoArquivo(video.size)
+      ? formatarTamanhoArquivo(
+          video.size,
+        )
       : "Arquivo já salvo",
 
-    formatarDuracao(duracaoVideo),
+    formatarDuracao(
+      duracaoVideo,
+    ),
 
     larguraVideo > 0 &&
     alturaVideo > 0
@@ -197,7 +208,8 @@ export default function ProductVideoManager({
     }
 
     if (
-      arquivo.size > TAMANHO_MAXIMO
+      arquivo.size >
+      TAMANHO_MAXIMO
     ) {
       setErroVideo(
         "O vídeo deve ter no máximo 50 MB.",
@@ -272,9 +284,14 @@ export default function ProductVideoManager({
           </div>
 
           <p className="mt-4 max-w-2xl text-sm leading-6 text-text-light">
-            Adicione um vídeo curto para apresentar
-            detalhes, acabamento, movimento ou utilização
-            do produto.
+            Adicione um vídeo curto para
+            apresentar detalhes,
+            acabamento, movimento ou
+            utilização do produto.
+          </p>
+
+          <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-text-light">
+            {LEGENDA_VIDEO}
           </p>
         </div>
 
@@ -302,8 +319,9 @@ export default function ProductVideoManager({
           </h4>
 
           <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-text-light">
-            Formatos aceitos: MP4 e WEBM. Tamanho máximo:
-            50 MB.
+            Selecione um vídeo para
+            demonstrar o produto aos
+            clientes.
           </p>
 
           <button
@@ -340,8 +358,9 @@ export default function ProductVideoManager({
               }
               className="aspect-video w-full object-contain"
             >
-              Seu navegador não oferece suporte à reprodução
-              de vídeos.
+              Seu navegador não oferece
+              suporte à reprodução de
+              vídeos.
             </video>
           </div>
 
@@ -376,7 +395,8 @@ export default function ProductVideoManager({
             {!video &&
               videoAtual && (
                 <p className="mt-3 text-sm font-medium text-text-light">
-                  O vídeo salvo atualmente será mantido.
+                  O vídeo salvo atualmente
+                  será mantido.
                 </p>
               )}
           </div>
@@ -415,20 +435,6 @@ export default function ProductVideoManager({
         </div>
       )}
 
-      <div className="mt-6 rounded-2xl border border-primary/20 bg-[color-mix(in_srgb,var(--primary)_6%,white)] px-4 py-4">
-        <p className="text-sm font-bold text-primary">
-          Pré-visualização local
-        </p>
-
-        <p className="mt-1 text-sm leading-6 text-text-light">
-          Nesta etapa o vídeo será apenas exibido no
-          formulário. Depois conectaremos o upload ao bucket{" "}
-          <strong className="text-text">
-            produto-videos
-          </strong>{" "}
-          e salvaremos a URL no cadastro do produto.
-        </p>
-      </div>
     </section>
   );
 }
