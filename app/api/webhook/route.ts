@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+import {
+  InvalidWebhookSignatureError,
+  WebhookSignatureValidator,
+} from "mercadopago";
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -14,24 +19,128 @@ type MercadoPagoPayment = {
 
 export async function POST(req: Request) {
   try {
+    /*
+     * =========================================================
+     * 1. VALIDAR ASSINATURA DO WEBHOOK
+     * =========================================================
+     *
+     * Antes de consultar ou alterar qualquer pedido,
+     * confirmamos que a notificação realmente foi enviada
+     * pelo Mercado Pago.
+     */
+
+    const webhookSecret =
+      process.env.MP_WEBHOOK_SECRET;
+
+    if (!webhookSecret) {
+      console.error(
+        "MP_WEBHOOK_SECRET não está configurada.",
+      );
+
+      return NextResponse.json(
+        {
+          error:
+            "Configuração de segurança do webhook ausente.",
+        },
+        {
+          status: 500,
+        },
+      );
+    }
+
+    const xSignature =
+      req.headers.get("x-signature");
+
+    const xRequestId =
+      req.headers.get("x-request-id");
+
+    const url = new URL(req.url);
+
+    const dataId =
+      url.searchParams.get("data.id");
+
+    if (
+      !xSignature ||
+      !xRequestId ||
+      !dataId
+    ) {
+      console.error(
+        "Webhook recebido sem dados necessários para validar assinatura.",
+        {
+          possuiSignature:
+            Boolean(xSignature),
+
+          possuiRequestId:
+            Boolean(xRequestId),
+
+          possuiDataId:
+            Boolean(dataId),
+        },
+      );
+
+      return NextResponse.json(
+        {
+          error:
+            "Notificação sem assinatura válida.",
+        },
+        {
+          status: 401,
+        },
+      );
+    }
+
+    try {
+      WebhookSignatureValidator.validate({
+        xSignature,
+        xRequestId,
+        dataId,
+        secret: webhookSecret,
+      });
+    } catch (error) {
+      if (
+        error instanceof
+        InvalidWebhookSignatureError
+      ) {
+        console.error(
+          "Assinatura inválida no webhook do Mercado Pago.",
+        );
+
+        return NextResponse.json(
+          {
+            error:
+              "Assinatura do webhook inválida.",
+          },
+          {
+            status: 401,
+          },
+        );
+      }
+
+      throw error;
+    }
+
+    /*
+     * A partir deste ponto, a origem da notificação
+     * já foi validada.
+     */
+
     const body = await req.json();
 
     console.log(
-      "WEBHOOK MERCADO PAGO:",
-      body,
+      "WEBHOOK MERCADO PAGO VALIDADO:",
+      {
+        type: body?.type,
+        action: body?.action,
+        dataId,
+      },
     );
 
-    const paymentId =
-      body?.data?.id;
-
     /*
-     * O Mercado Pago pode enviar notificações
-     * de outros tipos.
-     *
-     * Se não houver ID de pagamento,
-     * simplesmente reconhecemos o webhook
-     * para evitar reenvios desnecessários.
+     * Utilizamos o ID que participou da validação
+     * da assinatura como identificador do pagamento.
      */
+    const paymentId = dataId;
+
     if (!paymentId) {
       return NextResponse.json({
         success: true,
@@ -40,12 +149,16 @@ export async function POST(req: Request) {
     }
 
     /*
-     * Nunca confiamos apenas nos dados recebidos
-     * pelo webhook.
+     * =========================================================
+     * 2. CONSULTAR PAGAMENTO DIRETAMENTE NO MERCADO PAGO
+     * =========================================================
      *
-     * Consultamos o pagamento diretamente
-     * no Mercado Pago.
+     * Mesmo com o webhook autenticado, nunca confiamos apenas
+     * no status enviado na notificação.
+     *
+     * Consultamos novamente o recurso no Mercado Pago.
      */
+
     const response = await fetch(
       `https://api.mercadopago.com/v1/payments/${paymentId}`,
       {
@@ -86,7 +199,12 @@ export async function POST(req: Request) {
 
     console.log(
       "PAGAMENTO CONSULTADO:",
-      payment,
+      {
+        id: payment.id,
+        status: payment.status,
+        external_reference:
+          payment.external_reference,
+      },
     );
 
     const statusPagamento =
@@ -117,13 +235,19 @@ export async function POST(req: Request) {
     }
 
     /*
-     * PAGAMENTO APROVADO
+     * =========================================================
+     * 3. PAGAMENTO APROVADO
+     * =========================================================
      *
-     * Essa operação é idempotente:
-     * se o Mercado Pago enviar o mesmo webhook
+     * A operação é idempotente.
+     *
+     * Caso o Mercado Pago envie a mesma notificação
      * novamente, o pedido continuará aprovado.
      */
-    if (statusPagamento === "approved") {
+
+    if (
+      statusPagamento === "approved"
+    ) {
       const {
         data: pedidoAtualizado,
         error,
@@ -182,12 +306,16 @@ export async function POST(req: Request) {
     }
 
     /*
-     * Outros estados ainda não liberam
-     * produtos digitais.
+     * =========================================================
+     * 4. OUTROS STATUS
+     * =========================================================
      *
-     * Nesta versão 1.0, mantemos o pedido
-     * aguardando a confirmação definitiva.
+     * Nesta etapa ainda mantemos o comportamento anterior.
+     *
+     * Pending, rejected, cancelled etc. não liberam
+     * o pedido nem os downloads.
      */
+
     console.log(
       `Pagamento ${paymentId} com status: ${statusPagamento}`,
     );
