@@ -7,8 +7,19 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { salvarOuAtualizarCliente } from "@/lib/clientes";
 
+const accessTokenMercadoPago =
+  process.env.NODE_ENV === "development"
+    ? process.env.MP_ACCESS_TOKEN_TESTE
+    : process.env.MP_ACCESS_TOKEN;
+
+if (!accessTokenMercadoPago) {
+  throw new Error(
+    "Access Token do Mercado Pago não configurado."
+  );
+}
+
 const client = new MercadoPagoConfig({
-  accessToken: process.env.MP_ACCESS_TOKEN!,
+  accessToken: accessTokenMercadoPago,
 });
 
 const supabase = createClient(

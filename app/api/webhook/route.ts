@@ -17,16 +17,222 @@ type MercadoPagoPayment = {
   external_reference?: string | null;
 };
 
+type ProdutoPedido = {
+  id?: number | string;
+  nome?: string;
+  tipo_produto?: string;
+  arquivo_digital?: string | null;
+  formato_arquivo?: string | null;
+};
+
+type PedidoBanco = {
+  id: number;
+  status?: string | null;
+  produtos?: ProdutoPedido[] | null;
+  download_liberado?: boolean | null;
+};
+
+type ResultadoConsultaPagamento = {
+  payment: MercadoPagoPayment;
+  ambiente: "producao" | "teste";
+};
+
+/*
+ * =========================================================
+ * CONSULTAR PAGAMENTO NO MERCADO PAGO
+ * =========================================================
+ *
+ * Primeiro tentamos a credencial de produção.
+ *
+ * Se o pagamento não existir nesse ambiente e houver uma
+ * credencial de teste disponível, tentamos novamente usando
+ * MP_ACCESS_TOKEN_TESTE.
+ *
+ * Isso permite:
+ *
+ * PRODUÇÃO
+ * → pagamentos reais com MP_ACCESS_TOKEN
+ *
+ * TESTES
+ * → pagamentos criados com MP_ACCESS_TOKEN_TESTE
+ */
+async function consultarPagamentoMercadoPago(
+  paymentId: string,
+): Promise<ResultadoConsultaPagamento> {
+  const tokens: Array<{
+    token: string;
+    ambiente: "producao" | "teste";
+  }> = [];
+
+  if (process.env.MP_ACCESS_TOKEN) {
+    tokens.push({
+      token: process.env.MP_ACCESS_TOKEN,
+      ambiente: "producao",
+    });
+  }
+
+  if (
+    process.env.MP_ACCESS_TOKEN_TESTE &&
+    process.env.MP_ACCESS_TOKEN_TESTE !==
+      process.env.MP_ACCESS_TOKEN
+  ) {
+    tokens.push({
+      token: process.env.MP_ACCESS_TOKEN_TESTE,
+      ambiente: "teste",
+    });
+  }
+
+  if (tokens.length === 0) {
+    throw new Error(
+      "Nenhum Access Token do Mercado Pago está configurado.",
+    );
+  }
+
+  let ultimoStatus = 0;
+  let ultimoErro = "";
+
+  for (const configuracao of tokens) {
+    const response = await fetch(
+      `https://api.mercadopago.com/v1/payments/${paymentId}`,
+      {
+        method: "GET",
+
+        headers: {
+          Authorization: `Bearer ${configuracao.token}`,
+          Accept: "application/json",
+        },
+
+        cache: "no-store",
+      },
+    );
+
+    if (response.ok) {
+      const payment =
+        (await response.json()) as MercadoPagoPayment;
+
+      console.log(
+        "PAGAMENTO LOCALIZADO NO MERCADO PAGO:",
+        {
+          paymentId,
+          ambiente: configuracao.ambiente,
+          status: payment.status,
+          external_reference:
+            payment.external_reference,
+        },
+      );
+
+      return {
+        payment,
+        ambiente: configuracao.ambiente,
+      };
+    }
+
+    ultimoStatus = response.status;
+    ultimoErro = await response.text();
+
+    /*
+     * Se for 404, pode simplesmente significar
+     * que estamos consultando o ambiente errado.
+     *
+     * Nesse caso tentamos a próxima credencial.
+     */
+    if (response.status === 404) {
+      console.log(
+        `Pagamento ${paymentId} não encontrado no ambiente ${configuracao.ambiente}.`,
+      );
+
+      continue;
+    }
+
+    /*
+     * Para outros erros, registramos e seguimos
+     * para a próxima credencial caso exista.
+     */
+    console.error(
+      `Erro ao consultar pagamento no ambiente ${configuracao.ambiente}:`,
+      response.status,
+      ultimoErro,
+    );
+  }
+
+  console.error(
+    "Pagamento não pôde ser consultado no Mercado Pago:",
+    {
+      paymentId,
+      ultimoStatus,
+      ultimoErro,
+    },
+  );
+
+  throw new Error(
+    `Não foi possível consultar o pagamento ${paymentId} no Mercado Pago.`,
+  );
+}
+
+/*
+ * =========================================================
+ * VERIFICAR SE O PEDIDO POSSUI PRODUTO DIGITAL
+ * =========================================================
+ */
+function possuiProdutoDigital(
+  produtos: ProdutoPedido[] | null | undefined,
+) {
+  if (!Array.isArray(produtos)) {
+    return false;
+  }
+
+  return produtos.some((produto) => {
+    const tipoProduto = String(
+      produto?.tipo_produto || "",
+    ).toLowerCase();
+
+    return (
+      tipoProduto === "digital" ||
+      Boolean(produto?.arquivo_digital)
+    );
+  });
+}
+
+/*
+ * =========================================================
+ * CONVERTER STATUS MERCADO PAGO → STATUS DA LOJA
+ * =========================================================
+ */
+function converterStatusPagamento(
+  statusPagamento?: string,
+) {
+  switch (statusPagamento) {
+    case "approved":
+      return "aprovado";
+
+    case "pending":
+    case "in_process":
+    case "in_mediation":
+      return "pendente";
+
+    case "rejected":
+      return "recusado";
+
+    case "cancelled":
+      return "cancelado";
+
+    case "refunded":
+      return "reembolsado";
+
+    case "charged_back":
+      return "estornado";
+
+    default:
+      return null;
+  }
+}
+
 export async function POST(req: Request) {
   try {
     /*
      * =========================================================
      * 1. VALIDAR ASSINATURA DO WEBHOOK
      * =========================================================
-     *
-     * Antes de consultar ou alterar qualquer pedido,
-     * confirmamos que a notificação realmente foi enviada
-     * pelo Mercado Pago.
      */
 
     const webhookSecret =
@@ -120,8 +326,9 @@ export async function POST(req: Request) {
     }
 
     /*
-     * A partir deste ponto, a origem da notificação
-     * já foi validada.
+     * =========================================================
+     * 2. LER NOTIFICAÇÃO
+     * =========================================================
      */
 
     const body = await req.json();
@@ -136,51 +343,46 @@ export async function POST(req: Request) {
     );
 
     /*
-     * Utilizamos o ID que participou da validação
-     * da assinatura como identificador do pagamento.
+     * Nosso webhook atual é destinado a pagamentos.
+     *
+     * Caso futuramente outros eventos sejam habilitados,
+     * simplesmente reconhecemos a notificação.
      */
-    const paymentId = dataId;
+    if (
+      body?.type &&
+      body.type !== "payment"
+    ) {
+      console.log(
+        "Webhook ignorado por não ser evento de pagamento:",
+        body.type,
+      );
 
-    if (!paymentId) {
       return NextResponse.json({
         success: true,
         ignored: true,
+        type: body.type,
       });
     }
 
+    const paymentId = dataId;
+
     /*
      * =========================================================
-     * 2. CONSULTAR PAGAMENTO DIRETAMENTE NO MERCADO PAGO
+     * 3. CONSULTAR PAGAMENTO DIRETAMENTE NO MERCADO PAGO
      * =========================================================
-     *
-     * Mesmo com o webhook autenticado, nunca confiamos apenas
-     * no status enviado na notificação.
-     *
-     * Consultamos novamente o recurso no Mercado Pago.
      */
 
-    const response = await fetch(
-      `https://api.mercadopago.com/v1/payments/${paymentId}`,
-      {
-        method: "GET",
+    let resultadoConsulta: ResultadoConsultaPagamento;
 
-        headers: {
-          Authorization:
-            `Bearer ${process.env.MP_ACCESS_TOKEN}`,
-        },
-
-        cache: "no-store",
-      },
-    );
-
-    if (!response.ok) {
-      const erroMercadoPago =
-        await response.text();
-
+    try {
+      resultadoConsulta =
+        await consultarPagamentoMercadoPago(
+          paymentId,
+        );
+    } catch (error) {
       console.error(
         "Erro ao consultar pagamento no Mercado Pago:",
-        response.status,
-        erroMercadoPago,
+        error,
       );
 
       return NextResponse.json(
@@ -195,7 +397,10 @@ export async function POST(req: Request) {
     }
 
     const payment =
-      (await response.json()) as MercadoPagoPayment;
+      resultadoConsulta.payment;
+
+    const ambientePagamento =
+      resultadoConsulta.ambiente;
 
     console.log(
       "PAGAMENTO CONSULTADO:",
@@ -204,6 +409,8 @@ export async function POST(req: Request) {
         status: payment.status,
         external_reference:
           payment.external_reference,
+        ambiente:
+          ambientePagamento,
       },
     );
 
@@ -236,94 +443,232 @@ export async function POST(req: Request) {
 
     /*
      * =========================================================
-     * 3. PAGAMENTO APROVADO
+     * 4. CONSULTAR PEDIDO NO SUPABASE
      * =========================================================
-     *
-     * A operação é idempotente.
-     *
-     * Caso o Mercado Pago envie a mesma notificação
-     * novamente, o pedido continuará aprovado.
      */
 
-    if (
-      statusPagamento === "approved"
-    ) {
-      const {
-        data: pedidoAtualizado,
-        error,
-      } = await supabase
-        .from("pedidos")
-        .update({
-          status: "aprovado",
-          download_liberado: true,
-        })
-        .eq("id", pedidoId)
-        .select("id")
-        .maybeSingle();
+    const {
+      data: pedido,
+      error: erroPedido,
+    } = await supabase
+      .from("pedidos")
+      .select(
+        `
+          id,
+          status,
+          produtos,
+          download_liberado
+        `,
+      )
+      .eq("id", pedidoId)
+      .maybeSingle();
 
-      if (error) {
-        console.error(
-          "Erro ao atualizar pedido:",
-          error,
-        );
+    if (erroPedido) {
+      console.error(
+        "Erro ao consultar pedido:",
+        erroPedido,
+      );
 
-        return NextResponse.json(
-          {
-            error:
-              "Erro ao atualizar pedido.",
-          },
-          {
-            status: 500,
-          },
-        );
-      }
+      return NextResponse.json(
+        {
+          error:
+            "Erro ao consultar pedido.",
+        },
+        {
+          status: 500,
+        },
+      );
+    }
 
-      if (!pedidoAtualizado) {
-        console.error(
-          `Pedido ${pedidoId} não encontrado.`,
-        );
+    if (!pedido) {
+      console.error(
+        `Pedido ${pedidoId} não encontrado.`,
+      );
 
-        return NextResponse.json(
-          {
-            error:
-              "Pedido não encontrado.",
-          },
-          {
-            status: 404,
-          },
-        );
-      }
+      return NextResponse.json(
+        {
+          error:
+            "Pedido não encontrado.",
+        },
+        {
+          status: 404,
+        },
+      );
+    }
 
+    const pedidoAtual =
+      pedido as PedidoBanco;
+
+    const pedidoPossuiProdutoDigital =
+      possuiProdutoDigital(
+        pedidoAtual.produtos,
+      );
+
+    /*
+     * =========================================================
+     * 5. DEFINIR STATUS INTERNO
+     * =========================================================
+     */
+
+    const statusInterno =
+      converterStatusPagamento(
+        statusPagamento,
+      );
+
+    /*
+     * Caso o Mercado Pago envie algum status
+     * ainda não mapeado, não alteramos o pedido.
+     */
+    if (!statusInterno) {
       console.log(
-        `✅ Pedido ${pedidoId} aprovado pelo Mercado Pago.`,
+        "Status do Mercado Pago ainda não mapeado:",
+        {
+          paymentId,
+          statusPagamento,
+          pedidoId,
+        },
       );
 
       return NextResponse.json({
         success: true,
         pedidoId,
-        status: "aprovado",
+        statusPagamento,
+        ignored: true,
       });
     }
 
     /*
      * =========================================================
-     * 4. OUTROS STATUS
+     * 6. DEFINIR LIBERAÇÃO DE DOWNLOAD
      * =========================================================
      *
-     * Nesta etapa ainda mantemos o comportamento anterior.
+     * Somente:
      *
-     * Pending, rejected, cancelled etc. não liberam
-     * o pedido nem os downloads.
+     * pagamento aprovado
+     * +
+     * pedido contendo produto digital
+     *
+     * libera downloads.
      */
 
-    console.log(
-      `Pagamento ${paymentId} com status: ${statusPagamento}`,
-    );
+    const downloadLiberado =
+      statusPagamento === "approved" &&
+      pedidoPossuiProdutoDigital;
+
+    /*
+     * =========================================================
+     * 7. ATUALIZAR PEDIDO
+     * =========================================================
+     *
+     * Operação idempotente.
+     *
+     * Se a mesma notificação chegar novamente,
+     * os dados permanecerão no mesmo estado.
+     */
+
+    const {
+      data: pedidoAtualizado,
+      error: erroAtualizacao,
+    } = await supabase
+      .from("pedidos")
+      .update({
+        status: statusInterno,
+        download_liberado:
+          downloadLiberado,
+      })
+      .eq("id", pedidoId)
+      .select(
+        `
+          id,
+          status,
+          download_liberado
+        `,
+      )
+      .maybeSingle();
+
+    if (erroAtualizacao) {
+      console.error(
+        "Erro ao atualizar pedido:",
+        erroAtualizacao,
+      );
+
+      return NextResponse.json(
+        {
+          error:
+            "Erro ao atualizar pedido.",
+        },
+        {
+          status: 500,
+        },
+      );
+    }
+
+    if (!pedidoAtualizado) {
+      console.error(
+        `Pedido ${pedidoId} não pôde ser atualizado.`,
+      );
+
+      return NextResponse.json(
+        {
+          error:
+            "Pedido não pôde ser atualizado.",
+        },
+        {
+          status: 404,
+        },
+      );
+    }
+
+    /*
+     * =========================================================
+     * 8. LOG FINAL
+     * =========================================================
+     */
+
+    if (
+      statusPagamento === "approved"
+    ) {
+      console.log(
+        `✅ Pedido ${pedidoId} aprovado pelo Mercado Pago.`,
+        {
+          ambiente:
+            ambientePagamento,
+
+          possuiProdutoDigital:
+            pedidoPossuiProdutoDigital,
+
+          downloadLiberado,
+        },
+      );
+    } else {
+      console.log(
+        `Pedido ${pedidoId} atualizado.`,
+        {
+          paymentId,
+          statusPagamento,
+          statusInterno,
+          ambiente:
+            ambientePagamento,
+        },
+      );
+    }
 
     return NextResponse.json({
       success: true,
+
       pedidoId,
+
+      paymentId,
+
+      ambiente:
+        ambientePagamento,
+
       statusPagamento,
+
+      statusPedido:
+        statusInterno,
+
+      downloadLiberado,
     });
   } catch (error) {
     console.error(
