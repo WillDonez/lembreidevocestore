@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
 import Link from "next/link";
 
 import { useCarrinho } from "@/app/context/CarrinhoContext";
@@ -12,22 +17,34 @@ type UltimoPedido = {
 };
 
 export default function Sucesso() {
-  const { limparCarrinho } = useCarrinho();
+  const { limparCarrinho } =
+    useCarrinho();
 
-  const [ultimoPedido, setUltimoPedido] =
-    useState<UltimoPedido | null>(null);
+  const [
+    ultimoPedido,
+    setUltimoPedido,
+  ] = useState<UltimoPedido | null>(
+    null,
+  );
 
-  const [carregando, setCarregando] =
-    useState(true);
+  const [
+    carregando,
+    setCarregando,
+  ] = useState(true);
 
   useEffect(() => {
     /*
-      Primeiro recuperamos os dados da compra.
-      Eles serão usados nos botões de login e cadastro.
-    */
+     * Primeiro recuperamos os dados
+     * da compra.
+     *
+     * Eles serão usados nos botões
+     * de login e cadastro.
+     */
     try {
       const pedidoSalvo =
-        sessionStorage.getItem("ultimoPedido");
+        sessionStorage.getItem(
+          "ultimoPedido",
+        );
 
       if (pedidoSalvo) {
         const pedidoConvertido =
@@ -49,11 +66,14 @@ export default function Sucesso() {
     }
 
     /*
-      Limpa somente o carrinho e o frete.
-
-      Não removemos "ultimoPedido" neste momento,
-      porque ele ainda será útil durante a criação da conta.
-    */
+     * Limpa somente o carrinho
+     * e o frete.
+     *
+     * Não removemos "ultimoPedido"
+     * neste momento porque ele ainda
+     * será útil durante a criação
+     * da conta.
+     */
     limparCarrinho();
 
     sessionStorage.removeItem(
@@ -61,89 +81,115 @@ export default function Sucesso() {
     );
   }, [limparCarrinho]);
 
-  const primeiroNome = useMemo(() => {
-    const nome =
-      ultimoPedido?.nome?.trim();
+  const primeiroNome =
+    useMemo(() => {
+      const nome =
+        ultimoPedido?.nome?.trim();
 
-    if (!nome) {
-      return "";
-    }
+      if (!nome) {
+        return "";
+      }
 
-    return nome.split(/\s+/)[0];
-  }, [ultimoPedido]);
+      return nome.split(/\s+/)[0];
+    }, [ultimoPedido]);
 
-  const numeroPedido = useMemo(() => {
-    if (!ultimoPedido?.pedidoId) {
-      return "";
-    }
+  const numeroPedido =
+    useMemo(() => {
+      if (
+        !ultimoPedido?.pedidoId
+      ) {
+        return "";
+      }
 
-    return String(
-      ultimoPedido.pedidoId,
-    );
-  }, [ultimoPedido]);
-
-  const linkCadastro = useMemo(() => {
-    const parametros =
-      new URLSearchParams();
-
-    parametros.set(
-      "cadastro",
-      "1",
-    );
-
-    if (ultimoPedido?.email) {
-      parametros.set(
-        "email",
-        ultimoPedido.email,
+      return String(
+        ultimoPedido.pedidoId,
       );
-    }
+    }, [ultimoPedido]);
 
-    if (ultimoPedido?.nome) {
+  const linkCadastro =
+    useMemo(() => {
+      const parametros =
+        new URLSearchParams();
+
       parametros.set(
-        "nome",
-        ultimoPedido.nome,
+        "cadastro",
+        "1",
       );
-    }
 
-    if (ultimoPedido?.pedidoId) {
-      parametros.set(
-        "pedido",
-        String(
-          ultimoPedido.pedidoId,
-        ),
-      );
-    }
+      if (ultimoPedido?.email) {
+        parametros.set(
+          "email",
+          ultimoPedido.email,
+        );
+      }
 
-    return `/login?${parametros.toString()}`;
-  }, [ultimoPedido]);
+      if (ultimoPedido?.nome) {
+        parametros.set(
+          "nome",
+          ultimoPedido.nome,
+        );
+      }
 
-  const linkEntrar = useMemo(() => {
-    const parametros =
-      new URLSearchParams();
+      if (
+        ultimoPedido?.pedidoId
+      ) {
+        parametros.set(
+          "pedido",
+          String(
+            ultimoPedido.pedidoId,
+          ),
+        );
+      }
 
-    if (ultimoPedido?.email) {
-      parametros.set(
-        "email",
-        ultimoPedido.email,
-      );
-    }
+      return `/login?${parametros.toString()}`;
+    }, [ultimoPedido]);
 
-    if (ultimoPedido?.pedidoId) {
-      parametros.set(
-        "pedido",
-        String(
-          ultimoPedido.pedidoId,
-        ),
-      );
-    }
+  const linkEntrar =
+    useMemo(() => {
+      const parametros =
+        new URLSearchParams();
 
-    const query =
-      parametros.toString();
+      if (ultimoPedido?.email) {
+        parametros.set(
+          "email",
+          ultimoPedido.email,
+        );
+      }
 
-    return query
-      ? `/login?${query}`
-      : "/login";
-  }, [ultimoPedido]);
+      if (
+        ultimoPedido?.pedidoId
+      ) {
+        parametros.set(
+          "pedido",
+          String(
+            ultimoPedido.pedidoId,
+          ),
+        );
+      }
+
+      const query =
+        parametros.toString();
+
+      return query
+        ? `/login?${query}`
+        : "/login";
+    }, [ultimoPedido]);
+
+  /*
+   * =========================================================
+   * VOLTAR PARA A LOJA
+   * =========================================================
+   *
+   * Utilizamos navegação direta
+   * do navegador.
+   *
+   * Isso garante o retorno à página
+   * inicial mesmo após o redirecionamento
+   * externo realizado pelo Mercado Pago.
+   */
+  function continuarComprando() {
+    window.location.assign("/");
+  }
 
   return (
     <main className="min-h-screen bg-background px-4 py-8 sm:py-12">
@@ -170,7 +216,8 @@ export default function Sucesso() {
           </p>
 
           <p className="mt-2 text-white/80">
-            Seu pedido foi recebido com sucesso.
+            Seu pedido foi recebido
+            com sucesso.
           </p>
         </div>
 
@@ -188,9 +235,12 @@ export default function Sucesso() {
 
                 {ultimoPedido?.email && (
                   <p className="mt-2 break-all text-sm text-text-light">
-                    Compra realizada com o e-mail{" "}
+                    Compra realizada
+                    com o e-mail{" "}
                     <strong className="text-text">
-                      {ultimoPedido.email}
+                      {
+                        ultimoPedido.email
+                      }
                     </strong>
                   </p>
                 )}
@@ -212,8 +262,10 @@ export default function Sucesso() {
               </h2>
 
               <p className="mt-3 flex-1 leading-relaxed text-text-light">
-                Acompanhe seus pedidos, consulte suas compras
-                e acesse os arquivos digitais liberados.
+                Acompanhe seus pedidos,
+                consulte suas compras e
+                acesse os arquivos digitais
+                liberados.
               </p>
 
               {primeiroNome && (
@@ -222,8 +274,10 @@ export default function Sucesso() {
                   <strong className="text-text">
                     {primeiroNome}
                   </strong>
-                  ! Encontramos sua compra. Crie sua senha para
-                  vincular automaticamente sua conta ao pedido.
+                  ! Encontramos sua compra.
+                  Crie sua senha para vincular
+                  automaticamente sua conta
+                  ao pedido.
                 </div>
               )}
 
@@ -249,9 +303,11 @@ export default function Sucesso() {
               </h2>
 
               <p className="mt-3 flex-1 leading-relaxed text-text-light">
-                Acesse sua área do cliente para acompanhar
-                este pedido, verificar o andamento da entrega
-                e consultar seus downloads.
+                Acesse sua área do cliente
+                para acompanhar este pedido,
+                verificar o andamento da
+                entrega e consultar seus
+                downloads.
               </p>
 
               <Link
@@ -270,27 +326,33 @@ export default function Sucesso() {
 
             <div className="mt-3 grid grid-cols-1 gap-3 text-text-light md:grid-cols-3">
               <p>
-                📦 Seu pedido será preparado.
+                📦 Seu pedido será
+                preparado.
               </p>
 
               <p>
-                🚚 O envio seguirá a opção escolhida.
+                🚚 O envio seguirá a
+                opção escolhida.
               </p>
 
               <p>
-                📄 Arquivos digitais serão liberados após a
+                📄 Arquivos digitais
+                serão liberados após a
                 confirmação.
               </p>
             </div>
           </div>
 
           <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Link
-              href="/"
+            <button
+              type="button"
+              onClick={
+                continuarComprando
+              }
               className="w-full rounded-2xl bg-text px-7 py-4 text-center font-bold text-white transition hover:opacity-90 sm:w-auto"
             >
               🛍 Continuar comprando
-            </Link>
+            </button>
 
             <Link
               href="/minha-conta"
