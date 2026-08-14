@@ -137,6 +137,16 @@ export default function PedidosPage() {
   const [pedidos, setPedidos] =
     useState<Pedido[]>([]);
 
+  const [
+    salvandoNFePedidoId,
+    setSalvandoNFePedidoId,
+  ] = useState<number | null>(null);
+
+  const [
+    criandoEnvioPedidoId,
+    setCriandoEnvioPedidoId,
+  ] = useState<number | null>(null);
+
   useEffect(() => {
     buscarPedidos();
   }, []);
@@ -269,6 +279,291 @@ export default function PedidosPage() {
               : pedido,
         ),
     );
+  }
+
+  function limparSomenteNumeros(
+    valor?: string | null,
+  ) {
+    return String(valor || "")
+      .replace(/\D/g, "");
+  }
+
+  function atualizarChaveNFeLocal(
+    pedidoId: number,
+    valor: string,
+  ) {
+    const chave =
+      limparSomenteNumeros(
+        valor,
+      ).slice(0, 44);
+
+    setPedidos(
+      (
+        pedidosAtuais,
+      ) =>
+        pedidosAtuais.map(
+          (
+            pedido,
+          ) =>
+            pedido.id ===
+            pedidoId
+              ? {
+                  ...pedido,
+                  nota_fiscal_chave:
+                    chave,
+                }
+              : pedido,
+        ),
+    );
+  }
+
+  async function salvarNotaFiscal(
+    pedido: Pedido,
+  ) {
+    if (
+      !pedidoPossuiProdutoFisico(
+        pedido,
+      )
+    ) {
+      alert(
+        "Este pedido não possui produto físico.",
+      );
+
+      return;
+    }
+
+    const chaveNFe =
+      limparSomenteNumeros(
+        pedido.nota_fiscal_chave,
+      );
+
+    if (
+      chaveNFe.length !== 44
+    ) {
+      alert(
+        "A chave da NF-e deve possuir exatamente 44 números.",
+      );
+
+      return;
+    }
+
+    setSalvandoNFePedidoId(
+      pedido.id,
+    );
+
+    try {
+      const {
+        error,
+      } = await supabase
+        .from("pedidos")
+        .update({
+          nota_fiscal_chave:
+            chaveNFe,
+          nota_fiscal_status:
+            "emitida",
+        })
+        .eq(
+          "id",
+          pedido.id,
+        );
+
+      if (error) {
+        console.log(
+          "Erro ao salvar NF-e:",
+          error,
+        );
+
+        alert(
+          "Não foi possível salvar os dados da NF-e.",
+        );
+
+        return;
+      }
+
+      setPedidos(
+        (
+          pedidosAtuais,
+        ) =>
+          pedidosAtuais.map(
+            (
+              item,
+            ) =>
+              item.id ===
+              pedido.id
+                ? {
+                    ...item,
+                    nota_fiscal_chave:
+                      chaveNFe,
+                    nota_fiscal_status:
+                      "emitida",
+                  }
+                : item,
+          ),
+      );
+
+      alert(
+        "NF-e registrada no pedido com sucesso.",
+      );
+    } finally {
+      setSalvandoNFePedidoId(
+        null,
+      );
+    }
+  }
+
+  async function criarEnvio(
+    pedido: Pedido,
+  ) {
+    if (
+      !pedidoPossuiProdutoFisico(
+        pedido,
+      )
+    ) {
+      alert(
+        "Este pedido não possui produto físico.",
+      );
+
+      return;
+    }
+
+    const statusPedido =
+      String(
+        pedido.status || "",
+      )
+        .trim()
+        .toLowerCase();
+
+    if (
+      statusPedido !==
+        "aprovado" &&
+      statusPedido !==
+        "pago"
+    ) {
+      alert(
+        "O pedido precisa estar aprovado ou pago antes de criar o envio.",
+      );
+
+      return;
+    }
+
+    const chaveNFe =
+      limparSomenteNumeros(
+        pedido.nota_fiscal_chave,
+      );
+
+    if (
+      chaveNFe.length !== 44
+    ) {
+      alert(
+        "Registre primeiro uma chave de NF-e válida com 44 números.",
+      );
+
+      return;
+    }
+
+    if (
+      pedido.melhor_envio_order_id
+    ) {
+      alert(
+        "Este pedido já possui um envio criado no Melhor Envio.",
+      );
+
+      return;
+    }
+
+    setCriandoEnvioPedidoId(
+      pedido.id,
+    );
+
+    try {
+      const resposta =
+        await fetch(
+          "/api/admin/pedidos/melhor-envio",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body:
+              JSON.stringify({
+                pedidoId:
+                  pedido.id,
+              }),
+          },
+        );
+
+      let dados: {
+        sucesso?: boolean;
+        erro?: string;
+        mensagem?: string;
+        melhorEnvioOrderId?: string;
+      } = {};
+
+      try {
+        dados =
+          await resposta.json();
+      } catch {
+        dados = {};
+      }
+
+      if (
+        !resposta.ok
+      ) {
+        throw new Error(
+          dados.erro ||
+            "Não foi possível criar o envio no Melhor Envio.",
+        );
+      }
+
+      const melhorEnvioOrderId =
+        String(
+          dados.melhorEnvioOrderId ||
+          "",
+        );
+
+      setPedidos(
+        (
+          pedidosAtuais,
+        ) =>
+          pedidosAtuais.map(
+            (
+              item,
+            ) =>
+              item.id ===
+              pedido.id
+                ? {
+                    ...item,
+                    melhor_envio_order_id:
+                      melhorEnvioOrderId ||
+                      item.melhor_envio_order_id,
+                    melhor_envio_status:
+                      "carrinho",
+                  }
+                : item,
+          ),
+      );
+
+      alert(
+        dados.mensagem ||
+          "Envio criado no Melhor Envio com sucesso.",
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao criar envio no Melhor Envio:",
+        error,
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível criar o envio no Melhor Envio.",
+      );
+    } finally {
+      setCriandoEnvioPedidoId(
+        null,
+      );
+    }
   }
 
   function obterEstiloStatus(
@@ -621,20 +916,190 @@ export default function PedidosPage() {
                             📦
                           </div>
 
-                          <div>
+                          <div className="min-w-0 flex-1">
                             <p className="font-bold text-text">
                               Parte física
                             </p>
 
                             <p className="mt-1 text-sm leading-relaxed text-text-light">
-                              Este pedido
-                              possui produto
-                              físico e seguirá
-                              o fluxo de NF-e,
-                              preparação,
-                              etiqueta e
-                              rastreamento.
+                              Registre a NF-e
+                              emitida e, após
+                              o pagamento estar
+                              aprovado, crie o
+                              envio no Melhor
+                              Envio.
                             </p>
+
+                            <div className="mt-5 rounded-2xl border border-border bg-card p-4">
+                              <div className="flex flex-col gap-2">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <label
+                                    htmlFor={`nfe-${pedido.id}`}
+                                    className="text-sm font-bold text-text"
+                                  >
+                                    Chave da NF-e
+                                  </label>
+
+                                  <span className="text-xs font-medium text-text-light">
+                                    {limparSomenteNumeros(
+                                      pedido.nota_fiscal_chave,
+                                    ).length}
+                                    /44
+                                  </span>
+                                </div>
+
+                                <input
+                                  id={`nfe-${pedido.id}`}
+                                  type="text"
+                                  inputMode="numeric"
+                                  autoComplete="off"
+                                  maxLength={44}
+                                  value={
+                                    pedido.nota_fiscal_chave ||
+                                    ""
+                                  }
+                                  onChange={(
+                                    e,
+                                  ) =>
+                                    atualizarChaveNFeLocal(
+                                      pedido.id,
+                                      e.target.value,
+                                    )
+                                  }
+                                  placeholder="Digite ou cole os 44 números da chave da NF-e"
+                                  className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-text outline-none transition focus:border-primary"
+                                />
+
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                  <p className="text-xs text-text-light">
+                                    Status fiscal:{" "}
+                                    <strong className="text-text">
+                                      {pedido.nota_fiscal_status ===
+                                      "emitida"
+                                        ? "NF-e registrada"
+                                        : "Aguardando NF-e"}
+                                    </strong>
+                                  </p>
+
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      salvarNotaFiscal(
+                                        pedido,
+                                      )
+                                    }
+                                    disabled={
+                                      salvandoNFePedidoId ===
+                                      pedido.id
+                                    }
+                                    className="rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                                  >
+                                    {salvandoNFePedidoId ===
+                                    pedido.id
+                                      ? "Salvando..."
+                                      : "💾 Salvar NF-e"}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="mt-4 rounded-2xl border border-border bg-card p-4">
+                              {pedido.melhor_envio_order_id ? (
+                                <div>
+                                  <p className="text-sm font-bold text-success">
+                                    ✅ Envio criado no Melhor Envio
+                                  </p>
+
+                                  <p className="mt-2 break-all text-xs text-text-light">
+                                    ID do envio:{" "}
+                                    <strong className="text-text">
+                                      {
+                                        pedido.melhor_envio_order_id
+                                      }
+                                    </strong>
+                                  </p>
+
+                                  <p className="mt-1 text-xs text-text-light">
+                                    Status:{" "}
+                                    <strong className="text-text">
+                                      {pedido.melhor_envio_status ||
+                                        "carrinho"}
+                                    </strong>
+                                  </p>
+
+                                  {pedido.codigo_rastreio && (
+                                    <p className="mt-1 text-xs text-text-light">
+                                      Rastreio:{" "}
+                                      <strong className="text-text">
+                                        {
+                                          pedido.codigo_rastreio
+                                        }
+                                      </strong>
+                                    </p>
+                                  )}
+
+                                  {pedido.url_etiqueta && (
+                                    <a
+                                      href={
+                                        pedido.url_etiqueta
+                                      }
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="mt-3 inline-flex rounded-xl border border-primary px-4 py-2 text-sm font-bold text-primary transition hover:bg-primary/5"
+                                    >
+                                      🏷 Abrir etiqueta
+                                    </a>
+                                  )}
+                                </div>
+                              ) : (
+                                <div>
+                                  <p className="text-sm font-bold text-text">
+                                    Melhor Envio
+                                  </p>
+
+                                  <p className="mt-1 text-xs leading-relaxed text-text-light">
+                                    O envio só
+                                    pode ser
+                                    criado após
+                                    o pagamento
+                                    estar
+                                    aprovado e
+                                    a chave da
+                                    NF-e possuir
+                                    44 números.
+                                  </p>
+
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      criarEnvio(
+                                        pedido,
+                                      )
+                                    }
+                                    disabled={
+                                      criandoEnvioPedidoId ===
+                                        pedido.id ||
+                                      !(
+                                        pedido.status ===
+                                          "aprovado" ||
+                                        pedido.status ===
+                                          "pago"
+                                      ) ||
+                                      limparSomenteNumeros(
+                                        pedido.nota_fiscal_chave,
+                                      ).length !==
+                                        44
+                                    }
+                                    className="mt-4 w-full rounded-xl bg-secondary px-4 py-3 text-sm font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                                  >
+                                    {criandoEnvioPedidoId ===
+                                    pedido.id
+                                      ? "Criando envio..."
+                                      : "📦 Criar envio no Melhor Envio"}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
