@@ -5,9 +5,137 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { formatarMoeda } from "@/lib/formatadores";
 
+type ProdutoPedido = {
+  id?: number | string;
+  nome?: string;
+  preco?: number | string;
+  quantidade?: number;
+  imagem?: string;
+  descricao?: string;
+  tipo_produto?: string;
+  arquivo_digital?: string;
+  formato_arquivo?: string;
+};
+
+type Pedido = {
+  id: number;
+  status?: string;
+  produtos?: ProdutoPedido[] | null;
+  download_liberado?: boolean;
+
+  nome_cliente?: string;
+  cliente?: string;
+  email_cliente?: string;
+  whatsapp_cliente?: string;
+  cpf_cnpj?: string;
+
+  endereco?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  cep?: string;
+
+  total?: number | string;
+  created_at?: string;
+
+  nota_fiscal_chave?: string | null;
+  nota_fiscal_status?: string | null;
+
+  melhor_envio_order_id?: string | null;
+  melhor_envio_status?: string | null;
+  codigo_rastreio?: string | null;
+  url_etiqueta?: string | null;
+  etiqueta_gerada?: boolean;
+};
+
+function normalizarTipoProduto(tipo?: string) {
+  return String(tipo || "")
+    .trim()
+    .toLowerCase();
+}
+
+function pedidoPossuiProdutoFisico(
+  pedido: Pedido,
+) {
+  return Boolean(
+    pedido.produtos?.some(
+      (produto) =>
+        normalizarTipoProduto(
+          produto.tipo_produto,
+        ) === "fisico",
+    ),
+  );
+}
+
+function pedidoPossuiProdutoDigital(
+  pedido: Pedido,
+) {
+  return Boolean(
+    pedido.produtos?.some(
+      (produto) =>
+        normalizarTipoProduto(
+          produto.tipo_produto,
+        ) === "digital",
+    ),
+  );
+}
+
+function obterTipoPedido(
+  pedido: Pedido,
+) {
+  const possuiFisico =
+    pedidoPossuiProdutoFisico(
+      pedido,
+    );
+
+  const possuiDigital =
+    pedidoPossuiProdutoDigital(
+      pedido,
+    );
+
+  if (
+    possuiFisico &&
+    possuiDigital
+  ) {
+    return {
+      texto: "Pedido misto",
+      icone: "📦📄",
+      classe:
+        "border-secondary/30 bg-secondary/10 text-secondary",
+    };
+  }
+
+  if (possuiFisico) {
+    return {
+      texto: "Pedido físico",
+      icone: "📦",
+      classe:
+        "border-primary/30 bg-primary/10 text-primary",
+    };
+  }
+
+  if (possuiDigital) {
+    return {
+      texto: "Pedido digital",
+      icone: "📄",
+      classe:
+        "border-success/30 bg-success/10 text-success",
+    };
+  }
+
+  return {
+    texto: "Tipo não identificado",
+    icone: "❔",
+    classe:
+      "border-border bg-background text-text-light",
+  };
+}
+
 export default function PedidosPage() {
   const [pedidos, setPedidos] =
-    useState<any[]>([]);
+    useState<Pedido[]>([]);
 
   useEffect(() => {
     buscarPedidos();
@@ -25,12 +153,18 @@ export default function PedidosPage() {
       });
 
     if (error) {
-      console.log(error);
+      console.log(
+        "Erro ao buscar pedidos:",
+        error,
+      );
+
       return;
     }
 
     if (data) {
-      setPedidos(data);
+      setPedidos(
+        data as Pedido[],
+      );
     }
   }
 
@@ -38,21 +172,57 @@ export default function PedidosPage() {
     pedidoId: number,
     novoStatus: string,
   ) {
+    const pedidoAtual =
+      pedidos.find(
+        (pedido) =>
+          pedido.id === pedidoId,
+      );
+
+    if (!pedidoAtual) {
+      alert(
+        "Pedido não encontrado.",
+      );
+
+      return;
+    }
+
+    /*
+     * =====================================================
+     * REGRA DE DOWNLOAD
+     * =====================================================
+     *
+     * Somente pedidos que possuem produto DIGITAL
+     * podem ter download liberado.
+     *
+     * Produto físico:
+     * aprovado/pago -> download FALSE
+     *
+     * Produto digital:
+     * aprovado/pago -> download TRUE
+     *
+     * Pedido misto:
+     * aprovado/pago -> download TRUE
+     * porque existem arquivos digitais no pedido.
+     */
+
+    const possuiProdutoDigital =
+      pedidoPossuiProdutoDigital(
+        pedidoAtual,
+      );
+
     const statusLiberaDownload =
       novoStatus === "aprovado" ||
       novoStatus === "pago";
 
-    const atualizacao: {
-      status: string;
-      download_liberado?: boolean;
-    } = {
-      status: novoStatus,
-    };
+    const downloadLiberado =
+      statusLiberaDownload &&
+      possuiProdutoDigital;
 
-    if (statusLiberaDownload) {
-      atualizacao.download_liberado =
-        true;
-    }
+    const atualizacao = {
+      status: novoStatus,
+      download_liberado:
+        downloadLiberado,
+    };
 
     const {
       error,
@@ -94,9 +264,7 @@ export default function PedidosPage() {
                   status:
                     novoStatus,
                   download_liberado:
-                    statusLiberaDownload
-                      ? true
-                      : pedido.download_liberado,
+                    downloadLiberado,
                 }
               : pedido,
         ),
@@ -104,7 +272,7 @@ export default function PedidosPage() {
   }
 
   function obterEstiloStatus(
-    status: string,
+    status?: string,
   ) {
     switch (
       String(
@@ -185,7 +353,9 @@ export default function PedidosPage() {
           </h1>
 
           <p className="mt-2 text-text-light">
-            Acompanhe pedidos, atualize status e consulte os dados das compras.
+            Acompanhe pedidos,
+            atualize status e consulte
+            os dados das compras.
           </p>
         </div>
 
@@ -193,7 +363,8 @@ export default function PedidosPage() {
           {pedidos.length ===
             0 && (
             <div className="rounded-3xl border border-border bg-card p-10 text-center text-text-light shadow-sm">
-              Nenhum pedido encontrado.
+              Nenhum pedido
+              encontrado.
             </div>
           )}
 
@@ -204,6 +375,21 @@ export default function PedidosPage() {
               const status =
                 obterEstiloStatus(
                   pedido.status,
+                );
+
+              const tipoPedido =
+                obterTipoPedido(
+                  pedido,
+                );
+
+              const possuiFisico =
+                pedidoPossuiProdutoFisico(
+                  pedido,
+                );
+
+              const possuiDigital =
+                pedidoPossuiProdutoDigital(
+                  pedido,
                 );
 
               return (
@@ -225,6 +411,22 @@ export default function PedidosPage() {
                           pedido.id
                         }
                       </h2>
+
+                      <div className="mt-3">
+                        <span
+                          className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold ${tipoPedido.classe}`}
+                        >
+                          <span>
+                            {
+                              tipoPedido.icone
+                            }
+                          </span>
+
+                          {
+                            tipoPedido.texto
+                          }
+                        </span>
+                      </div>
                     </div>
 
                     <div className="flex flex-col items-start gap-3 md:items-end">
@@ -238,7 +440,8 @@ export default function PedidosPage() {
 
                       <select
                         value={
-                          pedido.status
+                          pedido.status ||
+                          "pendente"
                         }
                         onChange={(
                           e,
@@ -351,9 +554,11 @@ export default function PedidosPage() {
                           {
                             pedido.endereco
                           }
+
                           {pedido.numero
                             ? `, ${pedido.numero}`
                             : ""}
+
                           {pedido.complemento
                             ? ` - ${pedido.complemento}`
                             : ""}
@@ -385,6 +590,7 @@ export default function PedidosPage() {
                           {
                             pedido.cidade
                           }
+
                           {pedido.estado
                             ? ` - ${pedido.estado}`
                             : ""}
@@ -407,6 +613,75 @@ export default function PedidosPage() {
                     )}
                   </div>
 
+                  <div className="mt-6 grid gap-4 md:grid-cols-2">
+                    {possuiFisico && (
+                      <div className="rounded-2xl border border-primary/25 bg-primary/5 p-5">
+                        <div className="flex items-start gap-3">
+                          <div className="text-2xl">
+                            📦
+                          </div>
+
+                          <div>
+                            <p className="font-bold text-text">
+                              Parte física
+                            </p>
+
+                            <p className="mt-1 text-sm leading-relaxed text-text-light">
+                              Este pedido
+                              possui produto
+                              físico e seguirá
+                              o fluxo de NF-e,
+                              preparação,
+                              etiqueta e
+                              rastreamento.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {possuiDigital && (
+                      <div className="rounded-2xl border border-success/25 bg-success/5 p-5">
+                        <div className="flex items-start gap-3">
+                          <div className="text-2xl">
+                            📄
+                          </div>
+
+                          <div>
+                            <p className="font-bold text-text">
+                              Parte digital
+                            </p>
+
+                            <p className="mt-1 text-sm leading-relaxed text-text-light">
+                              Este pedido
+                              possui produto
+                              digital. O
+                              download será
+                              liberado quando
+                              o pagamento
+                              estiver aprovado.
+                            </p>
+
+                            <p className="mt-3 text-sm font-bold text-text">
+                              Download:{" "}
+                              <span
+                                className={
+                                  pedido.download_liberado
+                                    ? "text-success"
+                                    : "text-text-light"
+                                }
+                              >
+                                {pedido.download_liberado
+                                  ? "Liberado"
+                                  : "Não liberado"}
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="mt-6">
                     <h3 className="mb-3 text-xl font-bold text-text">
                       Produtos
@@ -415,48 +690,96 @@ export default function PedidosPage() {
                     <div className="space-y-3">
                       {pedido.produtos?.map(
                         (
-                          produto: any,
-                          index: number,
-                        ) => (
-                          <div
-                            key={
-                              index
-                            }
-                            className="flex flex-col gap-4 rounded-2xl border border-border bg-background p-4 sm:flex-row sm:items-center"
-                          >
-                            {produto.imagem && (
-                              <img
-                                src={
-                                  produto.imagem
-                                }
-                                alt={
-                                  produto.nome
-                                }
-                                className="h-20 w-20 rounded-xl border border-border object-cover"
-                              />
-                            )}
+                          produto,
+                          index,
+                        ) => {
+                          const tipo =
+                            normalizarTipoProduto(
+                              produto.tipo_produto,
+                            );
 
-                            <div className="min-w-0 flex-1">
-                              <p className="font-bold text-text">
-                                {
-                                  produto.nome
-                                }
-                              </p>
+                          const produtoFisico =
+                            tipo ===
+                            "fisico";
 
-                              <p className="mt-1 text-sm text-text-light">
-                                Quantidade:{" "}
-                                {produto.quantidade ||
-                                  1}
+                          const produtoDigital =
+                            tipo ===
+                            "digital";
+
+                          return (
+                            <div
+                              key={
+                                produto.id ??
+                                index
+                              }
+                              className="flex flex-col gap-4 rounded-2xl border border-border bg-background p-4 sm:flex-row sm:items-center"
+                            >
+                              {produto.imagem && (
+                                <img
+                                  src={
+                                    produto.imagem
+                                  }
+                                  alt={
+                                    produto.nome ||
+                                    "Produto"
+                                  }
+                                  className="h-20 w-20 rounded-xl border border-border object-cover"
+                                />
+                              )}
+
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <p className="font-bold text-text">
+                                    {produto.nome ||
+                                      "Produto"}
+                                  </p>
+
+                                  {produtoFisico && (
+                                    <span className="rounded-lg border border-primary/25 bg-primary/10 px-2 py-1 text-xs font-bold text-primary">
+                                      📦 Físico
+                                    </span>
+                                  )}
+
+                                  {produtoDigital && (
+                                    <span className="rounded-lg border border-success/25 bg-success/10 px-2 py-1 text-xs font-bold text-success">
+                                      📄 Digital
+                                    </span>
+                                  )}
+
+                                  {!produtoFisico &&
+                                    !produtoDigital && (
+                                      <span className="rounded-lg border border-border bg-card px-2 py-1 text-xs font-bold text-text-light">
+                                        ❔ Tipo não
+                                        identificado
+                                      </span>
+                                    )}
+                                </div>
+
+                                <p className="mt-1 text-sm text-text-light">
+                                  Quantidade:{" "}
+                                  {produto.quantidade ||
+                                    1}
+                                </p>
+
+                                {produtoDigital &&
+                                  produto.formato_arquivo && (
+                                    <p className="mt-1 text-sm text-text-light">
+                                      Formato:{" "}
+                                      {
+                                        produto.formato_arquivo
+                                      }
+                                    </p>
+                                  )}
+                              </div>
+
+                              <p className="font-bold text-primary">
+                                {formatarMoeda(
+                                 produto.preco ?? 0,
+                                )}
                               </p>
                             </div>
-
-                            <p className="font-bold text-primary">
-                              {formatarMoeda(
-                                produto.preco,
-                              )}
-                            </p>
-                          </div>
-                        ),
+                          );
+                        },
                       )}
                     </div>
                   </div>
@@ -469,7 +792,7 @@ export default function PedidosPage() {
 
                       <h3 className="mt-1 text-3xl font-bold text-primary">
                         {formatarMoeda(
-                          pedido.total,
+                          pedido.total ?? 0,
                         )}
                       </h3>
                     </div>
