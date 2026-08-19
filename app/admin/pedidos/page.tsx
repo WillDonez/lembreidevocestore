@@ -42,6 +42,8 @@ type Pedido = {
 
   nota_fiscal_chave?: string | null;
   nota_fiscal_status?: string | null;
+  nota_fiscal_pdf_path?: string | null;
+  nota_fiscal_xml_path?: string | null;
 
   melhor_envio_order_id?: string | null;
   melhor_envio_status?: string | null;
@@ -142,6 +144,16 @@ export default function PedidosPage() {
     salvandoNFePedidoId,
     setSalvandoNFePedidoId,
   ] = useState<number | null>(null);
+
+  const [
+    arquivosPdfNFe,
+    setArquivosPdfNFe,
+  ] = useState<Record<number, File | null>>({});
+
+  const [
+    arquivosXmlNFe,
+    setArquivosXmlNFe,
+  ] = useState<Record<number, File | null>>({});
 
   const [
     criandoEnvioPedidoId,
@@ -379,31 +391,97 @@ export default function PedidosPage() {
 
     try {
       const {
-        error,
-      } = await supabase
-        .from("pedidos")
-        .update({
-          nota_fiscal_chave:
-            chaveNFe,
-          nota_fiscal_status:
-            "emitida",
-        })
-        .eq(
-          "id",
+        data: {
+          session,
+        },
+      } =
+        await supabase.auth.getSession();
+
+      if (
+        !session?.access_token
+      ) {
+        throw new Error(
+          "Sua sessão administrativa expirou. Entre novamente.",
+        );
+      }
+
+      const formData =
+        new FormData();
+
+      formData.append(
+        "pedidoId",
+        String(
           pedido.id,
+        ),
+      );
+
+      formData.append(
+        "chaveNFe",
+        chaveNFe,
+      );
+
+      const pdf =
+        arquivosPdfNFe[
+          pedido.id
+        ];
+
+      const xml =
+        arquivosXmlNFe[
+          pedido.id
+        ];
+
+      if (pdf) {
+        formData.append(
+          "pdf",
+          pdf,
+        );
+      }
+
+      if (xml) {
+        formData.append(
+          "xml",
+          xml,
+        );
+      }
+
+      const resposta =
+        await fetch(
+          "/api/admin/pedidos/nota-fiscal",
+          {
+            method: "POST",
+            headers: {
+              Authorization:
+                `Bearer ${session.access_token}`,
+            },
+            body:
+              formData,
+          },
         );
 
-      if (error) {
-        console.log(
-          "Erro ao salvar NF-e:",
-          error,
-        );
+      let dados: {
+        sucesso?: boolean;
+        erro?: string;
+        mensagem?: string;
+        notaFiscalChave?: string;
+        notaFiscalStatus?: string;
+        notaFiscalPdfPath?: string | null;
+        notaFiscalXmlPath?: string | null;
+      } = {};
 
-        alert(
-          "Não foi possível salvar os dados da NF-e.",
-        );
+      try {
+        dados =
+          await resposta.json();
+      } catch {
+        dados = {};
+      }
 
-        return;
+      if (
+        !resposta.ok
+      ) {
+        throw new Error(
+          dados.erro ||
+            "Não foi possível salvar os dados da NF-e.",
+        );
       }
 
       setPedidos(
@@ -419,16 +497,56 @@ export default function PedidosPage() {
                 ? {
                     ...item,
                     nota_fiscal_chave:
+                      dados.notaFiscalChave ||
                       chaveNFe,
                     nota_fiscal_status:
+                      dados.notaFiscalStatus ||
                       "emitida",
+                    nota_fiscal_pdf_path:
+                      dados.notaFiscalPdfPath ??
+                      item.nota_fiscal_pdf_path,
+                    nota_fiscal_xml_path:
+                      dados.notaFiscalXmlPath ??
+                      item.nota_fiscal_xml_path,
                   }
                 : item,
           ),
       );
 
+      setArquivosPdfNFe(
+        (
+          arquivosAtuais,
+        ) => ({
+          ...arquivosAtuais,
+          [pedido.id]:
+            null,
+        }),
+      );
+
+      setArquivosXmlNFe(
+        (
+          arquivosAtuais,
+        ) => ({
+          ...arquivosAtuais,
+          [pedido.id]:
+            null,
+        }),
+      );
+
       alert(
-        "NF-e registrada no pedido com sucesso.",
+        dados.mensagem ||
+          "NF-e registrada no pedido com sucesso.",
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao salvar NF-e:",
+        error,
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível salvar os dados da NF-e.",
       );
     } finally {
       setSalvandoNFePedidoId(
@@ -1106,6 +1224,92 @@ export default function PedidosPage() {
                                   placeholder="Digite ou cole os 44 números da chave da NF-e"
                                   className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-text outline-none transition focus:border-primary"
                                 />
+
+                                <div className="mt-2 grid gap-3 sm:grid-cols-2">
+                                  <div className="rounded-xl border border-border bg-background p-3">
+                                    <label
+                                      htmlFor={`nfe-pdf-${pedido.id}`}
+                                      className="text-sm font-bold text-text"
+                                    >
+                                      📄 DANFE (PDF)
+                                    </label>
+
+                                    <input
+                                      id={`nfe-pdf-${pedido.id}`}
+                                      type="file"
+                                      accept=".pdf,application/pdf"
+                                      onChange={(
+                                        e,
+                                      ) =>
+                                        setArquivosPdfNFe(
+                                          (
+                                            arquivosAtuais,
+                                          ) => ({
+                                            ...arquivosAtuais,
+                                            [pedido.id]:
+                                              e.target.files?.[0] ||
+                                              null,
+                                          }),
+                                        )
+                                      }
+                                      className="mt-2 block w-full text-xs text-text-light file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:px-3 file:py-2 file:font-bold file:text-white hover:file:opacity-90"
+                                    />
+
+                                    <p className="mt-2 break-all text-xs text-text-light">
+                                      {arquivosPdfNFe[
+                                        pedido.id
+                                      ]
+                                        ? `Selecionado: ${arquivosPdfNFe[pedido.id]?.name}`
+                                        : pedido.nota_fiscal_pdf_path
+                                          ? "✅ DANFE já anexado"
+                                          : "Nenhum DANFE anexado"}
+                                    </p>
+                                  </div>
+
+                                  <div className="rounded-xl border border-border bg-background p-3">
+                                    <label
+                                      htmlFor={`nfe-xml-${pedido.id}`}
+                                      className="text-sm font-bold text-text"
+                                    >
+                                      📋 XML da NF-e
+                                    </label>
+
+                                    <input
+                                      id={`nfe-xml-${pedido.id}`}
+                                      type="file"
+                                      accept=".xml,application/xml,text/xml"
+                                      onChange={(
+                                        e,
+                                      ) =>
+                                        setArquivosXmlNFe(
+                                          (
+                                            arquivosAtuais,
+                                          ) => ({
+                                            ...arquivosAtuais,
+                                            [pedido.id]:
+                                              e.target.files?.[0] ||
+                                              null,
+                                          }),
+                                        )
+                                      }
+                                      className="mt-2 block w-full text-xs text-text-light file:mr-3 file:rounded-lg file:border-0 file:bg-secondary file:px-3 file:py-2 file:font-bold file:text-white hover:file:opacity-90"
+                                    />
+
+                                    <p className="mt-2 break-all text-xs text-text-light">
+                                      {arquivosXmlNFe[
+                                        pedido.id
+                                      ]
+                                        ? `Selecionado: ${arquivosXmlNFe[pedido.id]?.name}`
+                                        : pedido.nota_fiscal_xml_path
+                                          ? "✅ XML já anexado"
+                                          : "Nenhum XML anexado"}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <p className="text-xs leading-relaxed text-text-light">
+                                  Os arquivos fiscais ficam armazenados de forma privada e serão disponibilizados somente ao cliente vinculado ao pedido.
+                                </p>
 
                                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                   <p className="text-xs text-text-light">
