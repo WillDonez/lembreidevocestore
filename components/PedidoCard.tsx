@@ -89,6 +89,36 @@ export default function PedidoCard({
       null,
     );
 
+  const [
+    atualizandoRastreio,
+    setAtualizandoRastreio,
+  ] = useState(false);
+
+  const [
+    statusRastreioLocal,
+    setStatusRastreioLocal,
+  ] = useState<string | null>(
+    pedido.melhor_envio_status ||
+      null,
+  );
+
+  const [
+    codigoRastreioLocal,
+    setCodigoRastreioLocal,
+  ] = useState<string | null>(
+    pedido.codigo_rastreio ||
+      null,
+  );
+
+  const [
+    etiquetaGeradaLocal,
+    setEtiquetaGeradaLocal,
+  ] = useState(
+    Boolean(
+      pedido.etiqueta_gerada,
+    ),
+  );
+
   const possuiProdutoFisico =
     pedidoPossuiProdutoFisico(
       pedido,
@@ -102,14 +132,14 @@ export default function PedidoCard({
   const possuiRastreio =
     Boolean(
       String(
-        pedido.codigo_rastreio ||
+        codigoRastreioLocal ||
           "",
       ).trim(),
     );
 
   const statusEnvio =
     formatarStatusEnvio(
-      pedido.melhor_envio_status,
+      statusRastreioLocal,
     );
 
   const possuiDanfe =
@@ -125,6 +155,120 @@ export default function PedidoCard({
   const possuiArquivosFiscais =
     possuiDanfe ||
     possuiXml;
+
+  async function atualizarRastreamento() {
+    if (
+      !possuiEnvio
+    ) {
+      alert(
+        "Este pedido ainda não possui envio para rastrear.",
+      );
+
+      return;
+    }
+
+    setAtualizandoRastreio(
+      true,
+    );
+
+    try {
+      const {
+        data: {
+          session,
+        },
+      } =
+        await supabase.auth.getSession();
+
+      if (
+        !session?.access_token
+      ) {
+        throw new Error(
+          "Sua sessão expirou. Entre novamente para atualizar o rastreamento.",
+        );
+      }
+
+      const resposta =
+        await fetch(
+          `/api/minha-conta/pedidos/rastreio?pedidoId=${pedido.id}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization:
+                `Bearer ${session.access_token}`,
+            },
+            cache:
+              "no-store",
+          },
+        );
+
+      let dados: {
+        sucesso?: boolean;
+        erro?: string;
+        mensagem?: string;
+        status?: string;
+        codigoRastreio?: string | null;
+        etiquetaGerada?: boolean;
+      } = {};
+
+      try {
+        dados =
+          await resposta.json();
+      } catch {
+        dados = {};
+      }
+
+      if (
+        !resposta.ok
+      ) {
+        throw new Error(
+          dados.erro ||
+            "Não foi possível atualizar o rastreamento.",
+        );
+      }
+
+      if (
+        dados.status
+      ) {
+        setStatusRastreioLocal(
+          dados.status,
+        );
+      }
+
+      setCodigoRastreioLocal(
+        dados.codigoRastreio ??
+          codigoRastreioLocal,
+      );
+
+      if (
+        typeof dados.etiquetaGerada ===
+        "boolean"
+      ) {
+        setEtiquetaGeradaLocal(
+          dados.etiquetaGerada,
+        );
+      }
+
+      alert(
+        dados.mensagem ||
+          "Rastreamento atualizado com sucesso.",
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao atualizar rastreamento:",
+        error,
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível atualizar o rastreamento.",
+      );
+    } finally {
+      setAtualizandoRastreio(
+        false,
+      );
+    }
+  }
 
   async function baixarArquivoFiscal(
     tipo: TipoArquivoFiscal,
@@ -298,13 +442,13 @@ export default function PedidoCard({
 
               <p className="mt-1 break-all font-bold text-text">
                 {possuiRastreio
-                  ? pedido.codigo_rastreio
+                  ? codigoRastreioLocal
                   : "Ainda não disponível"}
               </p>
             </div>
           </div>
 
-          {pedido.etiqueta_gerada && (
+          {etiquetaGeradaLocal && (
             <p className="mt-3 text-xs font-bold text-success">
               ✅ Etiqueta de envio gerada
             </p>
@@ -317,9 +461,39 @@ export default function PedidoCard({
               </p>
             )}
 
+          {possuiEnvio && (
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <button
+                type="button"
+                onClick={
+                  atualizarRastreamento
+                }
+                disabled={
+                  atualizandoRastreio
+                }
+                className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {atualizandoRastreio
+                  ? "Atualizando rastreamento..."
+                  : "🔄 Atualizar rastreamento"}
+              </button>
+
+              {possuiRastreio && (
+                <span className="text-xs text-text-light">
+                  Código atual:{" "}
+                  <strong className="text-text">
+                    {
+                      codigoRastreioLocal
+                    }
+                  </strong>
+                </span>
+              )}
+            </div>
+          )}
+
           {possuiRastreio && (
             <p className="mt-3 text-xs text-text-light">
-              Guarde este código para acompanhar a movimentação do pedido junto à transportadora.
+              Use o botão acima para buscar a situação mais recente do envio.
             </p>
           )}
         </div>
