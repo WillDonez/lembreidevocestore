@@ -5,11 +5,29 @@ import {
 
 import {
   criarEnvioMelhorEnvio,
+  sincronizarEnvioMelhorEnvio,
 } from "@/lib/melhorEnvioEnvio";
 
 type Body = {
   pedidoId?: number | string;
 };
+
+function validarPedidoId(
+  valor?: number | string | null,
+) {
+  const pedidoId = Number(valor);
+
+  if (
+    !Number.isInteger(pedidoId) ||
+    pedidoId <= 0
+  ) {
+    throw new Error(
+      "Informe um pedido válido.",
+    );
+  }
+
+  return pedidoId;
+}
 
 export async function POST(
   request: NextRequest,
@@ -18,27 +36,9 @@ export async function POST(
     const body =
       (await request.json()) as Body;
 
-    const pedidoId =
-      Number(
-        body.pedidoId,
-      );
-
-    if (
-      !Number.isInteger(
-        pedidoId,
-      ) ||
-      pedidoId <= 0
-    ) {
-      return NextResponse.json(
-        {
-          erro:
-            "Informe um pedido válido.",
-        },
-        {
-          status: 400,
-        },
-      );
-    }
+    const pedidoId = validarPedidoId(
+      body.pedidoId,
+    );
 
     const resultado =
       await criarEnvioMelhorEnvio(
@@ -65,7 +65,56 @@ export async function POST(
         erro: mensagem,
       },
       {
-        status: 500,
+        status:
+          mensagem ===
+          "Informe um pedido válido."
+            ? 400
+            : 500,
+      },
+    );
+  }
+}
+
+export async function GET(
+  request: NextRequest,
+) {
+  try {
+    const pedidoId = validarPedidoId(
+      request.nextUrl.searchParams.get(
+        "pedidoId",
+      ),
+    );
+
+    const resultado =
+      await sincronizarEnvioMelhorEnvio(
+        pedidoId,
+      );
+
+    return NextResponse.json(
+      resultado,
+    );
+  } catch (error) {
+    console.error(
+      "Erro ao sincronizar envio administrativo do Melhor Envio:",
+      error,
+    );
+
+    const mensagem =
+      error instanceof Error
+        ? error.message
+        : "Não foi possível atualizar o envio.";
+
+    return NextResponse.json(
+      {
+        sucesso: false,
+        erro: mensagem,
+      },
+      {
+        status:
+          mensagem ===
+          "Informe um pedido válido."
+            ? 400
+            : 500,
       },
     );
   }

@@ -13,11 +13,16 @@ import {
 } from "lucide-react";
 
 const whatsappUrl =
-  "https://wa.me/5500000000000?text=Olá!%20Gostaria%20de%20ajuda%20para%20escolher%20um%20produto.";
+  "https://wa.me/5533999958593?text=Olá!%20Gostaria%20de%20ajuda%20para%20escolher%20um%20produto.";
+
+const instagramUrl =
+  "https://www.instagram.com/lembreidevoce_store/";
+
+const facebookUrl =
+  "https://www.facebook.com/share/1TdrTfsQRo/";
 
 export default function Footer() {
-  const anoAtual =
-    new Date().getFullYear();
+  const anoAtual = new Date().getFullYear();
 
   return (
     <footer className="mt-16">
@@ -49,7 +54,7 @@ export default function Footer() {
             <a
               href={whatsappUrl}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 rounded-2xl bg-card px-6 py-4 text-sm font-black text-primary shadow-xl transition hover:-translate-y-0.5 hover:brightness-95"
             >
               <MessageCircle className="h-5 w-5" />
@@ -96,16 +101,20 @@ export default function Footer() {
 
               <div className="mt-6 flex gap-3">
                 <a
-                  href="#"
-                  aria-label="Instagram"
+                  href={instagramUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Instagram da Lembrei de Você Store"
                   className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-slate-300 transition hover:bg-primary hover:text-white"
                 >
                   <Camera className="h-5 w-5" />
                 </a>
 
                 <a
-                  href="#"
-                  aria-label="Facebook"
+                  href={facebookUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Facebook da Lembrei de Você Store"
                   className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-slate-300 transition hover:bg-primary hover:text-white"
                 >
                   <Users className="h-5 w-5" />
@@ -114,8 +123,8 @@ export default function Footer() {
                 <a
                   href={whatsappUrl}
                   target="_blank"
-                  rel="noreferrer"
-                  aria-label="WhatsApp"
+                  rel="noopener noreferrer"
+                  aria-label="WhatsApp da Lembrei de Você Store"
                   className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-slate-300 transition hover:bg-primary hover:text-white"
                 >
                   <MessageCircle className="h-5 w-5" />
@@ -177,7 +186,7 @@ export default function Footer() {
                 <a
                   href={whatsappUrl}
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   className="flex items-start gap-3 transition hover:text-secondary"
                 >
                   <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-secondary" />

@@ -61,12 +61,25 @@ type PedidoBanco = {
 
   melhor_envio_order_id?: string | null;
   melhor_envio_status?: string | null;
+  melhor_envio_ambiente?: "sandbox" | "producao" | null;
 };
 
 type ResultadoCriacaoEnvio = {
   sucesso: boolean;
   pedidoId: number;
   melhorEnvioOrderId?: string;
+  ambiente: "sandbox" | "producao";
+  mensagem: string;
+};
+
+export type ResultadoSincronizacaoEnvio = {
+  sucesso: boolean;
+  pedidoId: number;
+  melhorEnvioOrderId: string;
+  status: string;
+  codigoRastreio: string | null;
+  urlEtiqueta: string | null;
+  etiquetaGerada: boolean;
   mensagem: string;
 };
 
@@ -268,7 +281,8 @@ export async function criarEnvioMelhorEnvio(
       nota_fiscal_chave,
       nota_fiscal_status,
       melhor_envio_order_id,
-      melhor_envio_status
+      melhor_envio_status,
+      melhor_envio_ambiente
     `)
     .eq(
       "id",
@@ -293,6 +307,9 @@ export async function criarEnvioMelhorEnvio(
   const pedido =
     pedidoData as PedidoBanco;
 
+  const { ambiente } =
+    obterConfiguracaoMelhorEnvio();
+
   /*
    * =========================================================
    * 2. EVITAR ENVIO DUPLICADO
@@ -302,11 +319,21 @@ export async function criarEnvioMelhorEnvio(
   if (
     pedido.melhor_envio_order_id
   ) {
+    if (
+      pedido.melhor_envio_ambiente &&
+      pedido.melhor_envio_ambiente !== ambiente
+    ) {
+      throw new Error(
+        `Este pedido possui um envio do ambiente ${pedido.melhor_envio_ambiente}. O ambiente atual é ${ambiente}.`,
+      );
+    }
+
     return {
       sucesso: true,
       pedidoId,
       melhorEnvioOrderId:
         pedido.melhor_envio_order_id,
+      ambiente,
       mensagem:
         "O pedido já possui um envio criado no Melhor Envio.",
     };
@@ -926,6 +953,9 @@ export async function criarEnvioMelhorEnvio(
 
       melhor_envio_status:
         "carrinho",
+
+      melhor_envio_ambiente:
+        ambiente,
     })
     .eq(
       "id",
@@ -959,7 +989,427 @@ export async function criarEnvioMelhorEnvio(
 
     melhorEnvioOrderId,
 
+    ambiente,
+
     mensagem:
       "Envio inserido no carrinho do Melhor Envio com sucesso.",
+  };
+}
+
+function normalizarStatusMelhorEnvio(
+  status?: unknown,
+) {
+  const statusNormalizado = String(
+    status || "",
+  )
+    .trim()
+    .toLowerCase();
+
+  const statusConhecidos: Record<string, string> = {
+    pending: "pendente",
+    released: "liberado",
+    posted: "postado",
+    delivered: "entregue",
+    canceled: "cancelado",
+    cancelled: "cancelado",
+    undelivered: "nao_entregue",
+    "not delivered": "nao_entregue",
+    suspended: "suspenso",
+  };
+
+  return (
+    statusConhecidos[statusNormalizado] ||
+    statusNormalizado ||
+    "desconhecido"
+  );
+}
+
+function obterTextoPrimeiroCampo(
+  origem: unknown,
+  campos: string[],
+): string | null {
+  if (!origem || typeof origem !== "object") {
+    return null;
+  }
+
+  const registro = origem as Record<string, unknown>;
+
+  for (const campo of campos) {
+    const valor = registro[campo];
+
+    if (
+      typeof valor === "string" &&
+      valor.trim()
+    ) {
+      return valor.trim();
+    }
+
+    if (
+      typeof valor === "number" &&
+      Number.isFinite(valor)
+    ) {
+      return String(valor);
+    }
+  }
+
+  return null;
+}
+
+function encontrarDadosRastreio(
+  origem: unknown,
+): {
+  status: string | null;
+  codigo: string | null;
+} {
+  const fila: unknown[] = [origem];
+  const visitados = new Set<unknown>();
+  let primeiroStatus: string | null = null;
+
+  while (fila.length > 0) {
+    const atual = fila.shift();
+
+    if (
+      !atual ||
+      typeof atual !== "object" ||
+      visitados.has(atual)
+    ) {
+      continue;
+    }
+
+    visitados.add(atual);
+
+    const status = obterTextoPrimeiroCampo(atual, [
+      "status",
+      "state",
+    ]);
+
+    const codigo = obterTextoPrimeiroCampo(atual, [
+      "tracking",
+      "tracking_code",
+      "tracking_number",
+      "authorization_code",
+      "melhorenvio_tracking",
+      "codigo_rastreio",
+    ]);
+
+    primeiroStatus = primeiroStatus || status;
+
+    if (codigo) {
+      return {
+        status: status || primeiroStatus,
+        codigo,
+      };
+    }
+
+    const valores = Array.isArray(atual)
+      ? atual
+      : Object.values(atual as Record<string, unknown>);
+
+    fila.push(...valores);
+  }
+
+  return {
+    status: primeiroStatus,
+    codigo: null,
+  };
+}
+
+function validarUrlEtiqueta(
+  valor?: string | null,
+) {
+  if (!valor) {
+    return null;
+  }
+
+  try {
+    const url = new URL(valor);
+
+    if (url.protocol !== "https:") {
+      return null;
+    }
+
+    const host = url.hostname.toLowerCase();
+
+    if (
+      host !== "melhorenvio.com.br" &&
+      !host.endsWith(".melhorenvio.com.br")
+    ) {
+      return null;
+    }
+
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+export async function sincronizarEnvioMelhorEnvio(
+  pedidoId: number,
+): Promise<ResultadoSincronizacaoEnvio> {
+  const { data: pedidoData, error: erroPedido } =
+    await supabaseAdmin
+      .from("pedidos")
+      .select(`
+        id,
+        melhor_envio_order_id,
+        melhor_envio_status,
+        codigo_rastreio,
+        url_etiqueta,
+        etiqueta_gerada,
+        melhor_envio_ambiente
+      `)
+      .eq("id", pedidoId)
+      .maybeSingle();
+
+  if (erroPedido || !pedidoData) {
+    console.error(
+      "Erro ao consultar pedido para sincronizar envio:",
+      erroPedido,
+    );
+
+    throw new Error("Pedido não encontrado.");
+  }
+
+  const melhorEnvioOrderId = String(
+    pedidoData.melhor_envio_order_id || "",
+  ).trim();
+
+  if (!melhorEnvioOrderId) {
+    throw new Error(
+      "O pedido ainda não possui um envio no Melhor Envio.",
+    );
+  }
+
+  const { baseUrl, userAgent, ambiente } =
+    obterConfiguracaoMelhorEnvio();
+
+  const ambienteDoPedido = String(
+    pedidoData.melhor_envio_ambiente || "",
+  ).trim();
+
+  if (!ambienteDoPedido) {
+    throw new Error(
+      "O ambiente deste envio não foi identificado. Atualize o cadastro do pedido antes de sincronizar.",
+    );
+  }
+
+  if (ambienteDoPedido !== ambiente) {
+    throw new Error(
+      `Este envio pertence ao ambiente ${ambienteDoPedido}. Ele não pode ser atualizado no ambiente ${ambiente}.`,
+    );
+  }
+
+  const accessToken =
+    await obterAccessTokenMelhorEnvio();
+
+  const headers = {
+    Accept: "application/json",
+    Authorization: `Bearer ${accessToken}`,
+    "User-Agent": userAgent,
+  };
+
+  const respostaPedido = await fetch(
+    `${baseUrl}/api/v2/me/orders/${encodeURIComponent(
+      melhorEnvioOrderId,
+    )}`,
+    {
+      method: "GET",
+      headers,
+      cache: "no-store",
+    },
+  );
+
+  const textoPedido = await respostaPedido.text();
+
+  let dadosPedido: Record<string, unknown> = {};
+
+  try {
+    dadosPedido = textoPedido
+      ? (JSON.parse(textoPedido) as Record<string, unknown>)
+      : {};
+  } catch {
+    dadosPedido = {};
+  }
+
+  if (!respostaPedido.ok) {
+    console.error(
+      "Erro ao consultar envio no Melhor Envio:",
+      {
+        status: respostaPedido.status,
+        dados: dadosPedido,
+      },
+    );
+
+    throw new Error(
+      "Não foi possível consultar o envio no Melhor Envio.",
+    );
+  }
+
+  let statusExterno = obterTextoPrimeiroCampo(
+    dadosPedido,
+    ["status", "state"],
+  );
+
+  let codigoRastreio = obterTextoPrimeiroCampo(
+    dadosPedido,
+    [
+      "tracking",
+      "tracking_code",
+      "tracking_number",
+      "authorization_code",
+      "melhorenvio_tracking",
+      "codigo_rastreio",
+    ],
+  );
+
+  try {
+    const respostaRastreio = await fetch(
+      `${baseUrl}/api/v2/me/shipment/tracking`,
+      {
+        method: "POST",
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          orders: [melhorEnvioOrderId],
+        }),
+        cache: "no-store",
+      },
+    );
+
+    const textoRastreio = await respostaRastreio.text();
+
+    if (respostaRastreio.ok) {
+      let dadosRastreio: unknown = {};
+
+      try {
+        dadosRastreio = textoRastreio
+          ? JSON.parse(textoRastreio)
+          : {};
+      } catch {
+        dadosRastreio = textoRastreio;
+      }
+
+      const rastreioEncontrado =
+        encontrarDadosRastreio(dadosRastreio);
+
+      statusExterno =
+        rastreioEncontrado.status || statusExterno;
+
+      codigoRastreio =
+        rastreioEncontrado.codigo || codigoRastreio;
+    }
+  } catch (error) {
+    console.warn(
+      "Não foi possível consultar o rastreio agora:",
+      error,
+    );
+  }
+
+  const status = normalizarStatusMelhorEnvio(
+    statusExterno || pedidoData.melhor_envio_status,
+  );
+
+  const geradaEm = obterTextoPrimeiroCampo(
+    dadosPedido,
+    ["generated_at", "released_at"],
+  );
+
+  let urlEtiqueta = validarUrlEtiqueta(
+    typeof pedidoData.url_etiqueta === "string"
+      ? pedidoData.url_etiqueta
+      : null,
+  );
+
+  const statusIndicaEtiquetaGerada = [
+    "liberado",
+    "postado",
+    "entregue",
+    "nao_entregue",
+  ].includes(status);
+
+  const etiquetaGerada = Boolean(
+    geradaEm ||
+      statusIndicaEtiquetaGerada ||
+      pedidoData.etiqueta_gerada,
+  );
+
+  if (etiquetaGerada) {
+    try {
+      const respostaImpressao = await fetch(
+        `${baseUrl}/api/v2/me/shipment/print`,
+        {
+          method: "POST",
+          headers: {
+            ...headers,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            mode: "public",
+            orders: [melhorEnvioOrderId],
+          }),
+          cache: "no-store",
+        },
+      );
+
+      if (respostaImpressao.ok) {
+        const dadosImpressao =
+          (await respostaImpressao.json()) as unknown;
+
+        const urlCandidata =
+          typeof dadosImpressao === "string"
+            ? dadosImpressao
+            : obterTextoPrimeiroCampo(
+                dadosImpressao,
+                ["url", "link", "print_url"],
+              );
+
+        urlEtiqueta = validarUrlEtiqueta(
+          urlCandidata,
+        );
+      }
+    } catch (error) {
+      console.warn(
+        "A etiqueta foi sincronizada, mas o link de impressão não pôde ser obtido:",
+        error,
+      );
+    }
+  }
+
+  const atualizacao = {
+    melhor_envio_status: status,
+    codigo_rastreio: codigoRastreio || null,
+    url_etiqueta: urlEtiqueta || null,
+    etiqueta_gerada: etiquetaGerada,
+  };
+
+  const { error: erroAtualizacao } =
+    await supabaseAdmin
+      .from("pedidos")
+      .update(atualizacao)
+      .eq("id", pedidoId);
+
+  if (erroAtualizacao) {
+    console.error(
+      "Erro ao salvar sincronização do Melhor Envio:",
+      erroAtualizacao,
+    );
+
+    throw new Error(
+      "O envio foi consultado, mas os dados não puderam ser salvos no pedido.",
+    );
+  }
+
+  return {
+    sucesso: true,
+    pedidoId,
+    melhorEnvioOrderId,
+    status,
+    codigoRastreio: codigoRastreio || null,
+    urlEtiqueta: urlEtiqueta || null,
+    etiquetaGerada,
+    mensagem:
+      "Dados do envio atualizados com sucesso.",
   };
 }

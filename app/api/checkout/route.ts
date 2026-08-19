@@ -6,9 +6,14 @@ import {
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { salvarOuAtualizarCliente } from "@/lib/clientes";
+import { calcularFrete } from "@/lib/calcularFrete";
+
+const usarMercadoPagoTeste =
+  process.env.NODE_ENV === "development" ||
+  process.env.VERCEL_ENV === "preview";
 
 const accessTokenMercadoPago =
-  process.env.NODE_ENV === "development"
+  usarMercadoPagoTeste
     ? process.env.MP_ACCESS_TOKEN_TESTE
     : process.env.MP_ACCESS_TOKEN;
 
@@ -37,12 +42,35 @@ type FreteRecebido = {
   cepDestino?: string;
 };
 
+type OpcaoFreteCalculada = {
+  id?: number | string;
+  nome?: string;
+  transportadora?: string;
+  preco?: number | string;
+  prazo?: number | string;
+};
+
 function limparCep(cep: string) {
   return cep.replace(/\D/g, "");
 }
 
+function obterBaseUrlRetorno(req: Request) {
+  if (process.env.NODE_ENV === "development") {
+    return new URL(req.url).origin;
+  }
+
+  if (process.env.VERCEL_ENV === "preview") {
+    return "https://lembreidevocestore-sandbox-will-donez-s-projects.vercel.app";
+  }
+
+  return "https://www.lembreidevocestore.com.br";
+}
+
 export async function POST(req: Request) {
   try {
+    const baseUrlRetorno =
+      obterBaseUrlRetorno(req);
+
     const body = await req.json();
 
     const itensRecebidos =
@@ -62,13 +90,17 @@ export async function POST(req: Request) {
     const itensNormalizados = itensRecebidos
       .map((item) => ({
         id: Number(item.id),
-        quantidade: Number(item.quantidade || 1),
+        quantidade: Number(
+          item.quantidade || 1
+        ),
       }))
       .filter(
         (item) =>
           Number.isInteger(item.id) &&
           item.id > 0 &&
-          Number.isInteger(item.quantidade) &&
+          Number.isInteger(
+            item.quantidade
+          ) &&
           item.quantidade > 0
       );
 
@@ -87,26 +119,29 @@ export async function POST(req: Request) {
       );
     }
 
-    const idsProdutos = itensNormalizados.map(
-      (item) => item.id
-    );
+    const idsProdutos =
+      itensNormalizados.map(
+        (item) => item.id
+      );
 
-    const { data: produtosBanco, error: erroProdutos } =
-      await supabase
-        .from("produtos")
-        .select(
-          `
-            id,
-            nome,
-            preco,
-            imagem,
-            descricao,
-            tipo_produto,
-            arquivo_digital,
-            formato_arquivo
-          `
-        )
-        .in("id", idsProdutos);
+    const {
+      data: produtosBanco,
+      error: erroProdutos,
+    } = await supabase
+      .from("produtos")
+      .select(
+        `
+          id,
+          nome,
+          preco,
+          imagem,
+          descricao,
+          tipo_produto,
+          arquivo_digital,
+          formato_arquivo
+        `
+      )
+      .in("id", idsProdutos);
 
     if (erroProdutos) {
       console.error(
@@ -141,33 +176,45 @@ export async function POST(req: Request) {
       );
     }
 
-    const produtosPedido = produtosBanco.map(
-      (produto: any) => {
-        const item = itensNormalizados.find(
-          (item) => item.id === produto.id
-        );
+    const produtosPedido =
+      produtosBanco.map(
+        (produto: any) => {
+          const item =
+            itensNormalizados.find(
+              (item) =>
+                item.id === produto.id
+            );
 
-        return {
-          id: produto.id,
-          nome: produto.nome,
-          preco: Number(produto.preco),
-          quantidade: item?.quantidade || 1,
-          imagem: produto.imagem || "",
-          descricao: produto.descricao || "",
-          tipo_produto:
-            produto.tipo_produto || "fisico",
-          arquivo_digital:
-            produto.arquivo_digital || "",
-          formato_arquivo:
-            produto.formato_arquivo || "",
-        };
-      }
-    );
+          return {
+            id: produto.id,
+            nome: produto.nome,
+            preco: Number(
+              produto.preco
+            ),
+            quantidade:
+              item?.quantidade || 1,
+            imagem:
+              produto.imagem || "",
+            descricao:
+              produto.descricao || "",
+            tipo_produto:
+              produto.tipo_produto ||
+              "fisico",
+            arquivo_digital:
+              produto.arquivo_digital ||
+              "",
+            formato_arquivo:
+              produto.formato_arquivo ||
+              "",
+          };
+        }
+      );
 
     const possuiProdutoFisico =
       produtosPedido.some(
         (produto: any) =>
-          produto.tipo_produto === "fisico"
+          produto.tipo_produto ===
+          "fisico"
       );
 
     let freteValidado: {
@@ -181,18 +228,24 @@ export async function POST(req: Request) {
 
     if (possuiProdutoFisico) {
       const freteRecebido =
-        body.frete as FreteRecebido | null;
+        body.frete as
+          | FreteRecebido
+          | null;
 
       const servicoId = Number(
         freteRecebido?.servicoId
       );
 
       const cepDestino = limparCep(
-        freteRecebido?.cepDestino || body.cep || ""
+        freteRecebido?.cepDestino ||
+          body.cep ||
+          ""
       );
 
       if (
-        !Number.isFinite(servicoId) ||
+        !Number.isFinite(
+          servicoId
+        ) ||
         cepDestino.length !== 8
       ) {
         return NextResponse.json(
@@ -207,57 +260,67 @@ export async function POST(req: Request) {
       }
 
       /*
-        Recalcula o frete no servidor.
-        O preço salvo no navegador não é utilizado.
+        Recalcula o frete diretamente
+        no servidor utilizando a mesma
+        função central usada pela rota
+        de cálculo de frete.
+
+        O preço enviado pelo navegador
+        não é utilizado.
       */
-      const urlCalculo = new URL(
-        "/api/frete/calcular",
-        req.url
-      );
-
-      const respostaFrete = await fetch(
-        urlCalculo,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            cepDestino,
-            itens: itensNormalizados.map((item) => ({
-              produtoId: item.id,
-              quantidade: item.quantidade,
-            })),
-          }),
-          cache: "no-store",
-        }
-      );
-
       const resultadoFrete =
-        await respostaFrete.json();
+        await calcularFrete({
+          cepDestino,
+          itens:
+            itensNormalizados.map(
+              (item) => ({
+                produtoId: item.id,
+                quantidade:
+                  item.quantidade,
+              })
+            ),
+        });
 
-      if (!respostaFrete.ok) {
+      if (
+        resultadoFrete.status !== 200
+      ) {
         console.error(
           "Erro ao validar frete:",
-          resultadoFrete
+          resultadoFrete.dados
         );
+
+        const mensagemErro =
+          typeof resultadoFrete.dados
+            .erro === "string"
+            ? resultadoFrete.dados
+                .erro
+            : "Não foi possível validar o frete.";
 
         return NextResponse.json(
           {
-            error:
-              resultadoFrete.erro ||
-              "Não foi possível validar o frete.",
+            error: mensagemErro,
           },
           {
-            status: respostaFrete.status,
+            status:
+              resultadoFrete.status,
           }
         );
       }
 
+      const opcoesFrete =
+        Array.isArray(
+          resultadoFrete.dados
+            .opcoes
+        )
+          ? (resultadoFrete.dados
+              .opcoes as OpcaoFreteCalculada[])
+          : [];
+
       const opcaoEncontrada =
-        resultadoFrete.opcoes?.find(
-          (opcao: any) =>
-            Number(opcao.id) === servicoId
+        opcoesFrete.find(
+          (opcao) =>
+            Number(opcao.id) ===
+            servicoId
         );
 
       if (!opcaoEncontrada) {
@@ -272,38 +335,96 @@ export async function POST(req: Request) {
         );
       }
 
+      const precoFrete =
+        Number(
+          opcaoEncontrada.preco
+        );
+
+      const prazoFrete =
+        Number(
+          opcaoEncontrada.prazo
+        );
+
+      if (
+        !Number.isFinite(
+          precoFrete
+        ) ||
+        precoFrete < 0
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              "O valor do frete retornado é inválido.",
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
       freteValidado = {
-        id: Number(opcaoEncontrada.id),
-        nome: opcaoEncontrada.nome,
+        id: Number(
+          opcaoEncontrada.id
+        ),
+        nome:
+          opcaoEncontrada.nome ||
+          "Frete",
         transportadora:
-          opcaoEncontrada.transportadora,
-        preco: Number(opcaoEncontrada.preco),
-        prazo: Number(opcaoEncontrada.prazo),
+          opcaoEncontrada
+            .transportadora ||
+          "Transportadora",
+        preco: precoFrete,
+        prazo:
+          Number.isFinite(
+            prazoFrete
+          )
+            ? prazoFrete
+            : 0,
         cepDestino,
       };
     }
 
-    const subtotal = produtosPedido.reduce(
-      (acc: number, produto: any) =>
-        acc +
-        Number(produto.preco) *
-          Number(produto.quantidade),
-      0
-    );
+    const subtotal =
+      produtosPedido.reduce(
+        (
+          acc: number,
+          produto: any
+        ) =>
+          acc +
+          Number(
+            produto.preco
+          ) *
+            Number(
+              produto.quantidade
+            ),
+        0
+      );
 
     const freteValor =
       freteValidado?.preco || 0;
 
-    const total = subtotal + freteValor;
+    const total =
+      subtotal + freteValor;
 
-    const nomeCliente = body.nomeCliente;
-    const whatsappCliente = body.whatsappCliente;
-    const emailCliente = body.emailCliente;
-    const cpfCnpj = body.cpfCnpj;
+    const nomeCliente =
+      body.nomeCliente;
+
+    const whatsappCliente =
+      body.whatsappCliente;
+
+    const emailCliente =
+      body.emailCliente;
+
+    const cpfCnpj =
+      body.cpfCnpj;
+
     const cep = body.cep;
     const endereco = body.endereco;
     const numero = body.numero;
-    const complemento = body.complemento;
+
+    const complemento =
+      body.complemento;
+
     const bairro = body.bairro;
     const cidade = body.cidade;
     const estado = body.estado;
@@ -328,7 +449,8 @@ export async function POST(req: Request) {
     await salvarOuAtualizarCliente({
       nome: nomeCliente,
       email: emailCliente,
-      whatsapp: whatsappCliente,
+      whatsapp:
+        whatsappCliente,
       cpf_cnpj: cpfCnpj,
       cep,
       endereco,
@@ -339,26 +461,35 @@ export async function POST(req: Request) {
       estado,
     });
 
-    const { data: pedidoCriado, error: erroPedido } =
-      await supabase
-        .from("pedidos")
-        .insert([
-          {
-            cliente: nomeCliente,
-            nome_cliente: nomeCliente,
-            whatsapp_cliente:
-              whatsappCliente,
-            email_cliente: emailCliente,
-            cpf_cnpj: cpfCnpj,
-            cep,
-            endereco,
-            numero,
-            complemento,
-            bairro,
-            cidade,
-            estado,
+    const {
+      data: pedidoCriado,
+      error: erroPedido,
+    } = await supabase
+      .from("pedidos")
+      .insert([
+        {
+          cliente: nomeCliente,
+          nome_cliente:
+            nomeCliente,
 
-            dados_fiscais_completos: Boolean(
+          whatsapp_cliente:
+            whatsappCliente,
+
+          email_cliente:
+            emailCliente,
+
+          cpf_cnpj: cpfCnpj,
+
+          cep,
+          endereco,
+          numero,
+          complemento,
+          bairro,
+          cidade,
+          estado,
+
+          dados_fiscais_completos:
+            Boolean(
               nomeCliente &&
                 whatsappCliente &&
                 emailCliente &&
@@ -371,30 +502,51 @@ export async function POST(req: Request) {
                 estado
             ),
 
-            produtos: produtosPedido,
+          produtos:
+            produtosPedido,
 
-            subtotal,
-            frete_valor: freteValor,
-            frete_servico_id: freteValidado
-              ? String(freteValidado.id)
+          subtotal,
+
+          frete_valor:
+            freteValor,
+
+          frete_servico_id:
+            freteValidado
+              ? String(
+                  freteValidado.id
+                )
               : null,
-            frete_servico:
-              freteValidado?.nome || null,
-            frete_transportadora:
-              freteValidado?.transportadora || null,
-            frete_prazo:
-              freteValidado?.prazo || null,
-            frete_cep_destino:
-              freteValidado?.cepDestino || null,
 
-            total,
-            status: "pendente",
-          },
-        ])
-        .select()
-        .single();
+          frete_servico:
+            freteValidado?.nome ||
+            null,
 
-    if (erroPedido || !pedidoCriado) {
+          frete_transportadora:
+            freteValidado
+              ?.transportadora ||
+            null,
+
+          frete_prazo:
+            freteValidado?.prazo ||
+            null,
+
+          frete_cep_destino:
+            freteValidado
+              ?.cepDestino ||
+            null,
+
+          total,
+
+          status: "pendente",
+        },
+      ])
+      .select()
+      .single();
+
+    if (
+      erroPedido ||
+      !pedidoCriado
+    ) {
       console.error(
         "Erro ao criar pedido:",
         erroPedido
@@ -402,7 +554,8 @@ export async function POST(req: Request) {
 
       return NextResponse.json(
         {
-          error: "Erro ao criar pedido.",
+          error:
+            "Erro ao criar pedido.",
         },
         {
           status: 500,
@@ -410,23 +563,28 @@ export async function POST(req: Request) {
       );
     }
 
-    const nomesProdutos = produtosPedido
-      .map(
-        (produto: any) =>
-          `• ${produto.nome} (${produto.quantidade}x) - ${formatarValor(
-            produto.preco * produto.quantidade
-          )}`
-      )
-      .join("\n");
+    const nomesProdutos =
+      produtosPedido
+        .map(
+          (produto: any) =>
+            `• ${produto.nome} (${produto.quantidade}x) - ${formatarValor(
+              produto.preco *
+                produto.quantidade
+            )}`
+        )
+        .join("\n");
 
-    const informacaoFrete = freteValidado
-      ? `
+    const informacaoFrete =
+      freteValidado
+        ? `
 
 🚚 Frete:
 ${freteValidado.transportadora} — ${freteValidado.nome}
 Prazo: até ${freteValidado.prazo} dia(s) útil(eis)
-Valor: ${formatarValor(freteValidado.preco)}`
-      : `
+Valor: ${formatarValor(
+            freteValidado.preco
+          )}`
+        : `
 
 📄 Pedido somente com produtos digitais
 Frete: Grátis`;
@@ -442,21 +600,32 @@ Frete: Grátis`;
 ${nomesProdutos}
 ${informacaoFrete}
 
-💰 Subtotal: ${formatarValor(subtotal)}
-💰 Total: ${formatarValor(total)}
+💰 Subtotal: ${formatarValor(
+        subtotal
+      )}
+💰 Total: ${formatarValor(
+        total
+      )}
 
 ✅ Pedido recebido com sucesso!`
     );
 
-    const itemsMercadoPago = produtosPedido.map(
-      (produto: any) => ({
-        id: String(produto.id),
-        title: produto.nome,
-        quantity: Number(produto.quantidade),
-        currency_id: "BRL",
-        unit_price: Number(produto.preco),
-      })
-    );
+    const itemsMercadoPago =
+      produtosPedido.map(
+        (produto: any) => ({
+          id: String(
+            produto.id
+          ),
+          title: produto.nome,
+          quantity: Number(
+            produto.quantidade
+          ),
+          currency_id: "BRL",
+          unit_price: Number(
+            produto.preco
+          ),
+        })
+      );
 
     if (freteValidado) {
       itemsMercadoPago.push({
@@ -464,42 +633,48 @@ ${informacaoFrete}
         title: `Frete - ${freteValidado.transportadora} ${freteValidado.nome}`,
         quantity: 1,
         currency_id: "BRL",
-        unit_price: Number(freteValidado.preco),
+        unit_price: Number(
+          freteValidado.preco
+        ),
       });
     }
 
-    const preference = new Preference(client);
+    const preference =
+      new Preference(client);
 
-    const response = await preference.create({
-      body: {
-        items: itemsMercadoPago,
+    const response =
+      await preference.create({
+        body: {
+          items:
+            itemsMercadoPago,
 
-        external_reference: String(
-          pedidoCriado.id
-        ),
+          external_reference:
+            String(
+              pedidoCriado.id
+            ),
 
-        payer: {
-          name: nomeCliente,
-          email: emailCliente,
+          payer: {
+            name: nomeCliente,
+            email: emailCliente,
+          },
+
+          back_urls: {
+            success: `${baseUrlRetorno}/sucesso`,
+            failure: `${baseUrlRetorno}/erro`,
+            pending: `${baseUrlRetorno}/pendente`,
+          },
+
+          auto_return:
+            "approved",
         },
-
-        back_urls: {
-          success:
-            "https://www.lembreidevocestore.com.br/sucesso",
-          failure:
-            "https://www.lembreidevocestore.com.br/erro",
-          pending:
-            "https://www.lembreidevocestore.com.br/pendente",
-        },
-
-        auto_return: "approved",
-      },
-    });
+      });
 
     return NextResponse.json({
       id: response.id,
-      initPoint: response.init_point,
-      pedidoId: pedidoCriado.id,
+      initPoint:
+        response.init_point,
+      pedidoId:
+        pedidoCriado.id,
       subtotal,
       frete: freteValor,
       total,
@@ -522,9 +697,16 @@ ${informacaoFrete}
   }
 }
 
-function formatarValor(valor: number) {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(Number(valor || 0));
+function formatarValor(
+  valor: number
+) {
+  return new Intl.NumberFormat(
+    "pt-BR",
+    {
+      style: "currency",
+      currency: "BRL",
+    }
+  ).format(
+    Number(valor || 0)
+  );
 }

@@ -1,4 +1,6 @@
-import { supabase } from "@/lib/supabase";
+import "server-only";
+
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 type ClientePayload = {
   nome: string;
@@ -14,12 +16,18 @@ type ClientePayload = {
   estado: string;
 };
 
-export async function buscarClientePorEmail(email: string) {
-  const emailNormalizado = email.trim().toLowerCase();
+export async function buscarClientePorEmail(
+  email: string,
+) {
+  const emailNormalizado = email
+    .trim()
+    .toLowerCase();
 
-  if (!emailNormalizado) return null;
+  if (!emailNormalizado) {
+    return null;
+  }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("clientes")
     .select("*")
     .ilike("email", emailNormalizado)
@@ -27,31 +35,30 @@ export async function buscarClientePorEmail(email: string) {
     .limit(1);
 
   if (error) {
-    console.log("Erro ao buscar cliente:", error);
+    console.error(
+      "Erro ao buscar cliente:",
+      error,
+    );
+
     return null;
   }
 
-  if (!data || data.length === 0) {
-    console.log("Nenhum cliente encontrado para:", emailNormalizado);
-    return null;
-  }
-
-  console.log("Cliente encontrado no Supabase:", data[0]);
-
-  return data[0];
+  return data?.[0] || null;
 }
 
 export async function salvarOuAtualizarCliente(
-  cliente: ClientePayload
+  cliente: ClientePayload,
 ) {
   const clienteNormalizado = {
     ...cliente,
-    nome: cliente.nome.trim(),
-    email: cliente.email.trim().toLowerCase(),
-    whatsapp: cliente.whatsapp.trim(),
+    nome: String(cliente.nome || "").trim(),
+    email: String(cliente.email || "")
+      .trim()
+      .toLowerCase(),
+    whatsapp: String(
+      cliente.whatsapp || "",
+    ).trim(),
   };
-
-  console.log("SALVAR CLIENTE:", clienteNormalizado);
 
   if (
     !clienteNormalizado.email &&
@@ -60,62 +67,81 @@ export async function salvarOuAtualizarCliente(
     return null;
   }
 
-  let clienteExistente = null;
+  let clienteExistente: {
+    id: number;
+  } | null = null;
 
-// 1. Primeiro procura pelo CPF/CNPJ
-if (clienteNormalizado.cpf_cnpj) {
-  const { data, error } = await supabase
-    .from("clientes")
-    .select("*")
-    .eq("cpf_cnpj", clienteNormalizado.cpf_cnpj)
-    .order("id", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  if (clienteNormalizado.cpf_cnpj) {
+    const { data, error } = await supabaseAdmin
+      .from("clientes")
+      .select("id")
+      .eq(
+        "cpf_cnpj",
+        clienteNormalizado.cpf_cnpj,
+      )
+      .order("id", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-  if (error) {
-    console.log("Erro ao procurar cliente por CPF/CNPJ:", error);
+    if (error) {
+      console.error(
+        "Erro ao procurar cliente por CPF/CNPJ:",
+        error,
+      );
+    }
+
+    clienteExistente = data;
   }
 
-  clienteExistente = data;
-}
+  if (
+    !clienteExistente &&
+    clienteNormalizado.email
+  ) {
+    const { data, error } = await supabaseAdmin
+      .from("clientes")
+      .select("id")
+      .eq("email", clienteNormalizado.email)
+      .order("id", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-// 2. Se não encontrou, procura pelo e-mail
-if (!clienteExistente && clienteNormalizado.email) {
-  const { data, error } = await supabase
-    .from("clientes")
-    .select("*")
-    .eq("email", clienteNormalizado.email)
-    .order("id", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    if (error) {
+      console.error(
+        "Erro ao procurar cliente por e-mail:",
+        error,
+      );
+    }
 
-  if (error) {
-    console.log("Erro ao procurar cliente por e-mail:", error);
+    clienteExistente = data;
   }
 
-  clienteExistente = data;
-}
+  if (
+    !clienteExistente &&
+    clienteNormalizado.whatsapp
+  ) {
+    const { data, error } = await supabaseAdmin
+      .from("clientes")
+      .select("id")
+      .eq(
+        "whatsapp",
+        clienteNormalizado.whatsapp,
+      )
+      .order("id", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-// 3. Se ainda não encontrou, procura pelo WhatsApp
-if (!clienteExistente && clienteNormalizado.whatsapp) {
-  const { data, error } = await supabase
-    .from("clientes")
-    .select("*")
-    .eq("whatsapp", clienteNormalizado.whatsapp)
-    .order("id", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    if (error) {
+      console.error(
+        "Erro ao procurar cliente por WhatsApp:",
+        error,
+      );
+    }
 
-  if (error) {
-    console.log("Erro ao procurar cliente por WhatsApp:", error);
+    clienteExistente = data;
   }
 
-  clienteExistente = data;
-}
-
-  // Atualiza o registro mais recente encontrado
   if (clienteExistente) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("clientes")
       .update({
         ...clienteNormalizado,
@@ -126,28 +152,31 @@ if (!clienteExistente && clienteNormalizado.whatsapp) {
       .single();
 
     if (error) {
-      console.log("Erro ao atualizar cliente:", error);
+      console.error(
+        "Erro ao atualizar cliente:",
+        error,
+      );
+
       return null;
     }
-
-    console.log("Cliente atualizado:", data);
 
     return data;
   }
 
-  // Cria apenas quando realmente não existir cliente
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("clientes")
     .insert([clienteNormalizado])
     .select()
     .single();
 
   if (error) {
-    console.log("Erro ao criar cliente:", error);
+    console.error(
+      "Erro ao criar cliente:",
+      error,
+    );
+
     return null;
   }
-
-  console.log("Cliente criado:", data);
 
   return data;
 }

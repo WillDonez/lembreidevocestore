@@ -45,6 +45,7 @@ type Pedido = {
 
   melhor_envio_order_id?: string | null;
   melhor_envio_status?: string | null;
+  melhor_envio_ambiente?: "sandbox" | "producao" | null;
   codigo_rastreio?: string | null;
   url_etiqueta?: string | null;
   etiqueta_gerada?: boolean;
@@ -147,7 +148,32 @@ export default function PedidosPage() {
     setCriandoEnvioPedidoId,
   ] = useState<number | null>(null);
 
+  const [
+    atualizandoEnvioPedidoId,
+    setAtualizandoEnvioPedidoId,
+  ] = useState<number | null>(null);
+
+  const [
+    ambienteAtual,
+    setAmbienteAtual,
+  ] = useState<"sandbox" | "producao" | null>(null);
+
   useEffect(() => {
+    const hostname =
+      window.location.hostname.toLowerCase();
+
+    const hostsProducao = [
+      "lembreidevocestore.com.br",
+      "www.lembreidevocestore.com.br",
+      "lembreidevocestore.vercel.app",
+    ];
+
+    setAmbienteAtual(
+      hostsProducao.includes(hostname)
+        ? "producao"
+        : "sandbox",
+    );
+
     buscarPedidos();
   }, []);
 
@@ -498,6 +524,7 @@ export default function PedidosPage() {
         erro?: string;
         mensagem?: string;
         melhorEnvioOrderId?: string;
+        ambiente?: "sandbox" | "producao";
       } = {};
 
       try {
@@ -539,6 +566,9 @@ export default function PedidosPage() {
                       item.melhor_envio_order_id,
                     melhor_envio_status:
                       "carrinho",
+                    melhor_envio_ambiente:
+                      dados.ambiente ||
+                      item.melhor_envio_ambiente,
                   }
                 : item,
           ),
@@ -563,6 +593,107 @@ export default function PedidosPage() {
       setCriandoEnvioPedidoId(
         null,
       );
+    }
+  }
+
+  async function atualizarEnvioMelhorEnvio(
+    pedido: Pedido,
+  ) {
+    if (!pedido.melhor_envio_order_id) {
+      alert(
+        "Este pedido ainda não possui um envio no Melhor Envio.",
+      );
+
+      return;
+    }
+
+    if (
+      pedido.melhor_envio_ambiente &&
+      ambienteAtual &&
+      pedido.melhor_envio_ambiente !== ambienteAtual
+    ) {
+      alert(
+        `Este envio pertence ao ambiente ${pedido.melhor_envio_ambiente} e não pode ser atualizado no ambiente ${ambienteAtual}.`,
+      );
+
+      return;
+    }
+
+    setAtualizandoEnvioPedidoId(
+      pedido.id,
+    );
+
+    try {
+      const resposta = await fetch(
+        `/api/admin/pedidos/melhor-envio?pedidoId=${pedido.id}`,
+        {
+          method: "GET",
+          cache: "no-store",
+        },
+      );
+
+      let dados: {
+        sucesso?: boolean;
+        erro?: string;
+        mensagem?: string;
+        status?: string;
+        codigoRastreio?: string | null;
+        urlEtiqueta?: string | null;
+        etiquetaGerada?: boolean;
+      } = {};
+
+      try {
+        dados = await resposta.json();
+      } catch {
+        dados = {};
+      }
+
+      if (!resposta.ok) {
+        throw new Error(
+          dados.erro ||
+            "Não foi possível atualizar o envio.",
+        );
+      }
+
+      setPedidos((pedidosAtuais) =>
+        pedidosAtuais.map((item) =>
+          item.id === pedido.id
+            ? {
+                ...item,
+                melhor_envio_status:
+                  dados.status ||
+                  item.melhor_envio_status,
+                codigo_rastreio:
+                  dados.codigoRastreio ??
+                  item.codigo_rastreio,
+                url_etiqueta:
+                  dados.urlEtiqueta ??
+                  item.url_etiqueta,
+                etiqueta_gerada:
+                  dados.etiquetaGerada ??
+                  item.etiqueta_gerada,
+              }
+            : item,
+        ),
+      );
+
+      alert(
+        dados.mensagem ||
+          "Dados do envio atualizados com sucesso.",
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao atualizar envio do Melhor Envio:",
+        error,
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível atualizar o envio.",
+      );
+    } finally {
+      setAtualizandoEnvioPedidoId(null);
     }
   }
 
@@ -686,6 +817,12 @@ export default function PedidosPage() {
                 pedidoPossuiProdutoDigital(
                   pedido,
                 );
+
+              const ambienteIncompativel = Boolean(
+                pedido.melhor_envio_ambiente &&
+                  ambienteAtual &&
+                  pedido.melhor_envio_ambiente !== ambienteAtual,
+              );
 
               return (
                 <section
@@ -1038,7 +1175,31 @@ export default function PedidosPage() {
                                     </p>
                                   )}
 
-                                  {pedido.url_etiqueta && (
+                                  <p className="mt-1 text-xs text-text-light">
+                                    Etiqueta: {" "}
+                                    <strong className="text-text">
+                                      {pedido.etiqueta_gerada
+                                        ? "Gerada"
+                                        : "Ainda não sincronizada"}
+                                    </strong>
+                                  </p>
+
+                                  <p className="mt-1 text-xs text-text-light">
+                                    Ambiente:{" "}
+                                    <strong className="text-text">
+                                      {pedido.melhor_envio_ambiente ||
+                                        "não identificado"}
+                                    </strong>
+                                  </p>
+
+                                  {ambienteIncompativel && (
+                                    <p className="mt-3 rounded-xl border border-warning/40 bg-warning/10 p-3 text-xs font-bold text-warning">
+                                      Este envio pertence ao ambiente {pedido.melhor_envio_ambiente} e está bloqueado no ambiente {ambienteAtual}.
+                                    </p>
+                                  )}
+
+                                  {pedido.url_etiqueta &&
+                                    !ambienteIncompativel && (
                                     <a
                                       href={
                                         pedido.url_etiqueta
@@ -1050,6 +1211,26 @@ export default function PedidosPage() {
                                       🏷 Abrir etiqueta
                                     </a>
                                   )}
+
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      atualizarEnvioMelhorEnvio(
+                                        pedido,
+                                      )
+                                    }
+                                    disabled={
+                                      atualizandoEnvioPedidoId ===
+                                        pedido.id ||
+                                      ambienteIncompativel
+                                    }
+                                    className="mt-3 inline-flex rounded-xl bg-secondary px-4 py-2 text-sm font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                                  >
+                                    {atualizandoEnvioPedidoId ===
+                                    pedido.id
+                                      ? "Atualizando..."
+                                      : "🔄 Atualizar envio"}
+                                  </button>
                                 </div>
                               ) : (
                                 <div>

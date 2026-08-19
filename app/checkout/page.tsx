@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -44,6 +44,8 @@ export default function CheckoutPage() {
 
   const [finalizando, setFinalizando] =
     useState(false);
+
+  const finalizandoRef = useRef(false);
 
   const {
     itens,
@@ -97,6 +99,10 @@ export default function CheckoutPage() {
   }, []);
 
   async function finalizarPedido() {
+    if (finalizandoRef.current) {
+      return;
+    }
+
     if (itens.length === 0) {
       alert(
         "Seu carrinho está vazio.",
@@ -148,6 +154,7 @@ export default function CheckoutPage() {
       return;
     }
 
+    finalizandoRef.current = true;
     setFinalizando(true);
 
     try {
@@ -247,17 +254,9 @@ export default function CheckoutPage() {
         data.initPoint ||
         `https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${data.id}`;
 
-      const abaPagamento =
-        window.open(
-          urlPagamento,
-          "_blank",
-          "noopener,noreferrer",
-        );
-
-      if (!abaPagamento) {
-        window.location.href =
-          urlPagamento;
-      }
+      window.location.assign(
+        urlPagamento,
+      );
     } catch (error) {
       console.error(
         "Erro ao finalizar o pedido:",
@@ -268,6 +267,7 @@ export default function CheckoutPage() {
         "Ocorreu um erro ao iniciar o pagamento.",
       );
     } finally {
+      finalizandoRef.current = false;
       setFinalizando(false);
     }
   }

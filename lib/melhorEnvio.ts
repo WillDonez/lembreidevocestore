@@ -1,21 +1,34 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
+type AmbienteMelhorEnvio = "sandbox" | "producao";
+
 type MelhorEnvioToken = {
   access_token: string;
   refresh_token: string;
   token_type: string;
   expires_in: number;
   expires_at: string;
-  ambiente: string;
+  ambiente: AmbienteMelhorEnvio;
 };
 
 const MARGEM_RENOVACAO_MINUTOS = 10;
+
+function obterAmbienteMelhorEnvio(): AmbienteMelhorEnvio {
+  return process.env.MELHOR_ENVIO_SANDBOX === "true"
+    ? "sandbox"
+    : "producao";
+}
+
+function obterChaveIntegracaoMelhorEnvio(): string {
+  return `principal_${obterAmbienteMelhorEnvio()}`;
+}
 
 function obterVariaveisMelhorEnvio() {
   const clientId = process.env.MELHOR_ENVIO_CLIENT_ID;
   const clientSecret = process.env.MELHOR_ENVIO_CLIENT_SECRET;
   const baseUrl = process.env.MELHOR_ENVIO_BASE_URL;
   const userAgent = process.env.MELHOR_ENVIO_USER_AGENT;
+  const ambiente = obterAmbienteMelhorEnvio();
 
   if (!clientId || !clientSecret || !baseUrl || !userAgent) {
     throw new Error(
@@ -23,28 +36,65 @@ function obterVariaveisMelhorEnvio() {
     );
   }
 
+  const urlNormalizada = baseUrl.toLowerCase();
+  const urlEhSandbox = urlNormalizada.includes(
+    "sandbox.melhorenvio.com.br"
+  );
+
+  if (ambiente === "sandbox" && !urlEhSandbox) {
+    throw new Error(
+      "O projeto está configurado como Sandbox, mas MELHOR_ENVIO_BASE_URL aponta para produção."
+    );
+  }
+
+  if (ambiente === "producao" && urlEhSandbox) {
+    throw new Error(
+      "O projeto está configurado como produção, mas MELHOR_ENVIO_BASE_URL aponta para Sandbox."
+    );
+  }
+
   return {
     clientId,
     clientSecret,
-    baseUrl,
+    baseUrl: baseUrl.replace(/\/+$/, ""),
     userAgent,
+    ambiente,
+    integracao: obterChaveIntegracaoMelhorEnvio(),
   };
 }
 
 async function buscarTokenSalvo(): Promise<MelhorEnvioToken> {
+  const { integracao, ambiente } =
+    obterVariaveisMelhorEnvio();
+
   const { data, error } = await supabaseAdmin
     .from("melhor_envio_tokens")
     .select(
       "access_token, refresh_token, token_type, expires_in, expires_at, ambiente"
     )
-    .eq("integracao", "principal")
-    .single();
+    .eq("integracao", integracao)
+    .maybeSingle();
 
-  if (error || !data) {
-    console.error("Erro ao buscar token do Melhor Envio:", error);
+  if (error) {
+    console.error(
+      "Erro ao buscar token do Melhor Envio:",
+      error
+    );
 
     throw new Error(
-      "A integração com o Melhor Envio ainda não possui um token salvo."
+      "Não foi possível consultar o token do Melhor Envio."
+    );
+  }
+
+  if (!data) {
+    throw new Error(
+      `A integração do Melhor Envio ainda não possui um token para o ambiente ${ambiente}. Faça uma nova autorização.`
+    );
+  }
+
+  if (data.ambiente !== ambiente) {
+    throw new Error(
+      "O ambiente do token do Melhor Envio não corresponde ao ambiente configurado."
     );
   }
 
@@ -72,6 +122,8 @@ async function renovarToken(
     clientSecret,
     baseUrl,
     userAgent,
+    ambiente,
+    integracao,
   } = obterVariaveisMelhorEnvio();
 
   const response = await fetch(`${baseUrl}/oauth/token`, {
@@ -127,10 +179,7 @@ async function renovarToken(
     token_type: tokenData.token_type || "Bearer",
     expires_in: expiresIn,
     expires_at: expiresAt,
-    ambiente:
-      process.env.MELHOR_ENVIO_SANDBOX === "true"
-        ? "sandbox"
-        : "producao",
+    ambiente,
   };
 
   const { error } = await supabaseAdmin
@@ -144,7 +193,7 @@ async function renovarToken(
       ambiente: novoToken.ambiente,
       updated_at: new Date().toISOString(),
     })
-    .eq("integracao", "principal");
+    .eq("integracao", integracao);
 
   if (error) {
     console.error(
@@ -175,11 +224,17 @@ export async function obterAccessTokenMelhorEnvio(): Promise<string> {
 }
 
 export function obterConfiguracaoMelhorEnvio() {
-  const { baseUrl, userAgent } =
-    obterVariaveisMelhorEnvio();
+  const {
+    baseUrl,
+    userAgent,
+    ambiente,
+    integracao,
+  } = obterVariaveisMelhorEnvio();
 
   return {
     baseUrl,
     userAgent,
+    ambiente,
+    integracao,
   };
 }

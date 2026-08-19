@@ -13,8 +13,8 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 interface HeaderProps {
-  quantidadeCarrinho: number;
-  abrirCarrinho: () => void;
+  quantidadeCarrinho?: number;
+  abrirCarrinho?: () => void;
 }
 
 const NOME_LOJA_PADRAO =
@@ -57,6 +57,10 @@ export default function Header({
     logoUrl,
     setLogoUrl,
   ] = useState("/logo.png");
+
+  const possuiQuantidadeCarrinho =
+    typeof quantidadeCarrinho ===
+    "number";
 
   useEffect(() => {
     void verificarUsuario();
@@ -233,6 +237,15 @@ export default function Header({
     router.refresh();
   }
 
+  function acionarCarrinho() {
+    if (abrirCarrinho) {
+      abrirCarrinho();
+      return;
+    }
+
+    router.push("/carrinho");
+  }
+
   return (
     <header className="relative z-50 border-b border-border bg-card">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-4">
@@ -254,36 +267,19 @@ export default function Header({
 
         {/* MENU PRINCIPAL */}
         <nav className="hidden items-center gap-8 font-bold text-text md:flex">
-          <button
-            type="button"
-            onClick={() =>
-              window.scrollTo({
-                top: 0,
-                behavior:
-                  "smooth",
-              })
-            }
+          <Link
+            href="/"
             className="transition hover:text-primary"
           >
             Início
-          </button>
+          </Link>
 
-          <button
-            type="button"
-            onClick={() =>
-              document
-                .getElementById(
-                  "produtos",
-                )
-                ?.scrollIntoView({
-                  behavior:
-                    "smooth",
-                })
-            }
+          <Link
+            href="/#produtos"
             className="transition hover:text-primary"
           >
             Produtos
-          </button>
+          </Link>
 
           <Link
             href="/meu-pedido"
@@ -434,21 +430,29 @@ export default function Header({
           <button
             type="button"
             onClick={
-              abrirCarrinho
+              acionarCarrinho
             }
             className="flex items-center gap-2 rounded-xl bg-accent px-4 py-3 font-bold text-white transition hover:brightness-95 sm:px-6"
           >
-            <span className="hidden sm:inline">
+            <span
+              className={
+                possuiQuantidadeCarrinho
+                  ? "hidden sm:inline"
+                  : "inline"
+              }
+            >
               Carrinho
             </span>
 
-            <span>
-              (
-              {
-                quantidadeCarrinho
-              }
-              )
-            </span>
+            {possuiQuantidadeCarrinho && (
+              <span>
+                (
+                {
+                  quantidadeCarrinho
+                }
+                )
+              </span>
+            )}
           </button>
         </div>
       </div>
