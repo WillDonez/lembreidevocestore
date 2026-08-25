@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { enviarWhatsapp } from "@/lib/whatsapp";
 
 import {
   InvalidWebhookSignatureError,
@@ -524,6 +525,17 @@ export async function POST(req: Request) {
         pedidoAtual.produtos,
       );
 
+    const statusPedidoAntes =
+      String(
+        pedidoAtual.status || "",
+      )
+        .trim()
+        .toLowerCase();
+
+    const pedidoJaEstavaAprovado =
+      statusPedidoAntes === "aprovado" ||
+      statusPedidoAntes === "pago";
+
     /*
      * =========================================================
      * 5. DEFINIR STATUS INTERNO
@@ -660,6 +672,53 @@ export async function POST(req: Request) {
           downloadLiberado,
         },
       );
+
+      /*
+       * =========================================================
+       * 9. AVISAR ADMINISTRADOR UMA ÚNICA VEZ
+       * =========================================================
+       *
+       * O Mercado Pago pode reenviar o mesmo webhook.
+       * Portanto, o aviso só é enviado quando o pedido ainda
+       * não estava aprovado/pago antes desta notificação.
+       *
+       * Uma falha no CallMeBot nunca impede a aprovação.
+       */
+
+      if (!pedidoJaEstavaAprovado) {
+        const whatsappAdmin =
+          process.env.WHATSAPP_ADMIN_NUMERO;
+
+        if (whatsappAdmin) {
+          try {
+            await enviarWhatsapp(
+              whatsappAdmin,
+              `✅ PAGAMENTO APROVADO
+
+🛍️ Pedido LVS-${String(
+                pedidoId,
+              ).padStart(6, "0")}
+
+💳 Pagamento Mercado Pago: ${paymentId}
+
+📦 Próximo passo: preparar o pedido para produção e envio.`
+            );
+
+            console.log(
+              `WhatsApp de pagamento aprovado enviado para o pedido ${pedidoId}.`,
+            );
+          } catch (error) {
+            console.error(
+              `Pedido ${pedidoId} foi aprovado, mas não foi possível enviar o aviso por WhatsApp:`,
+              error,
+            );
+          }
+        } else {
+          console.warn(
+            "WHATSAPP_ADMIN_NUMERO não está configurado. O aviso de pagamento aprovado não foi enviado.",
+          );
+        }
+      }
     } else {
       console.log(
         `Pedido ${pedidoId} atualizado.`,
