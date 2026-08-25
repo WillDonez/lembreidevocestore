@@ -589,9 +589,19 @@ Valor: ${formatarValor(
 📄 Pedido somente com produtos digitais
 Frete: Grátis`;
 
-    await enviarWhatsapp(
-      "3399958593",
-      `🛍️ NOVO PEDIDO NA LOJA
+    /*
+      O WhatsApp é apenas uma notificação administrativa.
+      Uma falha no CallMeBot nunca deve impedir o cliente
+      de prosseguir para o pagamento no Mercado Pago.
+    */
+    const whatsappAdmin =
+      process.env.WHATSAPP_ADMIN_NUMERO;
+
+    if (whatsappAdmin) {
+      try {
+        await enviarWhatsapp(
+          whatsappAdmin,
+          `🛍️ NOVO PEDIDO NA LOJA
 
 👤 Cliente: ${nomeCliente}
 📱 WhatsApp: ${whatsappCliente}
@@ -601,14 +611,25 @@ ${nomesProdutos}
 ${informacaoFrete}
 
 💰 Subtotal: ${formatarValor(
-        subtotal
-      )}
+            subtotal
+          )}
 💰 Total: ${formatarValor(
-        total
-      )}
+            total
+          )}
 
 ✅ Pedido recebido com sucesso!`
-    );
+        );
+      } catch (error) {
+        console.error(
+          "Não foi possível enviar a notificação administrativa pelo WhatsApp:",
+          error
+        );
+      }
+    } else {
+      console.warn(
+        "WHATSAPP_ADMIN_NUMERO não está configurado. O checkout continuará normalmente."
+      );
+    }
 
     const itemsMercadoPago =
       produtosPedido.map(
