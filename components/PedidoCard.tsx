@@ -475,7 +475,7 @@ export default function PedidoCard({
               >
                 {atualizandoRastreio
                   ? "Atualizando rastreamento..."
-                  : "🔄 Atualizar rastreamento"}
+                  : "🔄 Atualizar agora"}
               </button>
 
               {possuiRastreio && (
@@ -491,10 +491,16 @@ export default function PedidoCard({
             </div>
           )}
 
-          {possuiRastreio && (
-            <p className="mt-3 text-xs text-text-light">
-              Use o botão acima para buscar a situação mais recente do envio.
-            </p>
+          {possuiEnvio && (
+            <div className="mt-3 rounded-xl border border-success/20 bg-success/5 p-3">
+              <p className="text-xs font-bold text-success">
+                ✅ Acompanhamento automático ativado
+              </p>
+
+              <p className="mt-1 text-xs leading-relaxed text-text-light">
+                O status deste envio é atualizado automaticamente. Se quiser consultar o Melhor Envio neste momento, use o botão &quot;Atualizar agora&quot;.
+              </p>
+            </div>
           )}
         </div>
       )}
