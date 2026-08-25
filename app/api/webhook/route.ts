@@ -44,19 +44,15 @@ type ResultadoConsultaPagamento = {
  * CONSULTAR PAGAMENTO NO MERCADO PAGO
  * =========================================================
  *
- * Primeiro tentamos a credencial de produção.
- *
- * Se o pagamento não existir nesse ambiente e houver uma
- * credencial de teste disponível, tentamos novamente usando
- * MP_ACCESS_TOKEN_TESTE.
- *
- * Isso permite:
+ * O ambiente é definido de forma isolada:
  *
  * PRODUÇÃO
  * → pagamentos reais com MP_ACCESS_TOKEN
  *
- * TESTES
- * → pagamentos criados com MP_ACCESS_TOKEN_TESTE
+ * DEVELOPMENT / PREVIEW
+ * → pagamentos de teste com MP_ACCESS_TOKEN_TESTE
+ *
+ * Não há fallback entre produção e teste.
  */
 function obterAmbienteMercadoPago(): AmbienteMercadoPago {
   const ehAmbienteTeste =
@@ -260,10 +256,30 @@ export async function POST(req: Request) {
     const xRequestId =
       req.headers.get("x-request-id");
 
+    /*
+     * O Mercado Pago pode informar o ID do pagamento
+     * pela query string ("data.id") ou no corpo da
+     * notificação ("data.id").
+     *
+     * O simulador de Webhooks envia o Data ID no body,
+     * portanto lemos o corpo antes da validação e usamos
+     * a query string como primeira opção.
+     */
+    const body = await req.json();
+
     const url = new URL(req.url);
 
-    const dataId =
+    const dataIdQuery =
       url.searchParams.get("data.id");
+
+    const dataIdBody =
+      body?.data?.id !== undefined &&
+      body?.data?.id !== null
+        ? String(body.data.id)
+        : null;
+
+    const dataId =
+      dataIdQuery || dataIdBody;
 
     if (
       !xSignature ||
@@ -281,6 +297,12 @@ export async function POST(req: Request) {
 
           possuiDataId:
             Boolean(dataId),
+
+          dataIdNaQuery:
+            Boolean(dataIdQuery),
+
+          dataIdNoBody:
+            Boolean(dataIdBody),
         },
       );
 
@@ -330,8 +352,6 @@ export async function POST(req: Request) {
      * 2. LER NOTIFICAÇÃO
      * =========================================================
      */
-
-    const body = await req.json();
 
     console.log(
       "WEBHOOK MERCADO PAGO VALIDADO:",
