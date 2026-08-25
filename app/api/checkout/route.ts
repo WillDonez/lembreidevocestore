@@ -54,12 +54,12 @@ function limparCep(cep: string) {
   return cep.replace(/\D/g, "");
 }
 
-function obterBaseUrlRetorno(req: Request) {
-  if (process.env.NODE_ENV === "development") {
-    return new URL(req.url).origin;
-  }
+function obterBaseUrlRetorno() {
+  const ambienteTeste =
+    process.env.NODE_ENV === "development" ||
+    process.env.VERCEL_ENV === "preview";
 
-  if (process.env.VERCEL_ENV === "preview") {
+  if (ambienteTeste) {
     return "https://lembreidevocestore-sandbox-will-donez-s-projects.vercel.app";
   }
 
@@ -69,7 +69,7 @@ function obterBaseUrlRetorno(req: Request) {
 export async function POST(req: Request) {
   try {
     const baseUrlRetorno =
-      obterBaseUrlRetorno(req);
+      obterBaseUrlRetorno();
 
     const body = await req.json();
 
@@ -657,6 +657,9 @@ ${informacaoFrete}
             name: nomeCliente,
             email: emailCliente,
           },
+
+          notification_url:
+            `${baseUrlRetorno}/api/webhook`,
 
           back_urls: {
             success: `${baseUrlRetorno}/sucesso`,

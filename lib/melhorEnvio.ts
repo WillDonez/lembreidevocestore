@@ -14,9 +14,22 @@ type MelhorEnvioToken = {
 const MARGEM_RENOVACAO_MINUTOS = 10;
 
 function obterAmbienteMelhorEnvio(): AmbienteMelhorEnvio {
-  return process.env.MELHOR_ENVIO_SANDBOX === "true"
-    ? "sandbox"
-    : "producao";
+  const valor =
+    process.env.MELHOR_ENVIO_SANDBOX
+      ?.trim()
+      .toLowerCase();
+
+  if (valor === "true") {
+    return "sandbox";
+  }
+
+  if (valor === "false") {
+    return "producao";
+  }
+
+  throw new Error(
+    'MELHOR_ENVIO_SANDBOX deve estar configurada explicitamente como "true" ou "false".',
+  );
 }
 
 function obterChaveIntegracaoMelhorEnvio(): string {
@@ -32,24 +45,25 @@ function obterVariaveisMelhorEnvio() {
 
   if (!clientId || !clientSecret || !baseUrl || !userAgent) {
     throw new Error(
-      "As variáveis de ambiente do Melhor Envio não estão completas."
+      "As variáveis de ambiente do Melhor Envio não estão completas.",
     );
   }
 
   const urlNormalizada = baseUrl.toLowerCase();
+
   const urlEhSandbox = urlNormalizada.includes(
-    "sandbox.melhorenvio.com.br"
+    "sandbox.melhorenvio.com.br",
   );
 
   if (ambiente === "sandbox" && !urlEhSandbox) {
     throw new Error(
-      "O projeto está configurado como Sandbox, mas MELHOR_ENVIO_BASE_URL aponta para produção."
+      "O projeto está configurado como Sandbox, mas MELHOR_ENVIO_BASE_URL aponta para produção.",
     );
   }
 
   if (ambiente === "producao" && urlEhSandbox) {
     throw new Error(
-      "O projeto está configurado como produção, mas MELHOR_ENVIO_BASE_URL aponta para Sandbox."
+      "O projeto está configurado como produção, mas MELHOR_ENVIO_BASE_URL aponta para Sandbox.",
     );
   }
 
@@ -64,13 +78,12 @@ function obterVariaveisMelhorEnvio() {
 }
 
 async function buscarTokenSalvo(): Promise<MelhorEnvioToken> {
-  const { integracao, ambiente } =
-    obterVariaveisMelhorEnvio();
+  const { integracao, ambiente } = obterVariaveisMelhorEnvio();
 
   const { data, error } = await supabaseAdmin
     .from("melhor_envio_tokens")
     .select(
-      "access_token, refresh_token, token_type, expires_in, expires_at, ambiente"
+      "access_token, refresh_token, token_type, expires_in, expires_at, ambiente",
     )
     .eq("integracao", integracao)
     .maybeSingle();
@@ -78,23 +91,23 @@ async function buscarTokenSalvo(): Promise<MelhorEnvioToken> {
   if (error) {
     console.error(
       "Erro ao buscar token do Melhor Envio:",
-      error
+      error,
     );
 
     throw new Error(
-      "Não foi possível consultar o token do Melhor Envio."
+      "Não foi possível consultar o token do Melhor Envio.",
     );
   }
 
   if (!data) {
     throw new Error(
-      `A integração do Melhor Envio ainda não possui um token para o ambiente ${ambiente}. Faça uma nova autorização.`
+      `A integração do Melhor Envio ainda não possui um token para o ambiente ${ambiente}. Faça uma nova autorização.`,
     );
   }
 
   if (data.ambiente !== ambiente) {
     throw new Error(
-      "O ambiente do token do Melhor Envio não corresponde ao ambiente configurado."
+      "O ambiente do token do Melhor Envio não corresponde ao ambiente configurado.",
     );
   }
 
@@ -115,7 +128,7 @@ function tokenAindaValido(expiresAt: string): boolean {
 }
 
 async function renovarToken(
-  refreshToken: string
+  refreshToken: string,
 ): Promise<MelhorEnvioToken> {
   const {
     clientId,
@@ -126,38 +139,41 @@ async function renovarToken(
     integracao,
   } = obterVariaveisMelhorEnvio();
 
-  const response = await fetch(`${baseUrl}/oauth/token`, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      "User-Agent": userAgent,
+  const response = await fetch(
+    `${baseUrl}/oauth/token`,
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "User-Agent": userAgent,
+      },
+      body: JSON.stringify({
+        grant_type: "refresh_token",
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
+      }),
+      cache: "no-store",
     },
-    body: JSON.stringify({
-      grant_type: "refresh_token",
-      client_id: clientId,
-      client_secret: clientSecret,
-      refresh_token: refreshToken,
-    }),
-    cache: "no-store",
-  });
+  );
 
   const tokenData = await response.json();
 
   if (!response.ok) {
     console.error(
       "Erro ao renovar token do Melhor Envio:",
-      tokenData
+      tokenData,
     );
 
     throw new Error(
-      "Não foi possível renovar o token do Melhor Envio."
+      "Não foi possível renovar o token do Melhor Envio.",
     );
   }
 
   if (!tokenData.access_token || !tokenData.refresh_token) {
     throw new Error(
-      "O Melhor Envio não retornou os tokens esperados na renovação."
+      "O Melhor Envio não retornou os tokens esperados na renovação.",
     );
   }
 
@@ -165,12 +181,12 @@ async function renovarToken(
 
   if (!Number.isFinite(expiresIn)) {
     throw new Error(
-      "O Melhor Envio retornou uma validade de token inválida."
+      "O Melhor Envio retornou uma validade de token inválida.",
     );
   }
 
   const expiresAt = new Date(
-    Date.now() + expiresIn * 1000
+    Date.now() + expiresIn * 1000,
   ).toISOString();
 
   const novoToken: MelhorEnvioToken = {
@@ -198,11 +214,11 @@ async function renovarToken(
   if (error) {
     console.error(
       "Erro ao salvar token renovado no Supabase:",
-      error
+      error,
     );
 
     throw new Error(
-      "O token foi renovado, mas não pôde ser salvo."
+      "O token foi renovado, mas não pôde ser salvo.",
     );
   }
 
@@ -217,7 +233,7 @@ export async function obterAccessTokenMelhorEnvio(): Promise<string> {
   }
 
   const tokenRenovado = await renovarToken(
-    token.refresh_token
+    token.refresh_token,
   );
 
   return tokenRenovado.access_token;

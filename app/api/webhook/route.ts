@@ -32,9 +32,11 @@ type PedidoBanco = {
   download_liberado?: boolean | null;
 };
 
+type AmbienteMercadoPago = "producao" | "teste";
+
 type ResultadoConsultaPagamento = {
   payment: MercadoPagoPayment;
-  ambiente: "producao" | "teste";
+  ambiente: AmbienteMercadoPago;
 };
 
 /*
@@ -56,117 +58,106 @@ type ResultadoConsultaPagamento = {
  * TESTES
  * → pagamentos criados com MP_ACCESS_TOKEN_TESTE
  */
+function obterAmbienteMercadoPago(): AmbienteMercadoPago {
+  const ehAmbienteTeste =
+    process.env.NODE_ENV === "development" ||
+    process.env.VERCEL_ENV === "preview";
+
+  return ehAmbienteTeste
+    ? "teste"
+    : "producao";
+}
+
+function obterAccessTokenMercadoPago(
+  ambiente: AmbienteMercadoPago,
+) {
+  const token =
+    ambiente === "teste"
+      ? process.env.MP_ACCESS_TOKEN_TESTE
+      : process.env.MP_ACCESS_TOKEN;
+
+  if (!token) {
+    throw new Error(
+      ambiente === "teste"
+        ? "MP_ACCESS_TOKEN_TESTE não está configurado."
+        : "MP_ACCESS_TOKEN não está configurado.",
+    );
+  }
+
+  return token;
+}
+
 async function consultarPagamentoMercadoPago(
   paymentId: string,
 ): Promise<ResultadoConsultaPagamento> {
-  const tokens: Array<{
-    token: string;
-    ambiente: "producao" | "teste";
-  }> = [];
+  const ambiente =
+    obterAmbienteMercadoPago();
 
-  if (process.env.MP_ACCESS_TOKEN) {
-    tokens.push({
-      token: process.env.MP_ACCESS_TOKEN,
-      ambiente: "producao",
-    });
-  }
-
-  if (
-    process.env.MP_ACCESS_TOKEN_TESTE &&
-    process.env.MP_ACCESS_TOKEN_TESTE !==
-      process.env.MP_ACCESS_TOKEN
-  ) {
-    tokens.push({
-      token: process.env.MP_ACCESS_TOKEN_TESTE,
-      ambiente: "teste",
-    });
-  }
-
-  if (tokens.length === 0) {
-    throw new Error(
-      "Nenhum Access Token do Mercado Pago está configurado.",
-    );
-  }
-
-  let ultimoStatus = 0;
-  let ultimoErro = "";
-
-  for (const configuracao of tokens) {
-    const response = await fetch(
-      `https://api.mercadopago.com/v1/payments/${paymentId}`,
-      {
-        method: "GET",
-
-        headers: {
-          Authorization: `Bearer ${configuracao.token}`,
-          Accept: "application/json",
-        },
-
-        cache: "no-store",
-      },
+  const token =
+    obterAccessTokenMercadoPago(
+      ambiente,
     );
 
-    if (response.ok) {
-      const payment =
-        (await response.json()) as MercadoPagoPayment;
-
-      console.log(
-        "PAGAMENTO LOCALIZADO NO MERCADO PAGO:",
-        {
-          paymentId,
-          ambiente: configuracao.ambiente,
-          status: payment.status,
-          external_reference:
-            payment.external_reference,
-        },
-      );
-
-      return {
-        payment,
-        ambiente: configuracao.ambiente,
-      };
-    }
-
-    ultimoStatus = response.status;
-    ultimoErro = await response.text();
-
-    /*
-     * Se for 404, pode simplesmente significar
-     * que estamos consultando o ambiente errado.
-     *
-     * Nesse caso tentamos a próxima credencial.
-     */
-    if (response.status === 404) {
-      console.log(
-        `Pagamento ${paymentId} não encontrado no ambiente ${configuracao.ambiente}.`,
-      );
-
-      continue;
-    }
-
-    /*
-     * Para outros erros, registramos e seguimos
-     * para a próxima credencial caso exista.
-     */
-    console.error(
-      `Erro ao consultar pagamento no ambiente ${configuracao.ambiente}:`,
-      response.status,
-      ultimoErro,
-    );
-  }
-
-  console.error(
-    "Pagamento não pôde ser consultado no Mercado Pago:",
+  const response = await fetch(
+    `https://api.mercadopago.com/v1/payments/${paymentId}`,
     {
-      paymentId,
-      ultimoStatus,
-      ultimoErro,
+      method: "GET",
+      headers: {
+        Authorization:
+          `Bearer ${token}`,
+        Accept:
+          "application/json",
+      },
+      cache: "no-store",
     },
   );
 
-  throw new Error(
-    `Não foi possível consultar o pagamento ${paymentId} no Mercado Pago.`,
+  if (!response.ok) {
+    const detalhe =
+      await response.text();
+
+    console.error(
+      `Erro ao consultar pagamento no ambiente ${ambiente}:`,
+      {
+        paymentId,
+        status:
+          response.status,
+        detalhe,
+      },
+    );
+
+    if (
+      response.status === 404
+    ) {
+      throw new Error(
+        `Pagamento ${paymentId} não encontrado no ambiente ${ambiente}.`,
+      );
+    }
+
+    throw new Error(
+      `Não foi possível consultar o pagamento ${paymentId} no Mercado Pago.`,
+    );
+  }
+
+  const payment =
+    (await response.json()) as MercadoPagoPayment;
+
+  console.log(
+    "PAGAMENTO LOCALIZADO NO MERCADO PAGO:",
+    {
+      paymentId,
+      ambiente,
+      status:
+        payment.status,
+      external_reference:
+        payment.external_reference,
+    },
   );
+
+  return {
+    payment,
+    ambiente,
+  };
 }
 
 /*
@@ -236,11 +227,20 @@ export async function POST(req: Request) {
      */
 
     const webhookSecret =
-      process.env.MP_WEBHOOK_SECRET;
+      process.env.NODE_ENV === "development" ||
+      process.env.VERCEL_ENV === "preview"
+        ? process.env.MP_WEBHOOK_SECRET_TESTE
+        : process.env.MP_WEBHOOK_SECRET;
 
     if (!webhookSecret) {
+      const nomeVariavel =
+        process.env.NODE_ENV === "development" ||
+        process.env.VERCEL_ENV === "preview"
+          ? "MP_WEBHOOK_SECRET_TESTE"
+          : "MP_WEBHOOK_SECRET";
+
       console.error(
-        "MP_WEBHOOK_SECRET não está configurada.",
+        `${nomeVariavel} não está configurada.`,
       );
 
       return NextResponse.json(

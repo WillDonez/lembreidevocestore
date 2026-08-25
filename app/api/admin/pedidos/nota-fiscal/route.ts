@@ -5,6 +5,10 @@ import {
 
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
+import {
+  criarEnvioMelhorEnvio,
+} from "@/lib/melhorEnvioEnvio";
+
 const BUCKET = "notas-fiscais";
 
 const TAMANHO_MAXIMO_PDF =
@@ -562,6 +566,73 @@ export async function POST(
       arquivosAntigos,
     );
 
+    /*
+     * =========================================================
+     * CRIAR ENVIO AUTOMATICAMENTE APÓS SALVAR A NF-e
+     * =========================================================
+     *
+     * A função criarEnvioMelhorEnvio já:
+     * - valida pagamento aprovado;
+     * - valida produto físico;
+     * - valida a NF-e;
+     * - respeita sandbox/produção;
+     * - evita envio duplicado.
+     *
+     * Importante:
+     * se o Melhor Envio falhar, a NF-e continua salva.
+     */
+
+    let envioAutomatico:
+      {
+        sucesso: boolean;
+        mensagem: string;
+        melhorEnvioOrderId?: string;
+        ambiente?: "sandbox" | "producao";
+      } | null = null;
+
+    let erroEnvioAutomatico:
+      string | null = null;
+
+    try {
+      const resultadoEnvio =
+        await criarEnvioMelhorEnvio(
+          pedidoId,
+        );
+
+      envioAutomatico = {
+        sucesso:
+          resultadoEnvio.sucesso,
+        mensagem:
+          resultadoEnvio.mensagem,
+        melhorEnvioOrderId:
+          resultadoEnvio.melhorEnvioOrderId,
+        ambiente:
+          resultadoEnvio.ambiente,
+      };
+    } catch (error) {
+      console.error(
+        "NF-e salva, mas não foi possível criar o envio automaticamente:",
+        error,
+      );
+
+      erroEnvioAutomatico =
+        error instanceof Error
+          ? error.message
+          : "Não foi possível criar o envio automaticamente.";
+    }
+
+    const mensagemNotaFiscal =
+      pdf || xml
+        ? "NF-e e arquivos fiscais salvos com sucesso."
+        : "NF-e registrada com sucesso.";
+
+    const mensagemFinal =
+      envioAutomatico?.sucesso
+        ? `${mensagemNotaFiscal} ${envioAutomatico.mensagem}`
+        : erroEnvioAutomatico
+          ? `${mensagemNotaFiscal} Porém, o envio não foi criado automaticamente: ${erroEnvioAutomatico}`
+          : mensagemNotaFiscal;
+
     return NextResponse.json({
       sucesso: true,
       pedidoId,
@@ -573,10 +644,10 @@ export async function POST(
         novoPdfPath,
       notaFiscalXmlPath:
         novoXmlPath,
+      envioAutomatico,
+      erroEnvioAutomatico,
       mensagem:
-        pdf || xml
-          ? "NF-e e arquivos fiscais salvos com sucesso."
-          : "NF-e registrada com sucesso.",
+        mensagemFinal,
     });
   } catch (error) {
     console.error(
