@@ -129,8 +129,15 @@ export async function GET(
 
     /*
      * =========================================================
-     * 3. BUSCAR PEDIDOS COM ENVIO NO AMBIENTE ATUAL
+     * 3. BUSCAR SOMENTE ENVIOS AINDA ATIVOS
      * =========================================================
+     *
+     * O filtro é feito já no Supabase para evitar que pedidos
+     * entregues ou cancelados ocupem o limite da consulta.
+     *
+     * Também mantemos melhor_envio_status = null na busca,
+     * pois um envio recém-criado pode ainda não ter recebido
+     * um status sincronizado.
      */
 
     const {
@@ -153,6 +160,9 @@ export async function GET(
         "melhor_envio_ambiente",
         ambiente,
       )
+      .or(
+        "melhor_envio_status.is.null,melhor_envio_status.not.in.(entregue,cancelado)",
+      )
       .order(
         "id",
         {
@@ -160,7 +170,7 @@ export async function GET(
         },
       )
       .limit(
-        LIMITE_PEDIDOS_POR_EXECUCAO * 2,
+        LIMITE_PEDIDOS_POR_EXECUCAO,
       );
 
     if (erroPedidos) {
@@ -187,29 +197,30 @@ export async function GET(
 
     /*
      * =========================================================
-     * 4. IGNORAR ENVIOS FINALIZADOS
+     * 4. FILTRO DEFENSIVO LOCAL
      * =========================================================
+     *
+     * O Supabase já exclui os status finalizados. Este filtro
+     * local permanece como proteção adicional caso algum valor
+     * inesperado chegue no resultado.
      */
 
     const pedidosPendentes =
-      pedidos
-        .filter(
-          (pedido) =>
-            !STATUS_FINALIZADOS.has(
-              normalizarStatus(
-                pedido.melhor_envio_status,
-              ),
+      pedidos.filter(
+        (pedido) =>
+          !STATUS_FINALIZADOS.has(
+            normalizarStatus(
+              pedido.melhor_envio_status,
             ),
-        )
-        .slice(
-          0,
-          LIMITE_PEDIDOS_POR_EXECUCAO,
-        );
+          ),
+      );
 
     /*
      * =========================================================
      * 5. SINCRONIZAR UM PEDIDO POR VEZ
      * =========================================================
+     *
+     * Um erro em um pedido não interrompe os demais.
      */
 
     const resultados:
@@ -296,9 +307,6 @@ export async function GET(
       ambiente,
       encontrados:
         pedidos.length,
-      ignoradosFinalizados:
-        pedidos.length -
-        pedidosPendentes.length,
       processados:
         resultados.length,
       atualizados,
