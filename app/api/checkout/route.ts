@@ -680,7 +680,7 @@ ${informacaoFrete}
           },
 
           notification_url:
-            `${baseUrlRetorno}/api/webhook`,
+             `${baseUrlRetorno}/api/webhook?source_news=webhooks`,
 
           back_urls: {
             success: `${baseUrlRetorno}/sucesso`,
