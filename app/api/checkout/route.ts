@@ -679,9 +679,6 @@ ${informacaoFrete}
             email: emailCliente,
           },
 
-          notification_url:
-             `${baseUrlRetorno}/api/webhook?source_news=webhooks`,
-
           back_urls: {
             success: `${baseUrlRetorno}/sucesso`,
             failure: `${baseUrlRetorno}/erro`,
