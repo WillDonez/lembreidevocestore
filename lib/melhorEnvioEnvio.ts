@@ -1087,8 +1087,6 @@ function encontrarDadosRastreio(
       "tracking",
       "tracking_code",
       "tracking_number",
-      "authorization_code",
-      "melhorenvio_tracking",
       "codigo_rastreio",
     ]);
 
@@ -1220,7 +1218,6 @@ export async function sincronizarEnvioMelhorEnvio(
   );
 
   const textoPedido = await respostaPedido.text();
-
   let dadosPedido: Record<string, unknown> = {};
 
   try {
@@ -1256,8 +1253,6 @@ export async function sincronizarEnvioMelhorEnvio(
       "tracking",
       "tracking_code",
       "tracking_number",
-      "authorization_code",
-      "melhorenvio_tracking",
       "codigo_rastreio",
     ],
   );
@@ -1278,18 +1273,9 @@ export async function sincronizarEnvioMelhorEnvio(
       },
     );
 
-    const textoRastreio = await respostaRastreio.text();
-
     if (respostaRastreio.ok) {
-      let dadosRastreio: unknown = {};
-
-      try {
-        dadosRastreio = textoRastreio
-          ? JSON.parse(textoRastreio)
-          : {};
-      } catch {
-        dadosRastreio = textoRastreio;
-      }
+      const dadosRastreio =
+        await respostaRastreio.json();
 
       const rastreioEncontrado =
         encontrarDadosRastreio(dadosRastreio);
