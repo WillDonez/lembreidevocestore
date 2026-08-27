@@ -1,4 +1,4 @@
-"use client";
+
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -8,6 +8,10 @@ import {
   Sparkles,
   Star,
 } from "lucide-react";
+import {
+  useRef,
+  useState,
+} from "react";
 
 import { useCarrinho } from "@/app/context/CarrinhoContext";
 import FavoriteButton from "@/components/product/FavoriteButton";
@@ -25,8 +29,24 @@ export default function ProdutoCard({
   adicionarCarrinho,
 }: ProdutoCardProps) {
   const router = useRouter();
+
   const { limparCarrinho } =
     useCarrinho();
+
+  const imagemProdutoRef =
+    useRef<HTMLImageElement | null>(
+      null,
+    );
+
+  const timerAdicionadoRef =
+    useRef<ReturnType<
+      typeof setTimeout
+    > | null>(null);
+
+  const [
+    adicionado,
+    setAdicionado,
+  ] = useState(false);
 
   const produtoDigital =
     Boolean(
@@ -61,6 +81,246 @@ export default function ProdutoCard({
             100,
         )
       : 0;
+
+  function avisarCarrinhoQueProdutoChegou() {
+    window.dispatchEvent(
+      new CustomEvent(
+        "carrinho:produto-adicionado",
+        {
+          detail: {
+            nome:
+              produto.nome ||
+              "Produto",
+          },
+        },
+      ),
+    );
+  }
+
+  function mostrarConfirmacaoNoBotao() {
+    setAdicionado(true);
+
+    if (
+      timerAdicionadoRef.current
+    ) {
+      clearTimeout(
+        timerAdicionadoRef.current,
+      );
+    }
+
+    timerAdicionadoRef.current =
+      setTimeout(() => {
+        setAdicionado(false);
+      }, 1600);
+  }
+
+  function animarProdutoAteCarrinho(
+    origemAlternativa?: HTMLElement,
+  ) {
+    const destino =
+      document.querySelector<HTMLElement>(
+        '[data-cart-target="true"]',
+      );
+
+    const origem =
+      imagemProdutoRef.current ||
+      origemAlternativa;
+
+    if (!destino || !origem) {
+      avisarCarrinhoQueProdutoChegou();
+      return;
+    }
+
+    const origemRect =
+      origem.getBoundingClientRect();
+
+    const destinoRect =
+      destino.getBoundingClientRect();
+
+    const tamanhoInicial = 76;
+
+    const inicioX =
+      origemRect.left +
+      origemRect.width / 2 -
+      tamanhoInicial / 2;
+
+    const inicioY =
+      origemRect.top +
+      origemRect.height / 2 -
+      tamanhoInicial / 2;
+
+    const fimX =
+      destinoRect.left +
+      destinoRect.width / 2 -
+      tamanhoInicial / 2;
+
+    const fimY =
+      destinoRect.top +
+      destinoRect.height / 2 -
+      tamanhoInicial / 2;
+
+    const deltaX =
+      fimX - inicioX;
+
+    const deltaY =
+      fimY - inicioY;
+
+    const elemento =
+      document.createElement("div");
+
+    elemento.setAttribute(
+      "aria-hidden",
+      "true",
+    );
+
+    elemento.style.position =
+      "fixed";
+
+    elemento.style.left =
+      `${inicioX}px`;
+
+    elemento.style.top =
+      `${inicioY}px`;
+
+    elemento.style.width =
+      `${tamanhoInicial}px`;
+
+    elemento.style.height =
+      `${tamanhoInicial}px`;
+
+    elemento.style.zIndex =
+      "9999";
+
+    elemento.style.pointerEvents =
+      "none";
+
+    elemento.style.borderRadius =
+      "20px";
+
+    elemento.style.overflow =
+      "hidden";
+
+    elemento.style.background =
+      "white";
+
+    elemento.style.border =
+      "3px solid rgba(124, 58, 237, 0.35)";
+
+    elemento.style.boxShadow =
+      "0 18px 45px rgba(76, 29, 149, 0.35), 0 0 0 8px rgba(124, 58, 237, 0.10)";
+
+    elemento.style.willChange =
+      "transform, opacity";
+
+    if (produto.imagem) {
+      const imagem =
+        document.createElement("img");
+
+      imagem.src =
+        String(
+          produto.imagem,
+        );
+
+      imagem.alt = "";
+      imagem.style.width = "100%";
+      imagem.style.height = "100%";
+      imagem.style.objectFit = "cover";
+
+      elemento.appendChild(
+        imagem,
+      );
+    } else {
+      elemento.innerHTML =
+        "🛒";
+
+      elemento.style.display =
+        "flex";
+
+      elemento.style.alignItems =
+        "center";
+
+      elemento.style.justifyContent =
+        "center";
+
+      elemento.style.fontSize =
+        "34px";
+    }
+
+    document.body.appendChild(
+      elemento,
+    );
+
+    const alturaDoArco =
+      Math.max(
+        70,
+        Math.min(
+          150,
+          Math.abs(deltaY) * 0.22 +
+            55,
+        ),
+      );
+
+    const animacao =
+      elemento.animate(
+        [
+          {
+            transform:
+              "translate3d(0, 0, 0) scale(1) rotate(0deg)",
+            opacity: 1,
+          },
+          {
+            transform: `translate3d(${deltaX * 0.52}px, ${deltaY * 0.48 - alturaDoArco}px, 0) scale(0.76) rotate(7deg)`,
+            opacity: 0.98,
+            offset: 0.56,
+          },
+          {
+            transform: `translate3d(${deltaX}px, ${deltaY}px, 0) scale(0.22) rotate(14deg)`,
+            opacity: 0.25,
+          },
+        ],
+        {
+          duration: 820,
+          easing:
+            "cubic-bezier(0.22, 0.75, 0.24, 1)",
+          fill: "forwards",
+        },
+      );
+
+    const finalizar = () => {
+      elemento.remove();
+      avisarCarrinhoQueProdutoChegou();
+    };
+
+    animacao.addEventListener(
+      "finish",
+      finalizar,
+      {
+        once: true,
+      },
+    );
+
+    animacao.addEventListener(
+      "cancel",
+      finalizar,
+      {
+        once: true,
+      },
+    );
+  }
+
+  function adicionarAoCarrinho(
+    botao: HTMLButtonElement,
+  ) {
+    adicionarCarrinho(
+      produto,
+    );
+
+    mostrarConfirmacaoNoBotao();
+
+    animarProdutoAteCarrinho(
+      botao,
+    );
+  }
 
   function comprarAgora() {
     limparCarrinho();
@@ -113,6 +373,7 @@ export default function ProdutoCard({
         >
           {produto.imagem ? (
             <img
+              ref={imagemProdutoRef}
               src={
                 produto.imagem
               }
@@ -194,17 +455,33 @@ export default function ProdutoCard({
         <div className="mt-auto pt-4">
           <button
             type="button"
-            onClick={() =>
-              adicionarCarrinho(
-                produto,
+            onClick={(event) =>
+              adicionarAoCarrinho(
+                event.currentTarget,
               )
             }
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3 text-sm font-black text-white shadow-md transition hover:-translate-y-0.5 hover:brightness-95 hover:shadow-lg active:scale-[0.98]"
+            className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black text-white shadow-md transition duration-300 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98] ${
+              adicionado
+                ? "bg-success"
+                : "bg-accent hover:brightness-95"
+            }`}
           >
-            <ShoppingCart className="h-4.5 w-4.5" />
+            {adicionado ? (
+              <>
+                <span className="text-base">
+                  ✓
+                </span>
 
-            Adicionar ao
-            carrinho
+                Adicionado!
+              </>
+            ) : (
+              <>
+                <ShoppingCart className="h-4.5 w-4.5" />
+
+                Adicionar ao
+                carrinho
+              </>
+            )}
           </button>
 
           <button
