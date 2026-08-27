@@ -1297,9 +1297,9 @@ export async function sincronizarEnvioMelhorEnvio(
     statusExterno || pedidoData.melhor_envio_status,
   );
 
-  const geradaEm = obterTextoPrimeiroCampo(
+  let geradaEm = obterTextoPrimeiroCampo(
     dadosPedido,
-    ["generated_at", "released_at"],
+    ["generated_at"],
   );
 
   let urlEtiqueta = validarUrlEtiqueta(
@@ -1308,19 +1308,114 @@ export async function sincronizarEnvioMelhorEnvio(
       : null,
   );
 
-  const statusIndicaEtiquetaGerada = [
+  /*
+   * =========================================================
+   * GERAR ETIQUETA APÓS A COMPRA
+   * =========================================================
+   *
+   * O status "liberado" significa que o frete foi comprado,
+   * mas não significa que o arquivo da etiqueta já foi gerado.
+   *
+   * A geração precisa ser solicitada explicitamente antes da
+   * impressão. Só consideramos a etiqueta realmente gerada
+   * quando o Melhor Envio passar a informar "generated_at".
+   */
+
+  const statusPermiteGerarEtiqueta = [
     "liberado",
     "postado",
     "entregue",
     "nao_entregue",
   ].includes(status);
 
+  if (
+    statusPermiteGerarEtiqueta &&
+    !geradaEm
+  ) {
+    try {
+      const respostaGeracao = await fetch(
+        `${baseUrl}/api/v2/me/shipment/generate`,
+        {
+          method: "POST",
+          headers: {
+            ...headers,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            orders: [melhorEnvioOrderId],
+          }),
+          cache: "no-store",
+        },
+      );
+
+      if (!respostaGeracao.ok) {
+        const textoGeracao =
+          await respostaGeracao.text();
+
+        console.warn(
+          "O Melhor Envio ainda não confirmou a geração da etiqueta:",
+          {
+            status: respostaGeracao.status,
+            resposta: textoGeracao,
+          },
+        );
+      }
+
+      /*
+       * A geração pode ser assíncrona. Por isso consultamos
+       * novamente o pedido e só marcamos como gerada quando
+       * "generated_at" realmente existir.
+       */
+      const respostaPedidoAposGeracao = await fetch(
+        `${baseUrl}/api/v2/me/orders/${encodeURIComponent(
+          melhorEnvioOrderId,
+        )}`,
+        {
+          method: "GET",
+          headers,
+          cache: "no-store",
+        },
+      );
+
+      if (respostaPedidoAposGeracao.ok) {
+        const textoPedidoAposGeracao =
+          await respostaPedidoAposGeracao.text();
+
+        let dadosPedidoAposGeracao:
+          Record<string, unknown> = {};
+
+        try {
+          dadosPedidoAposGeracao =
+            textoPedidoAposGeracao
+              ? (JSON.parse(
+                  textoPedidoAposGeracao,
+                ) as Record<string, unknown>)
+              : {};
+        } catch {
+          dadosPedidoAposGeracao = {};
+        }
+
+        geradaEm = obterTextoPrimeiroCampo(
+          dadosPedidoAposGeracao,
+          ["generated_at"],
+        );
+      }
+    } catch (error) {
+      console.warn(
+        "Não foi possível solicitar a geração da etiqueta agora:",
+        error,
+      );
+    }
+  }
+
   const etiquetaGerada = Boolean(
-    geradaEm ||
-      statusIndicaEtiquetaGerada ||
-      pedidoData.etiqueta_gerada,
+    geradaEm,
   );
 
+  /*
+   * Somente tenta obter o link de impressão depois de o
+   * Melhor Envio confirmar que a etiqueta foi gerada.
+   */
   if (etiquetaGerada) {
     try {
       const respostaImpressao = await fetch(
@@ -1354,13 +1449,34 @@ export async function sincronizarEnvioMelhorEnvio(
         urlEtiqueta = validarUrlEtiqueta(
           urlCandidata,
         );
+      } else {
+        const textoImpressao =
+          await respostaImpressao.text();
+
+        console.warn(
+          "A etiqueta foi gerada, mas o link de impressão ainda não está disponível:",
+          {
+            status: respostaImpressao.status,
+            resposta: textoImpressao,
+          },
+        );
+
+        urlEtiqueta = null;
       }
     } catch (error) {
       console.warn(
-        "A etiqueta foi sincronizada, mas o link de impressão não pôde ser obtido:",
+        "A etiqueta foi gerada, mas o link de impressão não pôde ser obtido:",
         error,
       );
+
+      urlEtiqueta = null;
     }
+  } else {
+    /*
+     * Remove eventual estado antigo incorreto, como ocorreu no
+     * Pedido #19 quando "liberado" foi confundido com "gerada".
+     */
+    urlEtiqueta = null;
   }
 
   const atualizacao = {
