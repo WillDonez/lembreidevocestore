@@ -533,6 +533,8 @@ export default function PedidosPage() {
         }),
       );
 
+      await buscarPedidos();
+
       alert(
         dados.mensagem ||
           "NF-e registrada no pedido com sucesso.",
