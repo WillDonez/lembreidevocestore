@@ -563,6 +563,150 @@ export async function POST(req: Request) {
       );
     }
 
+    const itemsMercadoPago =
+      produtosPedido.map(
+        (produto: any) => ({
+          id: String(
+            produto.id
+          ),
+          title: produto.nome,
+          quantity: Number(
+            produto.quantidade
+          ),
+          currency_id: "BRL",
+          unit_price: Number(
+            produto.preco
+          ),
+        })
+      );
+
+    if (freteValidado) {
+      itemsMercadoPago.push({
+        id: `frete-${freteValidado.id}`,
+        title: `Frete - ${freteValidado.transportadora} ${freteValidado.nome}`,
+        quantity: 1,
+        currency_id: "BRL",
+        unit_price: Number(
+          freteValidado.preco
+        ),
+      });
+    }
+
+    const preference =
+      new Preference(client);
+
+    let response: Awaited<
+      ReturnType<
+        typeof preference.create
+      >
+    >;
+
+    try {
+      response =
+        await preference.create({
+          body: {
+            items:
+              itemsMercadoPago,
+
+            external_reference:
+              String(
+                pedidoCriado.id
+              ),
+
+            payer: {
+              name: nomeCliente,
+              email: emailCliente,
+            },
+
+            back_urls: {
+              success: `${baseUrlRetorno}/sucesso`,
+              failure: `${baseUrlRetorno}/erro`,
+              pending: `${baseUrlRetorno}/pendente`,
+            },
+
+            auto_return:
+              "approved",
+          },
+        });
+    } catch (error) {
+      console.error(
+        `Erro ao criar preferência do Mercado Pago para o pedido ${pedidoCriado.id}:`,
+        error
+      );
+
+      /*
+        O pedido é criado antes da preferência porque o ID dele
+        é usado como external_reference no Mercado Pago.
+
+        Se o Mercado Pago falhar antes de devolver a preferência,
+        removemos o pedido recém-criado para evitar pedidos
+        pendentes órfãos no painel administrativo.
+      */
+      const {
+        error: erroRollbackPedido,
+      } = await supabase
+        .from("pedidos")
+        .delete()
+        .eq(
+          "id",
+          pedidoCriado.id
+        );
+
+      if (erroRollbackPedido) {
+        console.error(
+          `Falha ao remover o pedido ${pedidoCriado.id} após erro ao criar a preferência do Mercado Pago:`,
+          erroRollbackPedido
+        );
+
+        /*
+          Proteção adicional: se a exclusão falhar, tentamos ao
+          menos retirar o pedido do estado "pendente" para que
+          ele não seja confundido com uma compra aguardando pagamento.
+        */
+        const {
+          error: erroCancelamentoFallback,
+        } = await supabase
+          .from("pedidos")
+          .update({
+            status: "cancelado",
+          })
+          .eq(
+            "id",
+            pedidoCriado.id
+          );
+
+        if (erroCancelamentoFallback) {
+          console.error(
+            `Falha crítica ao neutralizar o pedido ${pedidoCriado.id} após erro no Mercado Pago:`,
+            erroCancelamentoFallback
+          );
+        }
+      } else {
+        console.log(
+          `Pedido ${pedidoCriado.id} removido porque a preferência do Mercado Pago não pôde ser criada.`
+        );
+      }
+
+      return NextResponse.json(
+        {
+          error:
+            "Não foi possível iniciar o pagamento. Tente novamente em instantes.",
+        },
+        {
+          status: 502,
+        }
+      );
+    }
+
+    /*
+      A notificação administrativa só é enviada depois que
+      o Mercado Pago cria a preferência com sucesso.
+
+      Assim, o administrador não recebe aviso de um pedido
+      que não conseguiu chegar à etapa de pagamento.
+
+      Uma falha no CallMeBot continua sem impedir o checkout.
+    */
     const nomesProdutos =
       produtosPedido
         .map(
@@ -589,11 +733,6 @@ Valor: ${formatarValor(
 📄 Pedido somente com produtos digitais
 Frete: Grátis`;
 
-    /*
-      O WhatsApp é apenas uma notificação administrativa.
-      Uma falha no CallMeBot nunca deve impedir o cliente
-      de prosseguir para o pagamento no Mercado Pago.
-    */
     const whatsappAdmin =
       process.env.WHATSAPP_ADMIN_NUMERO;
 
@@ -630,65 +769,6 @@ ${informacaoFrete}
         "WHATSAPP_ADMIN_NUMERO não está configurado. O checkout continuará normalmente."
       );
     }
-
-    const itemsMercadoPago =
-      produtosPedido.map(
-        (produto: any) => ({
-          id: String(
-            produto.id
-          ),
-          title: produto.nome,
-          quantity: Number(
-            produto.quantidade
-          ),
-          currency_id: "BRL",
-          unit_price: Number(
-            produto.preco
-          ),
-        })
-      );
-
-    if (freteValidado) {
-      itemsMercadoPago.push({
-        id: `frete-${freteValidado.id}`,
-        title: `Frete - ${freteValidado.transportadora} ${freteValidado.nome}`,
-        quantity: 1,
-        currency_id: "BRL",
-        unit_price: Number(
-          freteValidado.preco
-        ),
-      });
-    }
-
-    const preference =
-      new Preference(client);
-
-    const response =
-      await preference.create({
-        body: {
-          items:
-            itemsMercadoPago,
-
-          external_reference:
-            String(
-              pedidoCriado.id
-            ),
-
-          payer: {
-            name: nomeCliente,
-            email: emailCliente,
-          },
-
-          back_urls: {
-            success: `${baseUrlRetorno}/sucesso`,
-            failure: `${baseUrlRetorno}/erro`,
-            pending: `${baseUrlRetorno}/pendente`,
-          },
-
-          auto_return:
-            "approved",
-        },
-      });
 
     return NextResponse.json({
       id: response.id,
