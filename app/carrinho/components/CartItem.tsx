@@ -43,14 +43,14 @@ export default function CartItem({
 
   return (
     <article
-      className={`rounded-2xl border-2 p-5 transition ${
+      className={`relative rounded-2xl border-2 p-3 transition ${
         selecionado
-          ? "border-primary/30 bg-card shadow-sm"
-          : "border-border bg-background opacity-80"
+          ? "border-primary/30 bg-background shadow-sm"
+          : "border-border bg-background opacity-75"
       }`}
     >
-      <div className="flex flex-col gap-5 sm:flex-row">
-        <div className="flex items-start gap-3">
+      <div className="flex min-w-0 gap-3">
+        <div className="flex shrink-0 items-start gap-2">
           <input
             type="checkbox"
             checked={selecionado}
@@ -58,111 +58,117 @@ export default function CartItem({
               onAlternarSelecionado(idCarrinho)
             }
             aria-label={`Selecionar ${produto.nome}`}
-            className="mt-2 h-5 w-5 cursor-pointer accent-[var(--primary)]"
+            className="mt-8 h-4 w-4 cursor-pointer accent-[var(--primary)]"
           />
 
           {produto.imagem ? (
             <img
               src={produto.imagem}
               alt={produto.nome}
-              className="h-28 w-28 rounded-xl border border-border object-cover"
+              className="h-20 w-20 rounded-xl border border-border object-cover"
             />
           ) : (
-            <div className="flex h-28 w-28 items-center justify-center rounded-xl bg-background text-4xl">
+            <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-card text-3xl">
               🛍️
             </div>
           )}
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="flex flex-col gap-5">
-            <div>
-              <h2 className="text-xl font-bold text-text md:text-2xl">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <h2 className="truncate text-base font-black text-text">
                 {produto.nome}
               </h2>
 
               {produto.descricao && (
-                <p className="mt-2 text-text-light">
+                <p className="mt-0.5 line-clamp-1 text-[11px] text-text-light">
                   {produto.descricao}
                 </p>
               )}
 
-              <div className="mt-3 flex flex-wrap gap-2">
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
                 <ProductTypeBadge
                   tipoProduto={produto.tipo_produto}
                 />
               </div>
             </div>
 
-            <div className="grid gap-5 border-t border-border pt-5 sm:grid-cols-3">
-              <div>
-                <p className="text-sm font-medium text-text-light">
-                  Preço unitário
-                </p>
-
-                <ProductPrice
-                  value={Number(produto.preco)}
-                  className="mt-1"
-                />
-              </div>
-
-              <div>
-                <p className="mb-2 text-sm font-medium text-text-light">
-                  Quantidade
-                </p>
-
-                <QuantitySelector
-                  quantidade={quantidade}
-                  nomeProduto={produto.nome}
-                  aoDiminuir={() =>
-                    onDiminuirQuantidade(idCarrinho)
-                  }
-                  aoAumentar={() =>
-                    onAumentarQuantidade(idCarrinho)
-                  }
-                  desabilitarAumento={
-                    atingiuQuantidadeMaxima
-                  }
-                  quantidadeMaxima={quantidadeMaxima}
-                />
-
-                {!permiteMaisDeUmaUnidade ? (
-                  <p className="mt-2 text-xs font-medium text-success">
-                    ✓ Máximo de 1 unidade por pedido
-                  </p>
-                ) : atingiuQuantidadeMaxima ? (
-                  <p className="mt-2 text-xs font-medium text-warning">
-                    Quantidade máxima: {quantidadeMaxima}
-                  </p>
-                ) : null}
-              </div>
-
-              <div className="sm:text-right">
-                <p className="text-sm font-medium text-text-light">
-                  Subtotal
-                </p>
-
-                <ProductPrice
-                  value={subtotal}
-                  size="xl"
-                  color="default"
-                  align="right"
-                  className="mt-1"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-5 flex justify-end border-t border-border pt-4">
             <button
               type="button"
               onClick={() =>
                 onRemover(idCarrinho)
               }
-              className="rounded-xl px-4 py-2 font-bold text-danger transition hover:bg-[color-mix(in_srgb,var(--danger)_8%,white)]"
+              className="shrink-0 rounded-lg px-2 py-1 text-[11px] font-bold text-danger transition hover:bg-[color-mix(in_srgb,var(--danger)_8%,white)]"
+              aria-label={`Remover ${produto.nome}`}
             >
-              🗑 Remover produto
+              🗑
+              <span className="hidden 2xl:inline">
+                {" "}Remover
+              </span>
             </button>
+          </div>
+
+          <div className="mt-2.5 grid grid-cols-[1fr_auto] items-end gap-3 border-t border-border pt-2.5">
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-text-light">
+                Preço
+              </p>
+
+              <ProductPrice
+                value={Number(produto.preco)}
+                className="mt-0.5"
+              />
+            </div>
+
+            <div>
+              <p className="mb-1 text-right text-[10px] font-medium uppercase tracking-wide text-text-light">
+                Quantidade
+              </p>
+
+              <QuantitySelector
+                quantidade={quantidade}
+                nomeProduto={produto.nome}
+                aoDiminuir={() =>
+                  onDiminuirQuantidade(idCarrinho)
+                }
+                aoAumentar={() =>
+                  onAumentarQuantidade(idCarrinho)
+                }
+                desabilitarAumento={
+                  atingiuQuantidadeMaxima
+                }
+                quantidadeMaxima={quantidadeMaxima}
+              />
+            </div>
+          </div>
+
+          <div className="mt-2 flex items-end justify-between border-t border-border pt-2">
+            <div className="min-h-4">
+              {!permiteMaisDeUmaUnidade ? (
+                <p className="text-[10px] font-medium text-success">
+                  ✓ Máx. 1 unidade
+                </p>
+              ) : atingiuQuantidadeMaxima ? (
+                <p className="text-[10px] font-medium text-warning">
+                  Máx.: {quantidadeMaxima}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="text-right">
+              <p className="text-[10px] font-medium uppercase tracking-wide text-text-light">
+                Subtotal
+              </p>
+
+              <ProductPrice
+                value={subtotal}
+                size="lg"
+                color="default"
+                align="right"
+                className="mt-0.5"
+              />
+            </div>
           </div>
         </div>
       </div>

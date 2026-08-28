@@ -65,7 +65,7 @@ export default function ListaProdutos({
   if (produtos.length === 0) {
     return (
       <section className="mt-10 rounded-3xl border border-border bg-card p-10 text-center shadow-sm">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--primary)_8%,white)] text-3xl">
+        <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--primary)_8%,white)] text-3xl">
           📦
         </div>
 

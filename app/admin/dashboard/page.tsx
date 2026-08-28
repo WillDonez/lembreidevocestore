@@ -287,7 +287,7 @@ export default function DashboardAdmin() {
   ) {
     return (
       <main className="min-h-screen bg-background p-5 md:p-10">
-        <div className="mx-auto max-w-7xl">
+        <div className="mx-auto min-w-0 max-w-full">
           <div className="flex min-h-[420px] items-center justify-center rounded-3xl border border-border bg-card shadow">
             <div className="text-center">
               <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-border border-t-primary" />
@@ -309,7 +309,7 @@ export default function DashboardAdmin() {
   ) {
     return (
       <main className="min-h-screen bg-background p-5 md:p-10">
-        <div className="mx-auto max-w-7xl">
+        <div className="mx-auto min-w-0 max-w-full">
           <div className="rounded-3xl border border-border bg-card p-8 text-center shadow">
             <XCircle className="mx-auto h-12 w-12 text-danger" />
 
@@ -380,20 +380,20 @@ export default function DashboardAdmin() {
       : 0;
 
   return (
-    <main className="min-h-screen bg-background p-4 md:p-8 lg:p-10">
-      <div className="mx-auto max-w-7xl">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+    <main className="min-h-screen min-w-0 overflow-x-hidden bg-background p-4 md:p-6 lg:p-8">
+      <div className="mx-auto min-w-0 max-w-full">
+        <div className="flex min-w-0 flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <p className="font-bold uppercase tracking-[0.16em] text-secondary">
               Lembrei de Você
               Store
             </p>
 
-            <h1 className="mt-1 text-3xl font-black text-text md:text-5xl">
+            <h1 className="mt-1 text-3xl font-black leading-tight text-text md:text-4xl">
               Dashboard
             </h1>
 
-            <p className="mt-2 max-w-2xl text-text-light">
+            <p className="mt-1.5 max-w-2xl text-sm text-text-light md:text-base">
               Acompanhe vendas,
               pedidos e
               desempenho da
@@ -401,7 +401,7 @@ export default function DashboardAdmin() {
             </p>
           </div>
 
-          <div className="flex max-w-full gap-2 overflow-x-auto rounded-2xl border border-border bg-card p-2 shadow-sm">
+          <div className="grid w-full max-w-full grid-cols-2 gap-2 rounded-2xl border border-border bg-card p-2 shadow-sm sm:grid-cols-4 xl:w-auto">
             {periodos.map(
               (item) => (
                 <button
@@ -414,7 +414,7 @@ export default function DashboardAdmin() {
                       item.valor,
                     )
                   }
-                  className={`shrink-0 rounded-xl px-4 py-2.5 text-sm font-black transition ${
+                  className={`min-w-0 rounded-xl px-3 py-2.5 text-sm font-black transition ${
                     periodo ===
                     item.valor
                       ? "bg-primary text-white shadow"
@@ -436,7 +436,7 @@ export default function DashboardAdmin() {
           </div>
         )}
 
-        <div className="mt-7 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-5 grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <CardIndicador
             titulo="Faturamento"
             valor={formatarMoeda(
@@ -484,7 +484,7 @@ export default function DashboardAdmin() {
           />
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="mt-3 grid min-w-0 grid-cols-2 gap-2.5 xl:grid-cols-4">
           <CardResumo
             titulo="Pendentes"
             valor={
@@ -518,8 +518,8 @@ export default function DashboardAdmin() {
           />
         </div>
 
-        <div className="mt-7 grid grid-cols-1 gap-6 xl:grid-cols-[1.55fr_0.85fr]">
-          <section className="rounded-3xl border border-border bg-card p-5 shadow-sm md:p-7">
+        <div className="mt-5 grid min-w-0 grid-cols-1 gap-4 2xl:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.8fr)]">
+          <section className="min-w-0 rounded-2xl border border-border bg-card p-4 shadow-sm md:p-5">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-xl font-black text-text">
@@ -548,7 +548,7 @@ export default function DashboardAdmin() {
               </div>
             </div>
 
-            <div className="mt-8 flex h-64 items-end gap-2 overflow-x-auto border-b border-border pb-1">
+            <div className="mt-5 flex h-52 min-w-0 items-end gap-2 overflow-x-auto border-b border-border pb-1">
               {evolucao.map(
                 (item) => {
                   const altura =
@@ -569,7 +569,7 @@ export default function DashboardAdmin() {
                       }
                       className="group flex min-w-[32px] flex-1 flex-col items-center justify-end"
                     >
-                      <div className="relative flex h-52 w-full items-end justify-center">
+                      <div className="relative flex h-44 w-full items-end justify-center">
                         <div
                           title={`${item.label}: ${formatarMoeda(
                             item.faturamento,
@@ -599,7 +599,7 @@ export default function DashboardAdmin() {
             </div>
           </section>
 
-          <section className="rounded-3xl border border-border bg-card p-5 shadow-sm md:p-7">
+          <section className="min-w-0 rounded-2xl border border-border bg-card p-4 shadow-sm md:p-5">
             <h2 className="text-xl font-black text-text">
               Vendas por tipo
             </h2>
@@ -706,8 +706,8 @@ export default function DashboardAdmin() {
           </section>
         </div>
 
-        <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
-          <section className="rounded-3xl border border-border bg-card p-5 shadow-sm md:p-7">
+        <div className="mt-5 grid min-w-0 grid-cols-1 gap-5 2xl:grid-cols-2">
+          <section className="min-w-0 rounded-2xl border border-border bg-card p-4 shadow-sm md:p-5">
             <div>
               <h2 className="text-xl font-black text-text">
                 Produtos mais
@@ -771,7 +771,7 @@ export default function DashboardAdmin() {
             )}
           </section>
 
-          <section className="rounded-3xl border border-border bg-card p-5 shadow-sm md:p-7">
+          <section className="min-w-0 rounded-2xl border border-border bg-card p-4 shadow-sm md:p-5">
             <div>
               <h2 className="text-xl font-black text-text">
                 Últimos pedidos
@@ -806,7 +806,7 @@ export default function DashboardAdmin() {
                         }
                         className="rounded-2xl border border-border p-4"
                       >
-                        <div className="flex items-start justify-between gap-4">
+                        <div className="flex min-w-0 items-start justify-between gap-3">
                           <div className="min-w-0">
                             <p className="font-black text-text">
                               Pedido
@@ -863,7 +863,7 @@ export default function DashboardAdmin() {
           </section>
         </div>
 
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mt-5 grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-4">
           <CardGeral
             titulo="Produtos"
             valor={
@@ -909,24 +909,24 @@ function CardIndicador({
   icone: React.ReactNode;
 }) {
   return (
-    <div className="rounded-3xl border border-border bg-card p-5 shadow-sm md:p-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
+    <div className="min-w-0 rounded-xl border border-border bg-card p-3.5 shadow-sm">
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <div className="min-w-0">
           <p className="font-bold text-text-light">
             {titulo}
           </p>
 
-          <strong className="mt-2 block text-2xl font-black text-text md:text-3xl">
+          <strong className="mt-1.5 block break-words text-xl font-black leading-tight text-text md:text-2xl">
             {valor}
           </strong>
         </div>
 
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--primary)_8%,white)] text-primary">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--primary)_8%,white)] text-primary">
           {icone}
         </div>
       </div>
 
-      <p className="mt-3 text-xs font-medium text-text-light">
+      <p className="mt-2 text-xs font-medium text-text-light">
         {descricao}
       </p>
     </div>
@@ -943,13 +943,13 @@ function CardResumo({
   classe: string;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+    <div className="min-w-0 rounded-xl border border-border bg-card p-3.5 shadow-sm">
       <p className="text-xs font-bold uppercase tracking-wide text-text-light">
         {titulo}
       </p>
 
       <strong
-        className={`mt-1 block text-2xl font-black ${classe}`}
+        className={`mt-0.5 block text-xl font-black ${classe}`}
       >
         {valor}
       </strong>
@@ -965,7 +965,7 @@ function CardGeral({
   valor: number;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 text-center">
+    <div className="min-w-0 rounded-2xl border border-border bg-card p-4 text-center">
       <p className="text-xs font-bold text-text-light">
         {titulo}
       </p>

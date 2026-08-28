@@ -283,9 +283,9 @@ export default function CheckoutPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background px-4 py-5 md:px-6">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <main className="min-h-screen bg-background px-4 py-4 md:px-6">
+      <div className="checkout-desktop-scale mx-auto w-full max-w-[1460px]">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Link
             href="/"
             className="rounded-xl border border-border bg-card px-5 py-3 text-center font-bold text-primary shadow transition hover:bg-[color-mix(in_srgb,var(--primary)_8%,white)]"
@@ -301,8 +301,8 @@ export default function CheckoutPage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[0.85fr_1.15fr]">
-          <section className="h-fit rounded-3xl border border-border bg-card p-5 shadow-xl">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[0.82fr_1.18fr]">
+          <section className="h-fit rounded-3xl border border-border bg-card p-4 shadow-xl">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-bold uppercase tracking-wide text-secondary">
@@ -319,7 +319,7 @@ export default function CheckoutPage() {
               </span>
             </div>
 
-            <div className="mt-5 max-h-[430px] space-y-3 overflow-y-auto pr-1">
+            <div className="mt-4 max-h-[360px] space-y-2.5 overflow-y-auto pr-1">
               {itens.length === 0 && (
                 <div className="rounded-2xl border-2 border-dashed border-border p-8 text-center text-text-light">
                   Nenhum produto no pedido.
@@ -345,7 +345,7 @@ export default function CheckoutPage() {
                         alt={
                           produto.nome
                         }
-                        className="h-20 w-20 rounded-xl object-cover"
+                        className="h-16 w-16 rounded-xl object-cover"
                       />
                     )}
 
@@ -380,7 +380,7 @@ export default function CheckoutPage() {
 
             {possuiProdutoFisico &&
               freteSelecionado && (
-                <div className="mt-5 rounded-2xl border border-border bg-[color-mix(in_srgb,var(--primary)_8%,white)] p-4">
+                <div className="mt-4 rounded-2xl border border-border bg-[color-mix(in_srgb,var(--primary)_8%,white)] p-3.5">
                   <p className="text-sm font-bold uppercase text-primary">
                     Entrega selecionada
                   </p>
@@ -426,8 +426,8 @@ export default function CheckoutPage() {
 
             {itens.length >
               0 && (
-              <div className="mt-5 border-t border-border pt-5">
-                <div className="space-y-3">
+              <div className="mt-4 border-t border-border pt-4">
+                <div className="space-y-2">
                   <div className="flex items-center justify-between gap-4">
                     <span className="text-text-light">
                       Subtotal
@@ -558,6 +558,14 @@ export default function CheckoutPage() {
           </section>
         </div>
       </div>
+      <style jsx global>{`
+        @media (min-width: 1280px) {
+          .checkout-desktop-scale {
+            transform: scale(0.82);
+            transform-origin: top center;
+          }
+        }
+      `}</style>
     </main>
   );
 }

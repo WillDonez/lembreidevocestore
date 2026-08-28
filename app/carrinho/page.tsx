@@ -297,252 +297,245 @@ export default function CarrinhoPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background p-5 md:p-10">
-      <div className="mx-auto max-w-6xl rounded-3xl border border-border bg-card p-6 shadow-xl md:p-10">
-        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-          <h1 className="text-4xl font-bold text-primary md:text-5xl">
-            Meu Carrinho
-          </h1>
+    <main className="min-h-screen bg-background px-4 py-5 md:px-6 md:py-7">
+      <div className="cart-desktop-scale mx-auto max-w-7xl">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-bold uppercase tracking-[0.14em] text-secondary">
+              Seu pedido
+            </p>
+
+            <h1 className="mt-1 text-3xl font-black text-primary md:text-4xl">
+              Meu Carrinho
+            </h1>
+          </div>
 
           <Link
             href="/"
-            className="rounded-xl border border-border bg-background px-5 py-3 font-bold text-primary transition hover:bg-[color-mix(in_srgb,var(--primary)_8%,white)]"
+
+            className="rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-bold text-primary shadow-sm transition hover:bg-[color-mix(in_srgb,var(--primary)_8%,white)]"
           >
-            ← Continuar
-            comprando
+            ← Continuar comprando
           </Link>
         </div>
 
-        <div className="space-y-6">
-          {itens.length ===
-          0 ? (
+        {itens.length === 0 ? (
+          <div className="rounded-3xl border border-border bg-card p-6 shadow-lg">
             <EmptyCart />
-          ) : (
-            <>
-              {itens.map(
-                (item) => (
-                  <CartItem
-                    key={
-                      item.idCarrinho
-                    }
-                    item={
-                      item
-                    }
-                    onAlternarSelecionado={
-                      alternarSelecionado
-                    }
-                    onAumentarQuantidade={
-                      aumentarQuantidade
-                    }
-                    onDiminuirQuantidade={
-                      diminuirQuantidade
-                    }
-                    onRemover={
-                      removerItem
-                    }
-                  />
-                ),
-              )}
+          </div>
+        ) : (
+          <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.7fr)]">
+            {/* CONTEÚDO PRINCIPAL */}
+            <div className="space-y-5">
+              <section className="rounded-3xl border border-border bg-card p-4 shadow-sm md:p-5">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.13em] text-secondary">
+                      Produtos
+                    </p>
+
+                    <h2 className="mt-1 text-xl font-black text-text">
+                      Itens do carrinho
+                    </h2>
+                  </div>
+
+                  <span className="rounded-full bg-[color-mix(in_srgb,var(--primary)_10%,white)] px-3 py-1.5 text-xs font-black text-primary">
+                    {itens.length} item(ns)
+                  </span>
+                </div>
+
+                <div className="grid gap-3 xl:grid-cols-2">
+                  {itens.map((item) => (
+                    <CartItem
+                      key={item.idCarrinho}
+                      item={item}
+                      onAlternarSelecionado={alternarSelecionado}
+                      onAumentarQuantidade={aumentarQuantidade}
+                      onDiminuirQuantidade={diminuirQuantidade}
+                      onRemover={removerItem}
+                    />
+                  ))}
+                </div>
+              </section>
 
               {possuiProdutoFisico ? (
-                <section className="mt-8 rounded-3xl border border-border bg-background p-6">
-                  <div>
-                    <p className="text-sm font-bold uppercase tracking-wide text-secondary">
-                      Entrega
-                    </p>
+                <section className="rounded-3xl border border-border bg-card p-4 shadow-sm md:p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-[0.13em] text-secondary">
+                        Entrega
+                      </p>
 
-                    <h2 className="mt-1 text-2xl font-bold text-text">
-                      🚚 Calcular
-                      frete
-                    </h2>
+                      <h2 className="mt-1 text-xl font-black text-text">
+                        🚚 Calcular frete
+                      </h2>
 
-                    <p className="mt-2 text-text-light">
-                      Digite o CEP onde o pedido será entregue.
-                    </p>
-                  </div>
-
-                  <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="00000-000"
-                      value={cep}
-                      onChange={(
-                        e,
-                      ) =>
-                        setCep(
-                          formatarCepDigitado(
-                            e.target
-                              .value,
-                          ),
-                        )
-                      }
-                      onKeyDown={(
-                        e,
-                      ) => {
-                        if (
-                          e.key ===
-                          "Enter"
-                        ) {
-                          void calcularFrete();
-                        }
-                      }}
-                      className="flex-1 rounded-xl border border-border bg-card p-4 text-lg text-text outline-none transition focus:border-primary"
-                    />
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        void calcularFrete()
-                      }
-                      disabled={
-                        calculandoFrete
-                      }
-                      className="rounded-xl bg-primary px-7 py-4 font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-gray-300"
-                    >
-                      {calculandoFrete
-                        ? "Calculando..."
-                        : "Calcular frete"}
-                    </button>
-                  </div>
-
-                  {erroFrete && (
-                    <div className="mt-5 rounded-xl border border-danger/30 bg-[color-mix(in_srgb,var(--danger)_8%,white)] p-4 font-bold text-danger">
-                      ⚠️{" "}
-                      {erroFrete}
+                      <p className="mt-1 text-sm text-text-light">
+                        Digite o CEP para ver as opções de entrega.
+                      </p>
                     </div>
-                  )}
+                  </div>
 
-                  {opcoesFrete.length >
-                    0 && (
-                    <div className="mt-6 space-y-3">
-                      <h3 className="font-bold text-text">
-                        Escolha uma
-                        opção de
-                        entrega:
-                      </h3>
+                  <div
+                    className={`mt-4 grid gap-4 ${
+                      opcoesFrete.length > 0
+                        ? "md:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.2fr)] md:items-start"
+                        : ""
+                    }`}
+                  >
+                    <div>
+                      <div className="flex flex-col gap-2 sm:flex-row md:flex-col xl:flex-row">
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="00000-000"
+                          value={cep}
+                          onChange={(e) =>
+                            setCep(
+                              formatarCepDigitado(
+                                e.target.value,
+                              ),
+                            )
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              void calcularFrete();
+                            }
+                          }}
+                          className="min-h-10 min-w-0 flex-1 rounded-xl border border-border bg-background px-4 py-2.5 text-base text-text outline-none transition focus:border-primary"
+                        />
 
-                      {opcoesFrete.map(
-                        (
-                          opcao,
-                        ) => {
-                          const selecionada =
-                            freteSelecionado?.id ===
-                            opcao.id;
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void calcularFrete()
+                          }
+                          disabled={calculandoFrete}
+                          className="min-h-10 shrink-0 rounded-xl bg-primary px-5 py-2.5 text-sm font-black text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-gray-300"
+                        >
+                          {calculandoFrete
+                            ? "Calculando..."
+                            : "Calcular frete"}
+                        </button>
+                      </div>
 
-                          return (
-                            <label
-                              key={
-                                opcao.id
-                              }
-                              className={`flex cursor-pointer flex-col justify-between gap-4 rounded-2xl border-2 bg-card p-5 transition sm:flex-row sm:items-center ${
-                                selecionada
-                                  ? "border-primary shadow"
-                                  : "border-border hover:border-primary"
-                              }`}
-                            >
-                              <div className="flex items-center gap-4">
-                                <input
-                                  type="radio"
-                                  name="frete"
-                                  checked={
-                                    selecionada
-                                  }
-                                  onChange={() =>
-                                    selecionarFrete(
-                                      opcao,
-                                    )
-                                  }
-                                  className="h-5 w-5 accent-[var(--primary)]"
-                                />
+                      {erroFrete && (
+                        <div className="mt-3 rounded-xl border border-danger/30 bg-[color-mix(in_srgb,var(--danger)_8%,white)] px-4 py-3 text-sm font-bold text-danger">
+                          ⚠️ {erroFrete}
+                        </div>
+                      )}
 
-                                {opcao
-                                  .empresa
-                                  ?.imagem && (
-                                  <img
-                                    src={
-                                      opcao
-                                        .empresa
-                                        .imagem
-                                    }
-                                    alt={
-                                      opcao.transportadora
-                                    }
-                                    className="h-10 w-16 object-contain"
-                                  />
-                                )}
+                      {opcoesFrete.length > 0 && (
+                        <div className="mt-2 rounded-xl border border-primary/15 bg-[color-mix(in_srgb,var(--primary)_4%,white)] px-3 py-2">
+                          <p className="text-xs font-bold text-text">
+                            ✓ Opções encontradas
+                          </p>
 
-                                <div>
-                                  <p className="font-bold text-text">
-                                    {
-                                      opcao.transportadora
-                                    }{" "}
-                                    —{" "}
-                                    {
-                                      opcao.nome
-                                    }
-                                  </p>
-
-                                  <p className="mt-1 text-sm text-text-light">
-                                    Entrega
-                                    estimada
-                                    em até{" "}
-                                    <strong>
-                                      {
-                                        opcao.prazo
-                                      }{" "}
-                                      dia
-                                      {opcao.prazo !==
-                                      1
-                                        ? "s"
-                                        : ""}{" "}
-                                      útil
-                                      {opcao.prazo !==
-                                      1
-                                        ? "eis"
-                                        : ""}
-                                    </strong>
-                                  </p>
-                                </div>
-                              </div>
-
-                              <p className="text-xl font-bold text-primary">
-                                {formatarMoeda(
-                                  opcao.preco,
-                                )}
-                              </p>
-                            </label>
-                          );
-                        },
+                          <p className="mt-0.5 text-xs text-text-light">
+                            Escolha a entrega ao lado para atualizar o total.
+                          </p>
+                        </div>
                       )}
                     </div>
-                  )}
+
+                    {opcoesFrete.length > 0 && (
+                      <div>
+                        <h3 className="mb-1.5 text-sm font-bold text-text">
+                          Escolha uma opção de entrega:
+                        </h3>
+
+                        <div className="grid gap-1.5">
+                          {opcoesFrete.map((opcao) => {
+                            const selecionada =
+                              freteSelecionado?.id ===
+                              opcao.id;
+
+                            return (
+                              <label
+                                key={opcao.id}
+                                className={`flex cursor-pointer items-center justify-between gap-2.5 rounded-xl border-2 px-3 py-2 transition ${
+                                  selecionada
+                                    ? "border-primary bg-[color-mix(in_srgb,var(--primary)_5%,white)] shadow-sm"
+                                    : "border-border bg-background hover:border-primary/60"
+                                }`}
+                              >
+                                <div className="flex min-w-0 items-center gap-2.5">
+                                  <input
+                                    type="radio"
+                                    name="frete"
+                                    checked={selecionada}
+                                    onChange={() =>
+                                      selecionarFrete(opcao)
+                                    }
+                                    className="h-4 w-4 shrink-0 accent-[var(--primary)]"
+                                  />
+
+                                  {opcao.empresa?.imagem && (
+                                    <img
+                                      src={opcao.empresa.imagem}
+                                      alt={opcao.transportadora}
+                                      className="h-6 w-9 shrink-0 object-contain"
+                                    />
+                                  )}
+
+                                  <div className="min-w-0">
+                                    <p className="truncate text-sm font-black text-text">
+                                      {opcao.transportadora} — {opcao.nome}
+                                    </p>
+
+                                    <p className="mt-0.5 text-[11px] leading-tight text-text-light">
+                                      Até {opcao.prazo} dia
+                                      {opcao.prazo !== 1
+                                        ? "s"
+                                        : ""} útil
+                                      {opcao.prazo !== 1
+                                        ? "eis"
+                                        : ""}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <strong className="shrink-0 text-sm text-primary">
+                                  {formatarMoeda(opcao.preco)}
+                                </strong>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </section>
               ) : (
-                <div className="rounded-2xl border border-success/30 bg-[color-mix(in_srgb,var(--success)_8%,white)] p-5 font-bold text-success">
-                  ✅ Este
-                  carrinho possui
-                  apenas produtos
-                  digitais. Não há
-                  cobrança de frete.
+                <div className="rounded-2xl border border-success/30 bg-[color-mix(in_srgb,var(--success)_8%,white)] p-4 text-sm font-bold text-success">
+                  ✅ Este carrinho possui apenas produtos digitais. Não há cobrança de frete.
                 </div>
               )}
+            </div>
 
-              <section className="mt-8 border-t border-border pt-8">
-                <div className="ml-auto max-w-md space-y-4 rounded-3xl border border-border bg-background p-6">
-                  <div className="flex items-center justify-between text-lg">
+            {/* RESUMO LATERAL */}
+            <aside className="lg:sticky lg:top-24">
+              <section className="rounded-3xl border border-border bg-card p-5 shadow-lg md:p-6">
+                <p className="text-xs font-bold uppercase tracking-[0.13em] text-secondary">
+                  Resumo da compra
+                </p>
+
+                <h2 className="mt-1 text-2xl font-black text-text">
+                  Total do pedido
+                </h2>
+
+                <div className="mt-5 space-y-3">
+                  <div className="flex items-center justify-between gap-4 text-sm">
                     <span className="text-text-light">
                       Subtotal
                     </span>
 
                     <strong className="text-text">
-                      {formatarMoeda(
-                        total,
-                      )}
+                      {formatarMoeda(total)}
                     </strong>
                   </div>
 
-                  <div className="flex items-center justify-between text-lg">
+                  <div className="flex items-center justify-between gap-4 text-sm">
                     <span className="text-text-light">
                       Frete
                     </span>
@@ -558,35 +551,56 @@ export default function CarrinhoPage() {
                     </strong>
                   </div>
 
-                  <div className="border-t border-border pt-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xl font-bold text-text">
-                        Total
-                      </span>
+                  {freteSelecionado && (
+                    <div className="rounded-xl bg-[color-mix(in_srgb,var(--primary)_7%,white)] px-3 py-2.5">
+                      <p className="text-xs font-bold text-primary">
+                        🚚 {freteSelecionado.transportadora} — {freteSelecionado.nome}
+                      </p>
 
-                      <strong className="text-3xl text-primary">
-                        {formatarMoeda(
-                          totalComFrete,
-                        )}
-                      </strong>
+                      <p className="mt-0.5 text-xs text-text-light">
+                        Prazo estimado: até {freteSelecionado.prazo} dia(s) útil(eis)
+                      </p>
                     </div>
+                  )}
+                </div>
+
+                <div className="mt-5 border-t border-border pt-4">
+                  <div className="flex items-end justify-between gap-4">
+                    <span className="text-lg font-black text-text">
+                      Total
+                    </span>
+
+                    <strong className="text-3xl font-black text-primary">
+                      {formatarMoeda(totalComFrete)}
+                    </strong>
                   </div>
                 </div>
 
                 <button
                   type="button"
-                  onClick={
-                    finalizarCompra
-                  }
-                  className="mt-8 block w-full rounded-2xl bg-success py-4 text-center text-2xl font-bold text-white transition hover:opacity-90"
+                  onClick={finalizarCompra}
+                  className="mt-5 flex w-full items-center justify-center rounded-2xl bg-success px-4 py-3.5 text-base font-black text-white shadow-md transition hover:-translate-y-0.5 hover:opacity-95 hover:shadow-lg active:scale-[0.99]"
                 >
                   Finalizar compra
                 </button>
+
+                <div className="mt-4 grid gap-2 text-xs text-text-light">
+                  <p>🔒 Pagamento seguro</p>
+                  <p>⚡ Processamento automático</p>
+                </div>
               </section>
-            </>
-          )}
-        </div>
+            </aside>
+          </div>
+        )}
       </div>
+      <style jsx global>{`
+        @media (min-width: 1280px) {
+          .cart-desktop-scale {
+            transform: scale(0.82);
+            transform-origin: top center;
+          }
+        }
+      `}</style>
     </main>
   );
 }

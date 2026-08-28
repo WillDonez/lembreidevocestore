@@ -514,32 +514,32 @@ export default function LoginContent() {
   }
 
   const inputClass =
-    "w-full rounded-xl border border-border bg-card p-4 text-text outline-none transition placeholder:text-text-light focus:border-primary focus:ring-4 focus:ring-[color-mix(in_srgb,var(--primary)_15%,transparent)]";
+    "w-full rounded-xl border border-border bg-card px-4 py-3 text-text outline-none transition placeholder:text-text-light focus:border-primary focus:ring-4 focus:ring-[color-mix(in_srgb,var(--primary)_15%,transparent)]";
 
   return (
     <main
-      className="min-h-screen px-4 py-8 sm:py-12"
+      className="min-h-screen px-4 py-5 sm:py-7"
       style={{
         background:
           "linear-gradient(to bottom, color-mix(in srgb, var(--primary) 7%, white), var(--background), color-mix(in srgb, var(--primary) 7%, white))",
       }}
     >
-      <section className="mx-auto max-w-lg overflow-hidden rounded-3xl border border-border bg-card shadow-2xl">
-        <div className="px-6 pb-8 pt-7 sm:px-9">
+      <section className="mx-auto max-w-[460px] overflow-hidden rounded-3xl border border-border bg-card shadow-2xl">
+        <div className="px-6 pb-6 pt-5 sm:px-7">
           <div className="text-center">
             <img
               src="/logo.png"
               alt="Lembrei de Você Store"
-              className="mx-auto h-24 w-auto"
+              className="mx-auto h-16 w-auto"
             />
 
-            <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-primary">
+            <h1 className="mt-2.5 text-3xl font-extrabold tracking-tight text-primary">
               {modo === "login" && "Bem-vindo!"}
               {modo === "cadastro" && "Criar Conta"}
               {modo === "recuperar" && "Recuperar Senha"}
             </h1>
 
-            <p className="mx-auto mt-3 max-w-sm leading-relaxed text-text-light">
+            <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-text-light">
               {modo === "login" &&
                 "Entre para acompanhar seus pedidos, dados e downloads."}
 
@@ -556,11 +556,11 @@ export default function LoginContent() {
           )}
 
           {modo !== "recuperar" && (
-            <div className="mt-7 grid grid-cols-2 rounded-2xl bg-background p-1">
+            <div className="mt-5 grid grid-cols-2 rounded-2xl bg-background p-1">
               <button
                 type="button"
                 onClick={() => trocarModo("login")}
-                className={`rounded-xl px-4 py-3 text-sm font-bold transition ${
+                className={`rounded-xl px-4 py-2.5 text-sm font-bold transition ${
                   modo === "login"
                     ? "bg-card text-primary shadow-sm"
                     : "text-text-light hover:text-primary"
@@ -572,7 +572,7 @@ export default function LoginContent() {
               <button
                 type="button"
                 onClick={() => trocarModo("cadastro")}
-                className={`rounded-xl px-4 py-3 text-sm font-bold transition ${
+                className={`rounded-xl px-4 py-2.5 text-sm font-bold transition ${
                   modo === "cadastro"
                     ? "bg-card text-primary shadow-sm"
                     : "text-text-light hover:text-primary"
@@ -584,7 +584,7 @@ export default function LoginContent() {
           )}
 
           <form
-            className="mt-7 space-y-4"
+            className="mt-5 space-y-3.5"
             onSubmit={
               modo === "login"
                 ? entrar
@@ -597,7 +597,7 @@ export default function LoginContent() {
               <div>
                 <label
                   htmlFor="nome"
-                  className="mb-2 block text-sm font-bold text-text"
+                  className="mb-1.5 block text-sm font-bold text-text"
                 >
                   Nome completo
                 </label>
@@ -619,7 +619,7 @@ export default function LoginContent() {
             <div>
               <label
                 htmlFor="email"
-                className="mb-2 block text-sm font-bold text-text"
+                className="mb-1.5 block text-sm font-bold text-text"
               >
                 E-mail
               </label>
@@ -645,7 +645,7 @@ export default function LoginContent() {
               <div>
                 <label
                   htmlFor="senha"
-                  className="mb-2 block text-sm font-bold text-text"
+                  className="mb-1.5 block text-sm font-bold text-text"
                 >
                   Senha
                 </label>
@@ -684,7 +684,7 @@ export default function LoginContent() {
               <div>
                 <label
                   htmlFor="confirmarSenha"
-                  className="mb-2 block text-sm font-bold text-text"
+                  className="mb-1.5 block text-sm font-bold text-text"
                 >
                   Confirmar senha
                 </label>
@@ -700,7 +700,7 @@ export default function LoginContent() {
                   }
                   autoComplete="new-password"
                   placeholder="Digite a senha novamente"
-                  className={`w-full rounded-xl border bg-card p-4 text-text outline-none transition placeholder:text-text-light focus:ring-4 ${
+                  className={`w-full rounded-xl border bg-card px-4 py-3 text-text outline-none transition placeholder:text-text-light focus:ring-4 ${
                     confirmacaoPreenchida
                       ? senhasIguais
                         ? "border-success focus:ring-[color-mix(in_srgb,var(--success)_15%,transparent)]"
@@ -711,7 +711,7 @@ export default function LoginContent() {
 
                 {confirmacaoPreenchida && (
                   <p
-                    className={`mt-2 text-sm font-bold ${
+                    className={`mt-1.5 text-xs font-bold ${
                       senhasIguais
                         ? "text-success"
                         : "text-danger"
@@ -745,7 +745,7 @@ export default function LoginContent() {
             {mensagem && (
               <div
                 role="alert"
-                className={`rounded-xl border p-4 text-center text-sm font-bold ${
+                className={`rounded-xl border p-3 text-center text-sm font-bold ${
                   tipoMensagem === "sucesso"
                     ? "border-success/30 bg-[color-mix(in_srgb,var(--success)_8%,white)] text-success"
                     : "border-danger/30 bg-[color-mix(in_srgb,var(--danger)_8%,white)] text-danger"
@@ -758,7 +758,7 @@ export default function LoginContent() {
             <button
               type="submit"
               disabled={carregando || validandoPedido}
-              className="w-full rounded-2xl bg-primary px-5 py-4 text-lg font-bold text-white transition hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-[color-mix(in_srgb,var(--primary)_20%,transparent)] disabled:cursor-not-allowed disabled:bg-gray-300"
+              className="w-full rounded-2xl bg-primary px-5 py-3 text-base font-bold text-white transition hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-[color-mix(in_srgb,var(--primary)_20%,transparent)] disabled:cursor-not-allowed disabled:bg-gray-300"
             >
               {validandoPedido
                 ? "Validando compra..."
@@ -776,7 +776,7 @@ export default function LoginContent() {
             </button>
           </form>
 
-          <div className="mt-6 space-y-3 text-center">
+          <div className="mt-4 space-y-2 text-center">
             {modo === "login" && (
               <button
                 type="button"

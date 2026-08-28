@@ -249,82 +249,119 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <aside className="fixed left-0 top-0 z-50 h-screen w-80 border-r border-border bg-card p-6 shadow-sm">
-        <div className="mb-10">
-          <div className="flex justify-center">
-            <img
-              src={logoUrl}
-              alt={nomeLoja}
-              className="h-24 w-24 rounded-full object-contain"
-            />
+    <div className="admin-viewport bg-background">
+      <div className="admin-scale-root flex min-h-screen bg-background">
+        <aside className="fixed left-0 top-0 z-50 h-screen w-80 border-r border-border bg-card p-6 shadow-sm">
+          <div className="mb-10">
+            <div className="flex justify-center">
+              <img
+                src={logoUrl}
+                alt={nomeLoja}
+                className="h-24 w-24 rounded-full object-contain"
+              />
+            </div>
+
+            <h1 className="mt-5 text-center text-2xl font-bold text-primary">
+              {nomeLoja}
+            </h1>
           </div>
 
-          <h1 className="mt-5 text-center text-2xl font-bold text-primary">
-            {nomeLoja}
-          </h1>
-        </div>
+          <nav className="space-y-3">
+            {menu.map(
+              (item) => {
+                const ativo =
+                  itemEstaAtivo(
+                    item.href,
+                  );
 
-        <nav className="space-y-3">
-          {menu.map(
-            (item) => {
-              const ativo =
-                itemEstaAtivo(
-                  item.href,
-                );
-
-              return (
-                <Link
-                  key={
-                    item.href
-                  }
-                  href={
-                    item.href
-                  }
-                  className={`block rounded-2xl px-5 py-4 font-bold transition ${
-                    ativo
-                      ? "bg-primary text-white shadow-md"
-                      : "text-text hover:bg-[color-mix(in_srgb,var(--primary)_8%,white)] hover:text-primary"
-                  }`}
-                >
-                  <span className="mr-2">
-                    {
-                      item.icone
+                return (
+                  <Link
+                    key={
+                      item.href
                     }
-                  </span>
+                    href={
+                      item.href
+                    }
+                    className={`block rounded-2xl px-5 py-4 font-bold transition ${
+                      ativo
+                        ? "bg-primary text-white shadow-md"
+                        : "text-text hover:bg-[color-mix(in_srgb,var(--primary)_8%,white)] hover:text-primary"
+                    }`}
+                  >
+                    <span className="mr-2">
+                      {
+                        item.icone
+                      }
+                    </span>
 
-                  {
-                    item.nome
-                  }
-                </Link>
-              );
-            },
-          )}
-        </nav>
+                    {
+                      item.nome
+                    }
+                  </Link>
+                );
+              },
+            )}
+          </nav>
 
-        <div className="absolute bottom-6 left-6 right-6 space-y-3">
-          <a
-            href="/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block rounded-2xl border border-border bg-background px-5 py-4 text-center font-bold text-text transition hover:border-primary hover:text-primary"
-          >
-            🏠 Ver Loja
-          </a>
+          <div className="absolute bottom-6 left-6 right-6 space-y-3">
+            <a
+              href="/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block rounded-2xl border border-border bg-background px-5 py-4 text-center font-bold text-text transition hover:border-primary hover:text-primary"
+            >
+              🏠 Ver Loja
+            </a>
 
-          <button
-            type="button"
-            onClick={sair}
-            className="w-full rounded-2xl bg-danger px-5 py-4 font-bold text-white transition hover:opacity-90"
-          >
-            🚪 Sair
-          </button>
-        </div>
-      </aside>
+            <button
+              type="button"
+              onClick={sair}
+              className="w-full rounded-2xl bg-danger px-5 py-4 font-bold text-white transition hover:opacity-90"
+            >
+              🚪 Sair
+            </button>
+          </div>
+        </aside>
 
-      <main className="ml-80 min-h-screen flex-1">
-        {children}
-      </main>
+        <main className="ml-80 min-h-screen flex-1">
+          {children}
+        </main>
+      </div>
+
+      <style jsx global>{`
+        /*
+          No desktop, reproduz visualmente o painel com aproximadamente
+          80% de zoom enquanto o navegador permanece em 100%.
+
+          A largura de 125% compensa a escala de 0.8, mantendo toda a
+          largura útil da janela e evitando que o conteúdo fique espremido.
+        */
+        @media (min-width: 1024px) {
+          .admin-viewport {
+            width: 100%;
+            min-height: 100vh;
+            overflow-x: hidden;
+          }
+
+          .admin-scale-root {
+            width: 125%;
+            min-height: 125vh;
+            transform: scale(0.8);
+            transform-origin: top left;
+          }
+        }
+
+        /*
+          Em telas menores não aplicamos a escala global.
+          Assim o comportamento responsivo original é preservado.
+        */
+        @media (max-width: 1023px) {
+          .admin-scale-root {
+            width: 100%;
+            transform: none;
+          }
+        }
+      `}</style>
     </div>
   );
 }
