@@ -23,6 +23,24 @@ export const metadata: Metadata = {
   title: "Lembrei de Você Store",
   description:
     "Presentes personalizados, produtos físicos e arquivos digitais para tornar momentos especiais ainda mais inesquecíveis.",
+
+  icons: {
+    icon: [
+      {
+        url: "/api/favicon",
+      },
+    ],
+    shortcut: [
+      {
+        url: "/api/favicon",
+      },
+    ],
+    apple: [
+      {
+        url: "/api/favicon",
+      },
+    ],
+  },
 };
 
 export default function RootLayout({

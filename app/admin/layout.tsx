@@ -251,8 +251,8 @@ export default function AdminLayout({
   return (
     <div className="admin-viewport bg-background">
       <div className="admin-scale-root flex min-h-screen bg-background">
-        <aside className="fixed left-0 top-0 z-50 h-screen w-80 border-r border-border bg-card p-6 shadow-sm">
-          <div className="mb-10">
+        <aside className="fixed left-0 top-0 z-50 flex h-screen w-80 flex-col border-r border-border bg-card p-6 shadow-sm">
+          <div className="shrink-0">
             <div className="flex justify-center">
               <img
                 src={logoUrl}
@@ -266,7 +266,7 @@ export default function AdminLayout({
             </h1>
           </div>
 
-          <nav className="space-y-3">
+          <nav className="mt-6 flex-1 space-y-2">
             {menu.map(
               (item) => {
                 const ativo =
@@ -303,7 +303,7 @@ export default function AdminLayout({
             )}
           </nav>
 
-          <div className="absolute bottom-6 left-6 right-6 space-y-3">
+          <div className="mt-4 shrink-0 space-y-3 border-t border-border pt-4">
             <a
               href="/"
               target="_blank"
@@ -329,13 +329,6 @@ export default function AdminLayout({
       </div>
 
       <style jsx global>{`
-        /*
-          No desktop, reproduz visualmente o painel com aproximadamente
-          80% de zoom enquanto o navegador permanece em 100%.
-
-          A largura de 125% compensa a escala de 0.8, mantendo toda a
-          largura útil da janela e evitando que o conteúdo fique espremido.
-        */
         @media (min-width: 1024px) {
           .admin-viewport {
             width: 100%;
@@ -351,10 +344,6 @@ export default function AdminLayout({
           }
         }
 
-        /*
-          Em telas menores não aplicamos a escala global.
-          Assim o comportamento responsivo original é preservado.
-        */
         @media (max-width: 1023px) {
           .admin-scale-root {
             width: 100%;

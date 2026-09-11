@@ -380,7 +380,7 @@ export default function DashboardAdmin() {
       : 0;
 
   return (
-    <main className="min-h-screen min-w-0 overflow-x-hidden bg-background p-4 md:p-6 lg:p-8">
+    <main className="min-h-screen min-w-0 overflow-x-hidden bg-background p-4 md:p-5 lg:p-6">
       <div className="mx-auto min-w-0 max-w-full">
         <div className="flex min-w-0 flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div>
@@ -518,7 +518,7 @@ export default function DashboardAdmin() {
           />
         </div>
 
-        <div className="mt-5 grid min-w-0 grid-cols-1 gap-4 2xl:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.8fr)]">
+        <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.8fr)]">
           <section className="min-w-0 rounded-2xl border border-border bg-card p-4 shadow-sm md:p-5">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -706,7 +706,7 @@ export default function DashboardAdmin() {
           </section>
         </div>
 
-        <div className="mt-5 grid min-w-0 grid-cols-1 gap-5 2xl:grid-cols-2">
+        <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-2">
           <section className="min-w-0 rounded-2xl border border-border bg-card p-4 shadow-sm md:p-5">
             <div>
               <h2 className="text-xl font-black text-text">
@@ -863,7 +863,7 @@ export default function DashboardAdmin() {
           </section>
         </div>
 
-        <div className="mt-5 grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mt-4 grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-4">
           <CardGeral
             titulo="Produtos"
             valor={
