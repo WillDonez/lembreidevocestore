@@ -1,545 +1,989 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+
+import { ReactNode, useEffect, useState } from "react";
+
 import {
+
   useParams,
+
   useRouter,
+
 } from "next/navigation";
 
 import {
+
   ArrowLeft,
+
   Download,
+
   PackageCheck,
+
   ShieldCheck,
+
   ShoppingCart,
+
   Sparkles,
+
   Truck,
+
 } from "lucide-react";
 
 import {
+
   useCarrinho,
+
 } from "@/app/context/CarrinhoContext";
 
 import Header from "@/components/Header";
+
 import ProdutoCard from "@/components/ProdutoCard";
 
 import FavoriteButton from "@/components/product/FavoriteButton";
+
 import ProductBadges from "@/components/product/ProductBadges";
+
 import ProductMediaGallery from "@/components/product/media/ProductMediaGallery";
+
 import { montarMidiasProduto } from "@/lib/produto/montarMidiasProduto";
+
 import ProductPrice from "@/components/product/ProductPrice";
+
 import ProductTypeBadge from "@/components/product/ProductTypeBadge";
 
 import Footer from "@/components/storefront/Footer";
+
 import SectionHeader from "@/components/storefront/SectionHeader";
 
 import { supabase } from "@/lib/supabase";
 
 type ImagemGaleriaProduto = {
+
   id: number;
+
   url: string;
+
   ordem: number;
+
 };
 
-export default function ProdutoDetalhe() {
-  const params = useParams();
-  const router = useRouter();
+function formatarDescricao(descricao: string) {
+  const linhas = descricao.split("\n");
+  const elementos: ReactNode[] = [];
+  let itensLista: string[] = [];
 
-  const id = Array.isArray(params.id)
-    ? params.id[0]
-    : params.id;
+  function finalizarLista() {
+    if (itensLista.length === 0) return;
 
-  const [produto, setProduto] =
-    useState<any>(null);
+    elementos.push(
+      <ul key={`lista-${elementos.length}`} className="my-3 space-y-1.5 pl-6">
+        {itensLista.map((item, index) => (
+          <li key={index} className="list-disc pl-1">
+            {item}
+          </li>
+        ))}
+      </ul>,
+    );
 
-  const [
-    imagensGaleria,
-    setImagensGaleria,
-  ] = useState<ImagemGaleriaProduto[]>([]);
+    itensLista = [];
+  }
 
-  const [
-    relacionados,
-    setRelacionados,
-  ] = useState<any[]>([]);
+  linhas.forEach((linha, index) => {
+    const texto = linha.trim();
 
-  const [carregando, setCarregando] =
-    useState(true);
-
-  const [erro, setErro] =
-    useState("");
-
-  const {
-    carrinho,
-    limparCarrinho,
-    adicionarCarrinho,
-  } = useCarrinho();
-
-  useEffect(() => {
-    if (!id) {
+    if (!texto) {
+      finalizarLista();
       return;
     }
 
+    if (texto.startsWith("## ")) {
+      finalizarLista();
+      elementos.push(
+        <h2 key={`titulo-${index}`} className="mb-2 mt-6 text-xl font-black text-primary first:mt-0">
+          {texto.substring(3)}
+        </h2>,
+      );
+      return;
+    }
+
+    if (texto.startsWith("- ")) {
+      itensLista.push(texto.substring(2));
+      return;
+    }
+
+    finalizarLista();
+    elementos.push(
+      <p key={`paragrafo-${index}`} className="mb-4 leading-8 last:mb-0">
+        {texto}
+      </p>,
+    );
+  });
+
+  finalizarLista();
+  return elementos;
+}
+
+export default function ProdutoDetalhe() {
+
+  const params = useParams();
+
+  const router = useRouter();
+
+  const id = Array.isArray(params.id)
+
+    ? params.id[0]
+
+    : params.id;
+
+  const [produto, setProduto] =
+
+    useState<any>(null);
+
+  const [
+
+    imagensGaleria,
+
+    setImagensGaleria,
+
+  ] = useState<ImagemGaleriaProduto[]>([]);
+
+  const [
+
+    relacionados,
+
+    setRelacionados,
+
+  ] = useState<any[]>([]);
+
+  const [carregando, setCarregando] =
+
+    useState(true);
+
+  const [erro, setErro] =
+
+    useState("");
+
+  const {
+
+    carrinho,
+
+    limparCarrinho,
+
+    adicionarCarrinho,
+
+  } = useCarrinho();
+
+  useEffect(() => {
+
+    if (!id) {
+
+      return;
+
+    }
+
     buscarProduto();
+
   }, [id]);
 
   async function buscarProduto() {
+
     setCarregando(true);
+
     setErro("");
+
     setProduto(null);
+
     setImagensGaleria([]);
+
     setRelacionados([]);
 
     try {
+
       const {
+
         data: produtoData,
+
         error: produtoError,
+
       } = await supabase
+
         .from("produtos")
+
         .select("*")
+
         .eq("id", id)
+
         .single();
 
       if (
+
         produtoError ||
+
         !produtoData
+
       ) {
+
         console.error(
+
           "Erro ao buscar produto:",
+
           produtoError,
+
         );
 
         throw new Error(
+
           "Não foi possível carregar este produto.",
+
         );
+
       }
 
       setProduto(produtoData);
 
       const [
+
         resultadoGaleria,
+
         resultadoRelacionados,
+
       ] = await Promise.all([
+
         supabase
+
           .from("produto_imagens")
+
           .select("id, url, ordem")
+
           .eq(
+
             "produto_id",
+
             produtoData.id,
+
           )
+
           .order("ordem", {
+
             ascending: true,
+
           }),
 
         produtoData.categoria
+
           ? supabase
+
               .from("produtos")
+
               .select("*")
+
               .eq(
+
                 "categoria",
+
                 produtoData.categoria,
+
               )
+
               .neq(
+
                 "id",
+
                 produtoData.id,
+
               )
+
               .limit(4)
+
           : Promise.resolve({
+
               data: [],
+
               error: null,
+
             }),
+
       ]);
 
       if (
+
         resultadoGaleria.error
+
       ) {
+
         console.error(
+
           "Erro ao buscar galeria do produto:",
+
           resultadoGaleria.error,
+
         );
 
         /*
+
           A página continua funcionando com a imagem
+
           principal mesmo que a galeria falhe.
+
         */
+
         setImagensGaleria([]);
+
       } else {
+
         setImagensGaleria(
+
           (
+
             resultadoGaleria.data ??
+
             []
+
           ).map(
+
             (imagem) => ({
+
               id: Number(
+
                 imagem.id,
+
               ),
+
               url: String(
+
                 imagem.url,
+
               ),
+
               ordem: Number(
+
                 imagem.ordem,
+
               ),
+
             }),
+
           ),
+
         );
+
       }
 
       if (
+
         resultadoRelacionados.error
+
       ) {
+
         console.error(
+
           "Erro ao buscar produtos relacionados:",
+
           resultadoRelacionados.error,
+
         );
 
         setRelacionados([]);
+
       } else {
+
         setRelacionados(
+
           resultadoRelacionados.data ??
+
             [],
+
         );
+
       }
+
     } catch (error) {
+
       console.error(error);
 
       setErro(
+
         error instanceof Error
+
           ? error.message
+
           : "Não foi possível carregar este produto.",
+
       );
+
     } finally {
+
       setCarregando(false);
+
     }
+
   }
 
   const produtoDigital =
+
     Boolean(
+
       produto?.arquivo_digital,
+
     ) ||
+
     produto?.tipo_produto ===
+
       "digital" ||
+
     produto?.tipo_produto ===
+
       "pdf" ||
+
     produto?.tipo_produto ===
+
       "kit";
 
   const preco = Number(
+
     produto?.preco || 0,
+
   );
 
   const precoAnterior = Number(
+
     produto?.preco_anterior || 0,
+
   );
 
   const possuiDesconto =
+
     precoAnterior > 0 &&
+
     preco > 0 &&
+
     precoAnterior > preco;
 
   const percentualDesconto =
+
     possuiDesconto
+
       ? Math.round(
+
           (
+
             (precoAnterior -
+
               preco) /
+
             precoAnterior
+
           ) *
+
             100,
+
         )
+
       : 0;
 
   const midiasProduto = produto
+
     ? montarMidiasProduto(
+
         produto,
+
         imagensGaleria,
+
       )
+
     : [];
 
   function comprarAgora() {
+
     if (!produto) {
+
       return;
+
     }
 
     limparCarrinho();
+
     adicionarCarrinho(
+
       produto,
+
     );
 
     /*
+
       Produtos físicos precisam passar pelo carrinho
+
       para calcular e selecionar o frete.
+
     */
+
     if (!produtoDigital) {
+
       router.push(
+
         "/carrinho",
+
       );
 
       return;
+
     }
 
     /*
+
       Produtos digitais não precisam de frete.
+
     */
+
     router.push(
+
       "/checkout",
+
     );
+
   }
 
   if (carregando) {
+
     return (
+
       <main className="flex min-h-screen items-center justify-center bg-background">
+
         <div className="text-center">
+
           <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-border border-t-primary" />
 
           <p className="mt-5 text-lg font-bold text-primary">
+
             Carregando produto...
+
           </p>
+
         </div>
+
       </main>
+
     );
+
   }
 
   if (
+
     erro ||
+
     !produto
+
   ) {
+
     return (
+
       <main className="flex min-h-screen items-center justify-center bg-background px-6">
+
         <div className="max-w-lg rounded-3xl border border-border bg-card p-10 text-center shadow-xl">
+
           <h1 className="text-2xl font-black text-text">
+
             Produto não
+
             encontrado
+
           </h1>
 
           <p className="mt-3 text-text-light">
+
             {erro ||
+
               "O produto informado não está disponível."}
+
           </p>
 
           <Link
+
             href="/"
+
             className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-primary px-6 py-3 font-black text-white transition hover:opacity-90"
+
           >
+
             <ArrowLeft className="h-5 w-5" />
 
             Voltar para a loja
+
           </Link>
+
         </div>
+
       </main>
+
     );
+
   }
 
   return (
+
     <main className="min-h-screen bg-background text-text">
+
       <Header
+
         quantidadeCarrinho={
+
           carrinho.length
+
         }
+
         abrirCarrinho={() => {
+
           router.push(
+
             "/carrinho",
+
           );
+
         }}
+
       />
 
       <section className="px-6 py-8 sm:px-10 sm:py-12">
+
         <div className="mx-auto max-w-7xl">
+
           <Link
+
             href="/"
+
             className="inline-flex items-center gap-2 text-sm font-bold text-text-light transition hover:text-primary"
+
           >
+
             <ArrowLeft className="h-4 w-4" />
 
             Voltar para a loja
+
           </Link>
 
           <div className="mt-6 grid gap-8 lg:grid-cols-2 lg:items-start">
+
             <div className="relative overflow-hidden rounded-[2rem] border border-border bg-card p-4 shadow-xl sm:p-6">
+
               <ProductBadges
+
                 destaque={
+
                   produto.destaque
+
                 }
+
                 produtoDigital={
+
                   produtoDigital
+
                 }
+
                 possuiDesconto={
+
                   possuiDesconto
+
                 }
+
                 percentualDesconto={
+
                   percentualDesconto
+
                 }
+
               />
 
               <div className="absolute right-6 top-20 z-20">
+
                 <FavoriteButton
+
                   nomeProduto={
+
                     produto.nome
+
                   }
+
                 />
+
               </div>
 
               <ProductMediaGallery
+
                 nomeProduto={
+
                   produto.nome
+
                 }
+
                 midias={
+
                   midiasProduto
+
                 }
+
               />
+
             </div>
 
             <div className="rounded-[2rem] border border-border bg-card p-6 shadow-xl sm:p-8 lg:p-10">
+
               {produto.categoria && (
+
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">
+
                   {
+
                     produto.categoria
+
                   }
+
                 </p>
+
               )}
 
               <h1 className="mt-3 text-3xl font-black leading-tight text-text sm:text-4xl lg:text-5xl">
+
                 {produto.nome}
+
               </h1>
 
               {produto.descricao && (
-                <p className="mt-5 text-base leading-8 text-text-light sm:text-lg">
-                  {
-                    produto.descricao
-                  }
-                </p>
+                <div className="mt-5 text-base text-text-light sm:text-lg">
+                  {formatarDescricao(produto.descricao)}
+                </div>
               )}
 
               <ProductPrice
+
                 preco={preco}
+
                 precoAnterior={
+
                   precoAnterior
+
                 }
+
                 parcelas={
+
                   produto.parcelas
+
                 }
+
                 produtoDigital={
+
                   produtoDigital
+
                 }
+
               />
 
               <ProductTypeBadge
+
                 produtoDigital={
+
                   produtoDigital
+
                 }
+
               />
 
               <div className="mt-7 grid gap-3 sm:grid-cols-3">
+
                 <div className="rounded-2xl border border-border bg-background p-4">
+
                   {produtoDigital ? (
+
                     <Download className="h-5 w-5 text-success" />
+
                   ) : (
+
                     <Truck className="h-5 w-5 text-primary" />
+
                   )}
 
                   <p className="mt-3 text-sm font-black text-text">
+
                     {produtoDigital
+
                       ? "Entrega digital"
+
                       : "Envio rastreado"}
+
                   </p>
 
                   <p className="mt-1 text-xs leading-5 text-text-light">
+
                     {produtoDigital
+
                       ? "Acesso liberado após o pagamento."
+
                       : "Acompanhe o envio do seu pedido."}
+
                   </p>
+
                 </div>
 
                 <div className="rounded-2xl border border-border bg-background p-4">
+
                   <ShieldCheck className="h-5 w-5 text-primary" />
 
                   <p className="mt-3 text-sm font-black text-text">
+
                     Compra segura
+
                   </p>
 
                   <p className="mt-1 text-xs leading-5 text-text-light">
+
                     Pagamento processado em ambiente protegido.
+
                   </p>
+
                 </div>
 
                 <div className="rounded-2xl border border-border bg-background p-4">
+
                   <PackageCheck className="h-5 w-5 text-secondary" />
 
                   <p className="mt-3 text-sm font-black text-text">
+
                     Feito com carinho
+
                   </p>
 
                   <p className="mt-1 text-xs leading-5 text-text-light">
+
                     Produtos preparados para momentos especiais.
+
                   </p>
+
                 </div>
+
               </div>
 
               <div className="mt-8 space-y-3">
+
                 <button
+
                   type="button"
+
                   onClick={() =>
+
                     adicionarCarrinho(
+
                       produto,
+
                     )
+
                   }
+
                   className="flex w-full items-center justify-center gap-2 rounded-2xl bg-accent px-6 py-4 text-base font-black text-white shadow-lg transition hover:-translate-y-0.5 hover:opacity-90 hover:shadow-xl active:scale-[0.99]"
+
                 >
+
                   <ShoppingCart className="h-5 w-5" />
 
                   Adicionar ao
+
                   carrinho
+
                 </button>
 
                 <button
+
                   type="button"
+
                   onClick={
+
                     comprarAgora
+
                   }
+
                   className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-primary px-6 py-4 text-base font-black text-primary transition hover:bg-[color-mix(in_srgb,var(--primary)_8%,white)] active:scale-[0.99]"
+
                 >
+
                   <Sparkles className="h-5 w-5" />
 
                   Comprar agora
+
                 </button>
+
               </div>
+
             </div>
+
           </div>
+
         </div>
+
       </section>
 
       {relacionados.length >
+
         0 && (
+
         <section className="bg-card px-6 py-14 sm:px-10 sm:py-16">
+
           <div className="mx-auto max-w-7xl">
+
             <SectionHeader
+
               etiqueta="Você também pode gostar"
+
               titulo="Produtos relacionados"
+
               descricao="Outras opções da mesma categoria que podem combinar com o que você procura."
+
               alinhamento="centro"
+
             />
 
             <div className="mt-10 grid grid-cols-1 justify-center gap-5 sm:grid-cols-[repeat(auto-fit,minmax(220px,260px))]">
+
               {relacionados.map(
+
                 (item) => (
+
                   <ProdutoCard
+
                     key={
+
                       item.id
+
                     }
+
                     produto={
+
                       item
+
                     }
+
                     adicionarCarrinho={
+
                       adicionarCarrinho
+
                     }
+
                   />
+
                 ),
+
               )}
+
             </div>
+
           </div>
+
         </section>
+
       )}
 
       <Footer />
+
     </main>
+
   );
+
 }
