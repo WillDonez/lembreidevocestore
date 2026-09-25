@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
+
 import { createClient } from "@supabase/supabase-js";
+
 import { enviarWhatsapp } from "@/lib/whatsapp";
+import { enviarEmailDownload } from "@/lib/resend";
 
 import {
   InvalidWebhookSignatureError,
@@ -31,6 +34,9 @@ type PedidoBanco = {
   status?: string | null;
   produtos?: ProdutoPedido[] | null;
   download_liberado?: boolean | null;
+  nome_cliente?: string | null;
+  email_cliente?: string | null;
+  email_download_enviado?: boolean | null;
 };
 
 type AmbienteMercadoPago = "producao" | "teste";
@@ -55,6 +61,7 @@ type ResultadoConsultaPagamento = {
  *
  * Não há fallback entre produção e teste.
  */
+
 function obterAmbienteMercadoPago(): AmbienteMercadoPago {
   const ehAmbienteTeste =
     process.env.NODE_ENV === "development" ||
@@ -162,6 +169,7 @@ async function consultarPagamentoMercadoPago(
  * VERIFICAR SE O PEDIDO POSSUI PRODUTO DIGITAL
  * =========================================================
  */
+
 function possuiProdutoDigital(
   produtos: ProdutoPedido[] | null | undefined,
 ) {
@@ -183,9 +191,31 @@ function possuiProdutoDigital(
 
 /*
  * =========================================================
+ * OBTER PRODUTOS DIGITAIS COM ARQUIVO DISPONÍVEL
+ * =========================================================
+ */
+
+function obterProdutosDigitaisComArquivo(
+  produtos: ProdutoPedido[] | null | undefined,
+) {
+  if (!Array.isArray(produtos)) {
+    return [];
+  }
+
+  return produtos.filter((produto) => {
+    return Boolean(
+      produto?.arquivo_digital &&
+        String(produto.arquivo_digital).trim(),
+    );
+  });
+}
+
+/*
+ * =========================================================
  * CONVERTER STATUS MERCADO PAGO → STATUS DA LOJA
  * =========================================================
  */
+
 function converterStatusPagamento(
   statusPagamento?: string,
 ) {
@@ -266,6 +296,7 @@ export async function POST(req: Request) {
      * portanto lemos o corpo antes da validação e usamos
      * a query string como primeira opção.
      */
+
     const body = await req.json();
 
     const url = new URL(req.url);
@@ -369,6 +400,7 @@ export async function POST(req: Request) {
      * Caso futuramente outros eventos sejam habilitados,
      * simplesmente reconhecemos a notificação.
      */
+
     if (
       body?.type &&
       body.type !== "payment"
@@ -478,7 +510,10 @@ export async function POST(req: Request) {
           id,
           status,
           produtos,
-          download_liberado
+          download_liberado,
+          nome_cliente,
+          email_cliente,
+          email_download_enviado
         `,
       )
       .eq("id", pedidoId)
@@ -525,6 +560,11 @@ export async function POST(req: Request) {
         pedidoAtual.produtos,
       );
 
+    const produtosDigitaisComArquivo =
+      obterProdutosDigitaisComArquivo(
+        pedidoAtual.produtos,
+      );
+
     const statusPedidoAntes =
       String(
         pedidoAtual.status || "",
@@ -535,6 +575,9 @@ export async function POST(req: Request) {
     const pedidoJaEstavaAprovado =
       statusPedidoAntes === "aprovado" ||
       statusPedidoAntes === "pago";
+
+    const emailDownloadJaEnviado =
+      pedidoAtual.email_download_enviado === true;
 
     /*
      * =========================================================
@@ -551,6 +594,7 @@ export async function POST(req: Request) {
      * Caso o Mercado Pago envie algum status
      * ainda não mapeado, não alteramos o pedido.
      */
+
     if (!statusInterno) {
       console.log(
         "Status do Mercado Pago ainda não mapeado:",
@@ -613,7 +657,8 @@ export async function POST(req: Request) {
         `
           id,
           status,
-          download_liberado
+          download_liberado,
+          email_download_enviado
         `,
       )
       .maybeSingle();
@@ -716,6 +761,102 @@ export async function POST(req: Request) {
         } else {
           console.warn(
             "WHATSAPP_ADMIN_NUMERO não está configurado. O aviso de pagamento aprovado não foi enviado.",
+          );
+        }
+      }
+
+      /*
+       * =========================================================
+       * 10. ENVIAR ARQUIVO DIGITAL POR E-MAIL
+       * =========================================================
+       *
+       * O e-mail somente é enviado quando:
+       *
+       * - o pagamento está aprovado;
+       * - o pedido possui produto digital;
+       * - existe pelo menos um arquivo digital;
+       * - existe e-mail do cliente;
+       * - o e-mail ainda não foi enviado;
+       * - o pedido ainda não estava aprovado antes deste webhook.
+       *
+       * O último critério protege pedidos antigos que receberam
+       * a nova coluna email_download_enviado com valor false.
+       *
+       * Uma falha no Resend nunca desfaz nem impede a aprovação
+       * do pagamento.
+       */
+
+      const emailCliente =
+        String(
+          pedidoAtual.email_cliente || "",
+        ).trim();
+
+      const deveEnviarEmailDownload =
+        pedidoPossuiProdutoDigital &&
+        produtosDigitaisComArquivo.length > 0 &&
+        Boolean(emailCliente) &&
+        !emailDownloadJaEnviado &&
+        !pedidoJaEstavaAprovado;
+
+      if (deveEnviarEmailDownload) {
+        try {
+          await enviarEmailDownload({
+            emailCliente,
+            nomeCliente:
+              pedidoAtual.nome_cliente,
+            pedidoId,
+            produtos:
+              produtosDigitaisComArquivo,
+          });
+
+          /*
+           * Somente depois que o Resend confirmar o envio
+           * registramos que o e-mail foi enviado.
+           */
+
+          const {
+            error: erroMarcarEmailEnviado,
+          } = await supabase
+            .from("pedidos")
+            .update({
+              email_download_enviado: true,
+            })
+            .eq("id", pedidoId)
+            .eq(
+              "email_download_enviado",
+              false,
+            );
+
+          if (erroMarcarEmailEnviado) {
+            console.error(
+              `E-mail do pedido ${pedidoId} foi enviado, mas não foi possível registrar email_download_enviado=true:`,
+              erroMarcarEmailEnviado,
+            );
+          } else {
+            console.log(
+              `Pedido ${pedidoId} marcado com email_download_enviado=true.`,
+            );
+          }
+        } catch (error) {
+          console.error(
+            `Pedido ${pedidoId} foi aprovado e o download foi liberado, mas não foi possível enviar o e-mail digital:`,
+            error,
+          );
+        }
+      } else if (
+        pedidoPossuiProdutoDigital &&
+        !emailDownloadJaEnviado &&
+        !pedidoJaEstavaAprovado
+      ) {
+        if (!emailCliente) {
+          console.warn(
+            `Pedido digital ${pedidoId} aprovado, mas não possui email_cliente.`,
+          );
+        } else if (
+          produtosDigitaisComArquivo.length === 0
+        ) {
+          console.warn(
+            `Pedido digital ${pedidoId} aprovado, mas não possui arquivo_digital disponível para envio.`,
           );
         }
       }
