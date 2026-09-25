@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+
 
 
 import {
@@ -176,6 +179,40 @@ export default function ProdutoForm({
 
     obterFormato(formatoArquivo);
 
+  const [categorias, setCategorias] = useState<
+    Array<{
+      id: number;
+      nome: string;
+    }>
+  >([]);
+
+  const [carregandoCategorias, setCarregandoCategorias] =
+    useState(true);
+
+  useEffect(() => {
+    async function buscarCategorias() {
+      setCarregandoCategorias(true);
+
+      const { data, error } = await supabase
+        .from("categorias")
+        .select("id,nome")
+        .order("ordem", {
+          ascending: true,
+        });
+
+      if (error) {
+        console.error("Erro ao buscar categorias:", error);
+        setCarregandoCategorias(false);
+        return;
+      }
+
+      setCategorias(data || []);
+      setCarregandoCategorias(false);
+    }
+
+    buscarCategorias();
+  }, []);
+
 
 
   const inputClass =
@@ -334,31 +371,49 @@ export default function ProdutoForm({
 
                 value={categoria}
 
-                onChange={(e) =>
-
-                  setCategoria(e.target.value)
-
-                }
+                onChange={(e) => setCategoria(e.target.value)}
 
                 className={inputClass}
 
+                disabled={carregandoCategorias}
+
               >
 
-                <option>Canecas</option>
+                <option value="">
 
-                <option>Topos de Bolo</option>
+                  {carregandoCategorias
 
-                <option>Lembrancinhas</option>
+                    ? "Carregando categorias..."
 
-                <option>Marcadores</option>
+                    : "Selecione uma categoria"}
 
-                <option>Papelaria</option>
+                </option>
 
-                <option>Festas</option>
 
-                <option>Outros</option>
+
+                {categorias.map((item) => (
+
+                  <option key={item.id} value={item.nome}>
+
+                    {item.nome}
+
+                  </option>
+
+                ))}
 
               </select>
+
+
+
+              {!carregandoCategorias && categorias.length === 0 && (
+
+                <p className="mt-2 text-sm font-medium text-danger">
+
+                  Nenhuma categoria cadastrada.
+
+                </p>
+
+              )}
 
             </div>
 
