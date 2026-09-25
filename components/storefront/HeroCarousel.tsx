@@ -14,6 +14,12 @@ type BannerHome = {
   botao_texto: string | null;
   botao_link: string | null;
   tema: string | null;
+  cor_titulo: string | null;
+  cor_destaque: string | null;
+  cor_descricao: string | null;
+  cor_etiqueta: string | null;
+  cor_botao: string | null;
+  cor_texto_botao: string | null;
   ordem: number;
   ativo: boolean;
 };
@@ -75,6 +81,18 @@ function normalizarTema(tema: string | null): TemaKey {
   }
 
   return "primary";
+}
+
+const COR_TITULO = "#111827";
+const COR_DESTAQUE = "#DB2777";
+const COR_DESCRICAO = "#4B5563";
+const COR_ETIQUETA = "#DB2777";
+const COR_BOTAO = "#DB2777";
+const COR_TEXTO_BOTAO = "#FFFFFF";
+
+function cor(c: string | null, padrao: string) {
+  const v = String(c ?? "").trim();
+  return /^#[0-9A-Fa-f]{6}$/.test(v) ? v : padrao;
 }
 
 export default function HeroCarousel() {
@@ -242,7 +260,8 @@ export default function HeroCarousel() {
                       <div className="absolute inset-5 rounded-full border border-white/80" />
 
                       <span
-                        className={`text-center text-7xl font-bold ${tema.destaque}`}
+                        className="text-center text-7xl font-bold"
+                        style={{ color: cor(slide.cor_destaque, COR_DESTAQUE) }}
                         aria-hidden="true"
                       >
                         ♥
@@ -255,17 +274,22 @@ export default function HeroCarousel() {
               <div className="relative z-10 mx-auto flex min-h-[430px] max-w-7xl items-center px-6 py-16 sm:min-h-[480px] sm:px-10 lg:min-h-[520px] lg:px-12">
                 <div className="max-w-2xl text-left">
                   <span
-                    className={`inline-flex rounded-full px-4 py-2 text-sm font-bold shadow-sm ring-1 backdrop-blur-sm ${tema.etiqueta}`}
+                    className="inline-flex rounded-full bg-white/85 px-4 py-2 text-sm font-bold shadow-sm ring-1 ring-current/30 backdrop-blur-sm"
+                    style={{ color: cor(slide.cor_etiqueta, COR_ETIQUETA) }}
                   >
                     Lembrei de Você Store
                   </span>
 
-                  <h1 className="mt-6 text-4xl font-black leading-tight text-gray-900 sm:text-5xl lg:text-6xl">
+                  <h1
+                    className="mt-6 text-4xl font-black leading-tight sm:text-5xl lg:text-6xl"
+                    style={{ color: cor(slide.cor_titulo, COR_TITULO) }}
+                  >
                     {slide.titulo}
 
                     {slide.destaque && (
                       <span
-                        className={`mt-1 block ${tema.destaque}`}
+                        className="mt-1 block"
+                        style={{ color: cor(slide.cor_destaque, COR_DESTAQUE) }}
                       >
                         {slide.destaque}
                       </span>
@@ -273,7 +297,10 @@ export default function HeroCarousel() {
                   </h1>
 
                   {slide.descricao && (
-                    <p className="mt-6 max-w-xl text-lg leading-relaxed text-gray-600 sm:text-xl">
+                    <p
+                      className="mt-6 max-w-xl text-lg leading-relaxed sm:text-xl"
+                      style={{ color: cor(slide.cor_descricao, COR_DESCRICAO) }}
+                    >
                       {slide.descricao}
                     </p>
                   )}
@@ -284,7 +311,11 @@ export default function HeroCarousel() {
                         href={
                           slide.botao_link || "/"
                         }
-                        className={`inline-flex min-h-12 items-center justify-center rounded-xl px-7 py-3 font-bold shadow-lg transition duration-200 hover:-translate-y-0.5 focus:outline-none focus:ring-4 ${tema.botao}`}
+                        className="inline-flex min-h-12 items-center justify-center rounded-xl px-7 py-3 font-bold shadow-lg transition duration-200 hover:-translate-y-0.5 hover:brightness-95 focus:outline-none focus:ring-4 focus:ring-black/10"
+                        style={{
+                          backgroundColor: cor(slide.cor_botao, COR_BOTAO),
+                          color: cor(slide.cor_texto_botao, COR_TEXTO_BOTAO),
+                        }}
                       >
                         {slide.botao_texto}
 

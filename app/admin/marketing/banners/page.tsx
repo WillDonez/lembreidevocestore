@@ -25,6 +25,12 @@ type BannerHome = {
   botao_texto: string | null;
   botao_link: string | null;
   tema: string | null;
+  cor_titulo: string | null;
+  cor_destaque: string | null;
+  cor_descricao: string | null;
+  cor_etiqueta: string | null;
+  cor_botao: string | null;
+  cor_texto_botao: string | null;
   ordem: number;
   ativo: boolean;
   created_at?: string;
@@ -45,6 +51,34 @@ const temasDisponiveis = [
     nome: "Coral",
   },
 ];
+
+const CORES_PADRAO = {
+  cor_titulo: "#1F2937",
+  cor_destaque: "#E50046",
+  cor_descricao: "#6B7280",
+  cor_etiqueta: "#E50046",
+  cor_botao: "#C9003D",
+  cor_texto_botao: "#FFFFFF",
+} as const;
+
+type CampoCor =
+  | "cor_titulo"
+  | "cor_destaque"
+  | "cor_descricao"
+  | "cor_etiqueta"
+  | "cor_botao"
+  | "cor_texto_botao";
+
+function normalizarHex(valor: string) {
+  const limpo = valor.trim().toUpperCase();
+  if (/^#[0-9A-F]{6}$/.test(limpo)) return limpo;
+  if (/^[0-9A-F]{6}$/.test(limpo)) return `#${limpo}`;
+  return valor;
+}
+
+function corValida(valor: string | null | undefined) {
+  return /^#[0-9A-Fa-f]{6}$/.test(valor ?? "");
+}
 
 const TAMANHO_MAXIMO =
   5 * 1024 * 1024;
@@ -223,6 +257,18 @@ export default function BannersAdminPage() {
             banner.botao_link,
           tema:
             banner.tema,
+          cor_titulo:
+            banner.cor_titulo,
+          cor_destaque:
+            banner.cor_destaque,
+          cor_descricao:
+            banner.cor_descricao,
+          cor_etiqueta:
+            banner.cor_etiqueta,
+          cor_botao:
+            banner.cor_botao,
+          cor_texto_botao:
+            banner.cor_texto_botao,
           ordem:
             banner.ordem,
           ativo:
@@ -895,6 +941,92 @@ export default function BannersAdminPage() {
                             }
                             className="w-full rounded-xl border border-border bg-white px-4 py-3 text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
                           />
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-border bg-background p-5">
+                        <div>
+                          <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">
+                            Cores do banner
+                          </p>
+                          <p className="mt-1 text-sm leading-relaxed text-text-light">
+                            Personalize as cores deste banner pelo seletor visual ou pelo código HEX.
+                          </p>
+                        </div>
+
+                        <div className="mt-5 grid gap-5 md:grid-cols-2">
+                          {(
+                            [
+                              ["cor_titulo", "Título"],
+                              ["cor_destaque", "Destaque"],
+                              ["cor_descricao", "Descrição"],
+                              ["cor_etiqueta", "Etiqueta"],
+                              ["cor_botao", "Botão"],
+                              ["cor_texto_botao", "Texto do botão"],
+                            ] as [CampoCor, string][]
+                          ).map(([campo, rotulo]) => {
+                            const valor =
+                              banner[campo] ??
+                              CORES_PADRAO[campo];
+
+                            return (
+                              <div key={campo}>
+                                <label className="mb-2 block text-sm font-black text-primary">
+                                  {rotulo}
+                                </label>
+
+                                <div className="flex gap-3">
+                                  <input
+                                    type="color"
+                                    value={
+                                      corValida(valor)
+                                        ? valor
+                                        : CORES_PADRAO[campo]
+                                    }
+                                    onChange={(evento) =>
+                                      alterarBanner(
+                                        banner.id,
+                                        campo,
+                                        evento.target.value.toUpperCase(),
+                                      )
+                                    }
+                                    className="h-12 w-14 shrink-0 cursor-pointer rounded-xl border border-border bg-white p-1.5"
+                                  />
+
+                                  <input
+                                    type="text"
+                                    value={valor}
+                                    maxLength={7}
+                                    placeholder={CORES_PADRAO[campo]}
+                                    onChange={(evento) =>
+                                      alterarBanner(
+                                        banner.id,
+                                        campo,
+                                        evento.target.value,
+                                      )
+                                    }
+                                    onBlur={(evento) => {
+                                      const normalizada =
+                                        normalizarHex(evento.target.value);
+
+                                      if (corValida(normalizada)) {
+                                        alterarBanner(
+                                          banner.id,
+                                          campo,
+                                          normalizada,
+                                        );
+                                      }
+                                    }}
+                                    className={`w-full rounded-xl border bg-white px-4 py-3 font-mono text-sm font-bold uppercase text-text outline-none transition focus:ring-2 focus:ring-primary/10 ${
+                                      corValida(valor)
+                                        ? "border-border focus:border-primary"
+                                        : "border-red-300 focus:border-red-400"
+                                    }`}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
 
